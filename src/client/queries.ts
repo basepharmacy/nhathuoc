@@ -4,6 +4,7 @@ import {
   tenantsRepo,
   locationsRepo,
   categoriesRepo,
+  suppliersRepo,
 } from '.'
 
 export const getProfilesQueryOptions = (userId: string) =>
@@ -48,5 +49,14 @@ export const getCategoriesQueryOptions = (tenantId: string) =>
     queryFn: async () => {
       const categories = await categoriesRepo.getAllCategoriesByTenantId(tenantId)
       return categories
+    },
+  })
+
+export const getSuppliersQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ["suppliers", tenantId],
+    queryFn: async () => {
+      const suppliers = await suppliersRepo.getAllSuppliersByTenantId(tenantId)
+      return suppliers
     },
   })
