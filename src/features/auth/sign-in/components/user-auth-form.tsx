@@ -5,8 +5,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
-import { useAuthStore } from '@/stores/auth-store'
-import { sleep, cn } from '@/lib/utils'
+import { supabaseAuth } from '@/services/supabase'
+import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import {
   Form,
@@ -18,6 +18,28 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
+
+const mapAuthErrorToVietnamese = (error: unknown): string => {
+  const fallback = 'Đăng nhập thất bại. Vui lòng thử lại.'
+
+  if (!error || typeof error !== 'object') return fallback
+
+  const status = 'status' in error ? Number(error.status) : undefined
+
+  if (status === 429) {
+    return 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.'
+  }
+
+  if (status === 401 || status === 400) {
+    return 'Email hoặc mật khẩu không đúng.'
+  }
+
+  if (status && status >= 500) {
+    return 'Máy chủ đang bận. Vui lòng thử lại sau.'
+  }
+
+  return fallback
+}
 
 const formSchema = z.object({
   email: z.email({
@@ -39,7 +61,6 @@ export function UserAuthForm({
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
-  const { auth } = useAuthStore()
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,34 +70,24 @@ export function UserAuthForm({
     },
   })
 
-  function onSubmit(data: z.infer<typeof formSchema>) {
+  async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
-    toast.promise(sleep(2000), {
-      loading: 'Đang đăng nhập...',
-      success: () => {
-        setIsLoading(false)
+    try {
+      await supabaseAuth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      })
 
-        // Mock successful authentication with expiry computed at success time
-        const mockUser = {
-          accountNo: 'ACC001',
-          email: data.email,
-          role: ['user'],
-          exp: Date.now() + 24 * 60 * 60 * 1000, // 24 hours from now
-        }
+      const targetPath = redirectTo || '/'
+      navigate({ to: targetPath, replace: true })
 
-        // Set user and access token
-        auth.setUser(mockUser)
-        auth.setAccessToken('mock-access-token')
-
-        // Redirect to the stored location or default to dashboard
-        const targetPath = redirectTo || '/'
-        navigate({ to: targetPath, replace: true })
-
-        return `Welcome back, ${data.email}!`
-      },
-      error: 'Error',
-    })
+      toast.success(`Chào mừng bạn đăng nhập trở lại, ${data.email}!`)
+    } catch (error) {
+      toast.error(mapAuthErrorToVietnamese(error))
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

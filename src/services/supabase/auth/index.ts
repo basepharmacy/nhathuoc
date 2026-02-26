@@ -3,8 +3,8 @@ import {
   Session,
   Subscription,
   User,
-} from "@supabase/supabase-js"
-import { BasePharmacySupabaseClient } from "../client"
+} from '@supabase/supabase-js'
+import { BasePharmacySupabaseClient } from '../client'
 
 type AuthStateChangeCallback = (
   event: AuthChangeEvent,
@@ -29,10 +29,18 @@ const createAuthClient = (client: BasePharmacySupabaseClient) => ({
     return data.subscription
   },
 
-  async signInAnonymously(): Promise<void> {
-    const { error } = await client.auth.signInAnonymously()
+  async signInWithPassword(params: {
+    email: string
+    password: string
+  }): Promise<Session> {
+    const { data, error } = await client.auth.signInWithPassword(params)
     if (error) throw error
+    if (!data.session) {
+      throw new Error('Có lỗi khi đăng nhập. Vui lòng thử lại.')
+    }
+    return data.session
   },
+
   async signOut(): Promise<void> {
     const { error } = await client.auth.signOut()
     if (error) throw error
