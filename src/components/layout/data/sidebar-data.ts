@@ -1,15 +1,14 @@
 import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { getLocationsQueryOptions } from '@/client/queries'
 import {
-  AudioWaveform,
   BarChart3,
   Box,
   Boxes,
   Building2,
   ClipboardList,
-  Command,
   FileText,
   Folder,
-  GalleryVerticalEnd,
   LayoutDashboard,
   LineChart,
   ShoppingCart,
@@ -18,24 +17,6 @@ import {
 } from 'lucide-react'
 import { type SidebarData } from '../types'
 import { useUser } from '@/client/provider'
-
-const staticTeams = [
-  {
-    name: 'Shadcn Admin',
-    logo: Command,
-    plan: 'Vite + ShadcnUI',
-  },
-  {
-    name: 'Acme Inc',
-    logo: GalleryVerticalEnd,
-    plan: 'Enterprise',
-  },
-  {
-    name: 'Acme Corp.',
-    logo: AudioWaveform,
-    plan: 'Startup',
-  },
-]
 
 const staticNavGroups = [
   {
@@ -67,17 +48,17 @@ const staticNavGroups = [
         items: [
           {
             title: 'Quản lý danh mục',
-            url: '/sign-in',
+            url: '/categories',
             icon: Folder,
           },
           {
             title: 'Quản lý sản phẩm',
-            url: '/forgot-password',
+            url: '/products',
             icon: Box,
           },
           {
             title: 'Quản lý tồn kho',
-            url: '/otp',
+            url: '/inventory',
             icon: Warehouse,
           },
         ],
@@ -88,12 +69,12 @@ const staticNavGroups = [
         items: [
           {
             title: 'Quản lý nhà cung cấp',
-            url: '/errors/unauthorized',
+            url: '/suppliers',
             icon: Building2,
           },
           {
             title: 'Đơn nhập hàng',
-            url: '/errors/forbidden',
+            url: '/purchase-orders',
             icon: ClipboardList,
           },
         ],
@@ -104,23 +85,23 @@ const staticNavGroups = [
     title: 'Báo cáo chi tiết',
     items: [
       {
-        title: 'Báo cáo bán hàng',
+        title: 'Bán hàng',
         icon: BarChart3,
         items: [
           {
             title: 'Doanh thu - Lợi nhuận',
-            url: '/settings',
+            url: '/reports/sales',
             icon: LineChart,
           },
         ],
       },
       {
-        title: 'Báo cáo nhập hàng',
+        title: 'Nhập hàng',
         icon: FileText,
         items: [
           {
             title: 'Nhập hàng',
-            url: '/settings',
+            url: '/reports/purchase',
             icon: ClipboardList,
           },
         ],
@@ -131,6 +112,12 @@ const staticNavGroups = [
 
 export function useSidebarData(): SidebarData {
   const { user } = useUser()
+  const tenantId = user?.profile?.tenant_id ?? ''
+
+  const { data: locations = [] } = useQuery({
+    ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
 
   return useMemo(
     () => ({
@@ -139,9 +126,9 @@ export function useSidebarData(): SidebarData {
         email: user?.email || 'user@example.com',
         avatar: '/avatars/shadcn.jpg',
       },
-      teams: staticTeams,
+      locations,
       navGroups: staticNavGroups,
     }),
-    [user]
+    [user, locations]
   )
 }
