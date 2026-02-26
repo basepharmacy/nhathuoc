@@ -1,28 +1,20 @@
 import {
-  Construction,
-  LayoutDashboard,
-  Monitor,
-  Bug,
-  ListTodo,
-  FileX,
-  HelpCircle,
-  Lock,
-  Bell,
-  Package,
-  Palette,
-  ServerOff,
-  Settings,
-  Wrench,
-  UserCog,
-  UserX,
-  Users,
-  MessagesSquare,
-  ShieldCheck,
   AudioWaveform,
+  BarChart3,
+  Box,
+  Boxes,
+  Building2,
+  ClipboardList,
   Command,
+  FileText,
+  Folder,
   GalleryVerticalEnd,
+  LayoutDashboard,
+  LineChart,
+  ShoppingCart,
+  Truck,
+  Warehouse,
 } from 'lucide-react'
-import { ClerkLogo } from '@/assets/clerk-logo'
 import { type SidebarData } from '../types'
 
 export const sidebarData: SidebarData = {
@@ -50,154 +42,91 @@ export const sidebarData: SidebarData = {
   ],
   navGroups: [
     {
-      title: 'General',
+      title: 'Truy cập nhanh',
       items: [
         {
-          title: 'Dashboard',
+          title: 'Tổng hợp',
           url: '/',
           icon: LayoutDashboard,
         },
         {
-          title: 'Tasks',
+          title: 'Bán hàng',
           url: '/tasks',
-          icon: ListTodo,
+          icon: ShoppingCart,
         },
         {
-          title: 'Apps',
+          title: 'Tồn kho',
           url: '/apps',
-          icon: Package,
-        },
-        {
-          title: 'Chats',
-          url: '/chats',
-          badge: '3',
-          icon: MessagesSquare,
-        },
-        {
-          title: 'Users',
-          url: '/users',
-          icon: Users,
-        },
-        {
-          title: 'Secured by Clerk',
-          icon: ClerkLogo,
-          items: [
-            {
-              title: 'Sign In',
-              url: '/clerk/sign-in',
-            },
-            {
-              title: 'Sign Up',
-              url: '/clerk/sign-up',
-            },
-            {
-              title: 'User Management',
-              url: '/clerk/user-management',
-            },
-          ],
+          icon: Warehouse,
         },
       ],
     },
     {
-      title: 'Pages',
+      title: 'Quản lý',
       items: [
         {
-          title: 'Auth',
-          icon: ShieldCheck,
+          title: 'Sản phẩm',
+          icon: Boxes,
           items: [
             {
-              title: 'Sign In',
+              title: 'Quản lý danh mục',
               url: '/sign-in',
+              icon: Folder,
             },
             {
-              title: 'Sign In (2 Col)',
-              url: '/sign-in-2',
-            },
-            {
-              title: 'Sign Up',
-              url: '/sign-up',
-            },
-            {
-              title: 'Forgot Password',
+              title: 'Quản lý sản phẩm',
               url: '/forgot-password',
+              icon: Box,
             },
             {
-              title: 'OTP',
+              title: 'Quản lý tồn kho',
               url: '/otp',
+              icon: Warehouse,
             },
           ],
         },
         {
-          title: 'Errors',
-          icon: Bug,
+          title: 'Nhập hàng',
+          icon: Truck,
           items: [
             {
-              title: 'Unauthorized',
+              title: 'Quản lý nhà cung cấp',
               url: '/errors/unauthorized',
-              icon: Lock,
+              icon: Building2,
             },
             {
-              title: 'Forbidden',
+              title: 'Đơn nhập hàng',
               url: '/errors/forbidden',
-              icon: UserX,
-            },
-            {
-              title: 'Not Found',
-              url: '/errors/not-found',
-              icon: FileX,
-            },
-            {
-              title: 'Internal Server Error',
-              url: '/errors/internal-server-error',
-              icon: ServerOff,
-            },
-            {
-              title: 'Maintenance Error',
-              url: '/errors/maintenance-error',
-              icon: Construction,
+              icon: ClipboardList,
             },
           ],
         },
       ],
     },
     {
-      title: 'Other',
+      title: 'Báo cáo chi tiết',
       items: [
         {
-          title: 'Settings',
-          icon: Settings,
+          title: 'Báo cáo bán hàng',
+          icon: BarChart3,
           items: [
             {
-              title: 'Profile',
+              title: 'Doanh thu - Lợi nhuận',
               url: '/settings',
-              icon: UserCog,
-            },
-            {
-              title: 'Account',
-              url: '/settings/account',
-              icon: Wrench,
-            },
-            {
-              title: 'Appearance',
-              url: '/settings/appearance',
-              icon: Palette,
-            },
-            {
-              title: 'Notifications',
-              url: '/settings/notifications',
-              icon: Bell,
-            },
-            {
-              title: 'Display',
-              url: '/settings/display',
-              icon: Monitor,
+              icon: LineChart,
             },
           ],
         },
         {
-          title: 'Help Center',
-          url: '/help-center',
-          icon: HelpCircle,
+          title: 'Báo cáo nhập hàng',
+          icon: FileText,
+          items: [
+            {
+              title: 'Nhập hàng',
+              url: '/settings',
+              icon: ClipboardList,
+            },
+          ],
         },
       ],
     },
