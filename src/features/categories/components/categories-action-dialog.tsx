@@ -154,7 +154,7 @@ export function CategoriesActionDialog({
                   <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
                   <FormControl>
                     <Input
-                      placeholder='Thuốc kháng sinh'
+                      placeholder='Tên danh mục...'
                       className='col-span-4'
                       autoComplete='off'
                       {...field}

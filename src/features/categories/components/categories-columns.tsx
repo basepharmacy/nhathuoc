@@ -1,39 +1,11 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
-import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type Category } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export const categoriesColumns: ColumnDef<Category>[] = [
-  {
-    id: 'select',
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && 'indeterminate')
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label='Select all'
-        className='translate-y-[2px]'
-      />
-    ),
-    meta: {
-      className: cn('max-md:sticky start-0 z-10 rounded-tl-[inherit]'),
-    },
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label='Select row'
-        className='translate-y-[2px]'
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: 'name',
     header: ({ column }) => (
@@ -59,6 +31,7 @@ export const categoriesColumns: ColumnDef<Category>[] = [
       const description = row.getValue('description') as string | null
       return <LongText className='max-w-64'>{description ?? '—'}</LongText>
     },
+    meta: { label: 'Mô tả' },
     enableSorting: false,
   },
   {
@@ -66,6 +39,7 @@ export const categoriesColumns: ColumnDef<Category>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Ngày tạo' />
     ),
+    meta: { label: 'Ngày tạo' },
     cell: ({ row }) => {
       const date = row.getValue('created_at') as string | null
       if (!date) return <span>—</span>
