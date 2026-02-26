@@ -1,0 +1,3 @@
+Chú ý:
+Khi nhập tên sản phẩm sẽ call product_masters để tìm thuốc tương ứng
+nếu có thì chọn luôn và fill sẵn dữ liệu từ product_master để tạo product
