@@ -254,6 +254,71 @@ export type Database = {
           },
         ]
       }
+      product_master_units: {
+        Row: {
+          conversion_factor: number
+          id: string
+          product_master_id: string
+          unit_name: string
+        }
+        Insert: {
+          conversion_factor: number
+          id?: string
+          product_master_id: string
+          unit_name: string
+        }
+        Update: {
+          conversion_factor?: number
+          id?: string
+          product_master_id?: string
+          unit_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_master_units_product_master_id_fkey"
+            columns: ["product_master_id"]
+            isOneToOne: false
+            referencedRelation: "product_masters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_masters: {
+        Row: {
+          active_ingredient: string | null
+          description: string | null
+          id: string
+          jan_code: string | null
+          made_company_name: string | null
+          product_name: string
+          product_type: Database["public"]["Enums"]["product_type"]
+          regis_number: string | null
+          sale_company_name: string | null
+        }
+        Insert: {
+          active_ingredient?: string | null
+          description?: string | null
+          id?: string
+          jan_code?: string | null
+          made_company_name?: string | null
+          product_name: string
+          product_type?: Database["public"]["Enums"]["product_type"]
+          regis_number?: string | null
+          sale_company_name?: string | null
+        }
+        Update: {
+          active_ingredient?: string | null
+          description?: string | null
+          id?: string
+          jan_code?: string | null
+          made_company_name?: string | null
+          product_name?: string
+          product_type?: Database["public"]["Enums"]["product_type"]
+          regis_number?: string | null
+          sale_company_name?: string | null
+        }
+        Relationships: []
+      }
       product_units: {
         Row: {
           conversion_factor: number
@@ -304,37 +369,52 @@ export type Database = {
       }
       products: {
         Row: {
+          active_ingredient: string | null
           category_id: string | null
           created_at: string | null
           description: string | null
           id: string
           jan_code: string | null
+          made_company_name: string | null
           min_stock: number | null
           product_name: string
+          product_type: Database["public"]["Enums"]["product_type"]
+          regis_number: string | null
+          sale_company_name: string | null
           status: Database["public"]["Enums"]["product_status"]
           tenant_id: string
           updated_at: string | null
         }
         Insert: {
+          active_ingredient?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           jan_code?: string | null
+          made_company_name?: string | null
           min_stock?: number | null
           product_name: string
+          product_type?: Database["public"]["Enums"]["product_type"]
+          regis_number?: string | null
+          sale_company_name?: string | null
           status?: Database["public"]["Enums"]["product_status"]
           tenant_id: string
           updated_at?: string | null
         }
         Update: {
+          active_ingredient?: string | null
           category_id?: string | null
           created_at?: string | null
           description?: string | null
           id?: string
           jan_code?: string | null
+          made_company_name?: string | null
           min_stock?: number | null
           product_name?: string
+          product_type?: Database["public"]["Enums"]["product_type"]
+          regis_number?: string | null
+          sale_company_name?: string | null
           status?: Database["public"]["Enums"]["product_status"]
           tenant_id?: string
           updated_at?: string | null
@@ -494,6 +574,7 @@ export type Database = {
           tenant_id: string
           total_amount: number
           updated_at: string | null
+          user_id: string
         }
         Insert: {
           created_at?: string | null
@@ -510,6 +591,7 @@ export type Database = {
           tenant_id: string
           total_amount?: number
           updated_at?: string | null
+          user_id: string
         }
         Update: {
           created_at?: string | null
@@ -526,6 +608,7 @@ export type Database = {
           tenant_id?: string
           total_amount?: number
           updated_at?: string | null
+          user_id?: string
         }
         Relationships: [
           {
@@ -547,6 +630,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -614,28 +704,34 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
+          note: string | null
           payment_date: string | null
           reference_code: string | null
           supplier_id: string
           tenant_id: string
+          user_id: string
         }
         Insert: {
           amount: number
           created_at?: string | null
           id?: string
+          note?: string | null
           payment_date?: string | null
           reference_code?: string | null
           supplier_id: string
           tenant_id: string
+          user_id: string
         }
         Update: {
           amount?: number
           created_at?: string | null
           id?: string
+          note?: string | null
           payment_date?: string | null
           reference_code?: string | null
           supplier_id?: string
           tenant_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -650,6 +746,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -715,6 +818,7 @@ export type Database = {
           representative: string | null
           staff_license: number
           status: Database["public"]["Enums"]["tenant_status"]
+          tenant_code: string | null
           updated_at: string | null
         }
         Insert: {
@@ -730,6 +834,7 @@ export type Database = {
           representative?: string | null
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_code?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -745,6 +850,7 @@ export type Database = {
           representative?: string | null
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
+          tenant_code?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -760,6 +866,7 @@ export type Database = {
       location_status: "1_ACTIVE" | "2_INACTIVE" | "3_CLOSED"
       location_type: "1_WAREHOUSE" | "2_STORE" | "9_OTHER"
       product_status: "1_DRAFT" | "2_ACTIVE" | "3_INACTIVE" | "4_ARCHIVED"
+      product_type: "1_OTC" | "2_PRESCRIPTION_REQUIRED"
       purchase_order_payment_status: "1_UNPAID" | "2_PARTIALLY_PAID" | "3_PAID"
       purchase_order_status:
         | "1_DRAFT"
@@ -898,6 +1005,7 @@ export const Constants = {
       location_status: ["1_ACTIVE", "2_INACTIVE", "3_CLOSED"],
       location_type: ["1_WAREHOUSE", "2_STORE", "9_OTHER"],
       product_status: ["1_DRAFT", "2_ACTIVE", "3_INACTIVE", "4_ARCHIVED"],
+      product_type: ["1_OTC", "2_PRESCRIPTION_REQUIRED"],
       purchase_order_payment_status: ["1_UNPAID", "2_PARTIALLY_PAID", "3_PAID"],
       purchase_order_status: [
         "1_DRAFT",
