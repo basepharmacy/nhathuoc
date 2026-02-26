@@ -7,13 +7,13 @@ import {
 } from '@supabase/supabase-js'
 import { Database } from './database.types'
 
-export type FamilyTaskSupabaseClient = SupabaseClient<Database>
+export type BasePharmacySupabaseClient = SupabaseClient<Database>
 
-function createFamilyTaskClient(
+function createBasePharmacyClient(
   baseUrl: string,
   anonKey: string,
   storage: SupportedStorage
-): FamilyTaskSupabaseClient {
+): BasePharmacySupabaseClient {
   const options: SupabaseClientOptions<'public'> = {
     auth: {
       storage,
@@ -27,4 +27,4 @@ function createFamilyTaskClient(
   return createClient(baseUrl, anonKey, options)
 }
 
-export { createFamilyTaskClient }
+export { createBasePharmacyClient }
