@@ -3,6 +3,7 @@ import type { Profile } from '../model'
 
 export const createProfileRepository = (client: BasePharmacySupabaseClient) => ({
   async getProfileByUserId(userId: string): Promise<Profile | null> {
+    console.log("Fetching profile for userId:", userId)
     const { data, error } = await client
       .from('profiles')
       .select('*')

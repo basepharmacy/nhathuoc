@@ -5,12 +5,14 @@ import {
   useEffect,
   type ReactNode,
 } from 'react'
-import { supabaseAuth, supabaseClient } from '@/services/supabase'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
+import { supabaseAuth } from '@/services/supabase'
 import {
-  createProfileRepository,
-  createTenantRepository,
-  createLocationRepository,
-} from '@/services/supabase'
+  getProfilesQueryOptions,
+  getTenantQueryOptions,
+  getLocationQueryOptions,
+} from './queries'
 import type { Profile, Tenant, Location } from '@/services/supabase/database/model'
 
 export type UserData = {
@@ -37,114 +39,66 @@ type AuthUserProviderProps = {
 }
 
 export function AuthUserProvider({ children }: AuthUserProviderProps) {
-  const [user, setUser] = useState<UserData | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [authUser, setAuthUser] = useState<{ id: string; email: string } | null>(null)
+  const queryClient = useQueryClient()
 
-  // Initialize auth on mount
   useEffect(() => {
-    let isMounted = true
-
-    const initializeAuth = async () => {
-      try {
-        const session = await supabaseAuth.getSession()
-        if (isMounted && session?.user?.id) {
-          setIsLoading(true)
-          const profileRepo = createProfileRepository(supabaseClient)
-          const tenantRepo = createTenantRepository(supabaseClient)
-          const locationRepo = createLocationRepository(supabaseClient)
-
-          try {
-            const profile = await profileRepo.getProfileByUserId(session.user.id)
-            let tenant = null
-            if (profile?.tenant_id) {
-              tenant = await tenantRepo.getTenantById(profile.tenant_id)
-            }
-            let location = null
-            if (profile?.location_id) {
-              location = await locationRepo.getLocationById(profile.location_id)
-            }
-
-            if (isMounted) {
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                profile,
-                tenant,
-                location,
-              })
-            }
-          } catch (error) {
-            if (import.meta.env.DEV) {
-              // eslint-disable-next-line no-console
-              console.error('Failed to load user data:', error)
-            }
-          } finally {
-            if (isMounted) {
-              setIsLoading(false)
-            }
-          }
-        }
-      } catch (error) {
-        if (isMounted && import.meta.env.DEV) {
-          // eslint-disable-next-line no-console
-          console.error('Auth session error:', error)
-        }
+    supabaseAuth.getSession().then((session) => {
+      if (session?.user) {
+        setAuthUser({ id: session.user.id, email: session.user.email || '' })
       }
-    }
+    })
 
-    initializeAuth()
-
-    const subscription = supabaseAuth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user?.id) {
-          setIsLoading(true)
-          const profileRepo = createProfileRepository(supabaseClient)
-          const tenantRepo = createTenantRepository(supabaseClient)
-          const locationRepo = createLocationRepository(supabaseClient)
-
-          try {
-            const profile = await profileRepo.getProfileByUserId(session.user.id)
-            let tenant = null
-            if (profile?.tenant_id) {
-              tenant = await tenantRepo.getTenantById(profile.tenant_id)
-            }
-            let location = null
-            if (profile?.location_id) {
-              location = await locationRepo.getLocationById(profile.location_id)
-            }
-
-            if (isMounted) {
-              setUser({
-                id: session.user.id,
-                email: session.user.email || '',
-                profile,
-                tenant,
-                location,
-              })
-            }
-          } catch (error) {
-            if (import.meta.env.DEV) {
-              // eslint-disable-next-line no-console
-              console.error('Failed to load user data on auth change:', error)
-            }
-          } finally {
-            if (isMounted) {
-              setIsLoading(false)
-            }
-          }
-        } else {
-          if (isMounted) {
-            setUser(null)
-          }
-        }
+    const subscription = supabaseAuth.onAuthStateChange((event, session) => {
+      if (event === 'TOKEN_REFRESHED') return
+      if (session?.user) {
+        setAuthUser({ id: session.user.id, email: session.user.email || '' })
+      } else {
+        setAuthUser(null)
+        queryClient.clear()
       }
-    )
+    })
 
-    return () => {
-      isMounted = false
-      subscription.unsubscribe()
+    return () => subscription.unsubscribe()
+  }, [queryClient])
+
+  const profileQuery = useQuery({
+    ...getProfilesQueryOptions(authUser?.id ?? ''),
+    enabled: !!authUser?.id,
+  })
+
+  const profile = profileQuery.data ?? null
+
+  const tenantQuery = useQuery({
+    ...getTenantQueryOptions(profile?.tenant_id ?? ''),
+    enabled: !!profile?.tenant_id,
+  })
+
+  const locationQuery = useQuery({
+    ...getLocationQueryOptions(profile?.location_id ?? ''),
+    enabled: !!profile?.location_id,
+  })
+
+  const navigate = useNavigate()
+
+  useEffect(() => {
+    if (profileQuery.isError || tenantQuery.isError || locationQuery.isError) {
+      navigate({ to: '/500' })
     }
-  }, [])
+  }, [profileQuery.isError, tenantQuery.isError, locationQuery.isError, navigate])
+
+  const isLoading =
+    profileQuery.isLoading || tenantQuery.isLoading || locationQuery.isLoading
+
+  const user: UserData | null = authUser
+    ? {
+        id: authUser.id,
+        email: authUser.email,
+        profile,
+        tenant: tenantQuery.data ?? null,
+        location: locationQuery.data ?? null,
+      }
+    : null
 
   return (
     <UserContext.Provider value={{ user, isLoading }}>

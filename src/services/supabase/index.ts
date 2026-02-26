@@ -6,3 +6,4 @@ export * from './database/model'
 export * from "./database/repo/locationsRepo"
 export * from "./database/repo/tenantsRepo"
 export * from "./database/repo/profilesRepo"
+export * from "./database/repo/categoriesRepo"
