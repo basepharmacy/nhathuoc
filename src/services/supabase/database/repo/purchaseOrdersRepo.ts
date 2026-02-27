@@ -37,6 +37,26 @@ export const createPurchaseOrderRepository = (
 
       return (data ?? []) as PurchaseOrderWithRelations[]
     },
+    async getPurchaseOrdersBySupplierId(params: {
+      tenantId: string
+      supplierId: string
+    }): Promise<PurchaseOrderWithRelations[]> {
+      const { data, error } = await client
+        .from('purchase_orders')
+        .select(
+          '*, supplier:suppliers(id, name), location:locations(id, name), user:profiles(id, name)'
+        )
+        .eq('tenant_id', params.tenantId)
+        .eq('supplier_id', params.supplierId)
+        .order('issued_at', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as PurchaseOrderWithRelations[]
+    },
     async createPurchaseOrderWithItems(params: {
       order: PurchaseOrderInsert
       items: Array<Omit<PurchaseOrderItemInsert, 'purchase_order_id'>>

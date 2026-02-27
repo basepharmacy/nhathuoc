@@ -5,6 +5,7 @@ import {
   locationsRepo,
   categoriesRepo,
   suppliersRepo,
+  supplierPaymentsRepo,
   customersRepo,
   productsRepo,
   purchaseOrdersRepo,
@@ -65,6 +66,24 @@ export const getSuppliersQueryOptions = (tenantId: string) =>
     },
   })
 
+export const getSupplierDetailQueryOptions = (
+  tenantId: string,
+  supplierId: string
+) =>
+  queryOptions({
+    queryKey: ["suppliers", tenantId, "detail", supplierId],
+    queryFn: async () => {
+      if (!tenantId || !supplierId) {
+        return null
+      }
+      const supplier = await suppliersRepo.getSupplierById({
+        tenantId,
+        supplierId,
+      })
+      return supplier
+    },
+  })
+
 export const getCustomersQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: ["customers", tenantId],
@@ -92,6 +111,24 @@ export const getPurchaseOrdersQueryOptions = (tenantId: string) =>
     },
   })
 
+export const getPurchaseOrdersBySupplierIdQueryOptions = (
+  tenantId: string,
+  supplierId: string
+) =>
+  queryOptions({
+    queryKey: ["purchase-orders", tenantId, "supplier", supplierId],
+    queryFn: async () => {
+      if (!tenantId || !supplierId) {
+        return []
+      }
+      const orders = await purchaseOrdersRepo.getPurchaseOrdersBySupplierId({
+        tenantId,
+        supplierId,
+      })
+      return orders
+    },
+  })
+
 export const getPurchaseOrderDetailQueryOptions = (
   tenantId: string,
   orderId: string
@@ -107,6 +144,24 @@ export const getPurchaseOrderDetailQueryOptions = (
         orderId,
       })
       return order
+    },
+  })
+
+export const getSupplierPaymentsBySupplierIdQueryOptions = (
+  tenantId: string,
+  supplierId: string
+) =>
+  queryOptions({
+    queryKey: ["supplier-payments", tenantId, supplierId],
+    queryFn: async () => {
+      if (!tenantId || !supplierId) {
+        return []
+      }
+      const payments = await supplierPaymentsRepo.getSupplierPaymentsBySupplierId({
+        tenantId,
+        supplierId,
+      })
+      return payments
     },
   })
 

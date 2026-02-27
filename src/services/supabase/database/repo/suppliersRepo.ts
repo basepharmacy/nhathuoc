@@ -19,6 +19,24 @@ export const createSupplierRepository = (client: BasePharmacySupabaseClient) => 
 
     return data as Supplier[]
   },
+  async getSupplierById(params: {
+    tenantId: string
+    supplierId: string
+  }): Promise<Supplier | null> {
+    const { tenantId, supplierId } = params
+    const { data, error } = await client
+      .from('suppliers')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('id', supplierId)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    return data as Supplier
+  },
   async createSupplier(params: SupplierInsert): Promise<Supplier> {
     const { data, error } = await client
       .from('suppliers')
