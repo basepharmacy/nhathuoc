@@ -28,6 +28,7 @@ type PurchaseOrdersSummaryProps = {
   onSaveDraft: () => void
   onSubmit: () => void
   isSubmitting: boolean
+  readOnly?: boolean
 }
 
 const PAYMENT_OPTIONS: Array<{ label: string; value: PaymentStatus }> = [
@@ -52,6 +53,7 @@ export function PurchaseOrdersSummary({
   onSaveDraft,
   onSubmit,
   isSubmitting,
+  readOnly = false,
 }: PurchaseOrdersSummaryProps) {
   return (
     <div className='space-y-4 rounded-xl border bg-card p-4 shadow-sm h-full'>
@@ -59,6 +61,7 @@ export function PurchaseOrdersSummary({
         suppliers={suppliers}
         activeSupplierId={supplierId}
         onChange={onSupplierChange}
+        disabled={readOnly}
       />
 
       <Separator />
@@ -76,6 +79,7 @@ export function PurchaseOrdersSummary({
             value={orderDiscount}
             onChange={(event) => onOrderDiscountChange(normalizeNumber(event.target.value))}
             className='h-8 w-28 rounded-full text-right text-xs'
+            disabled={readOnly}
           />
         </div>
       </div>
@@ -103,6 +107,7 @@ export function PurchaseOrdersSummary({
                 paymentStatus !== option.value && 'text-muted-foreground'
               )}
               onClick={() => onPaymentStatusChange(option.value)}
+              disabled={readOnly}
             >
               {option.label}
             </Button>
@@ -116,6 +121,7 @@ export function PurchaseOrdersSummary({
             value={paidAmount}
             onChange={(event) => onPaidAmountChange(normalizeNumber(event.target.value))}
             className='h-8 w-28 rounded-full text-right text-xs'
+            disabled={readOnly}
           />
         </div>
         <div className='flex items-center justify-between text-muted-foreground'>
@@ -132,7 +138,7 @@ export function PurchaseOrdersSummary({
           variant='outline'
           className='h-9 flex-1 rounded-xl'
           onClick={onSaveDraft}
-          disabled={isSubmitting}
+          disabled={isSubmitting || readOnly}
         >
           Lưu nháp (F1)
         </Button>
@@ -140,7 +146,7 @@ export function PurchaseOrdersSummary({
           type='button'
           className='h-9 flex-1 rounded-xl'
           onClick={onSubmit}
-          disabled={isSubmitting}
+          disabled={isSubmitting || readOnly}
         >
           Nhập hàng (F9)
         </Button>
@@ -151,6 +157,7 @@ export function PurchaseOrdersSummary({
         onChange={(event) => onNotesChange(event.target.value)}
         placeholder='Ghi chú đơn nhập hàng'
         className='min-h-[120px] rounded-xl'
+        disabled={readOnly}
       />
     </div>
   )

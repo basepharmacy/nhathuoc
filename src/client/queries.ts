@@ -7,6 +7,7 @@ import {
   suppliersRepo,
   customersRepo,
   productsRepo,
+  purchaseOrdersRepo,
   inventoryBatchesRepo,
 } from '.'
 
@@ -79,6 +80,33 @@ export const getProductsQueryOptions = (tenantId: string) =>
     queryFn: async () => {
       const products = await productsRepo.getAllProductsByTenantId(tenantId)
       return products
+    },
+  })
+
+export const getPurchaseOrdersQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ["purchase-orders", tenantId],
+    queryFn: async () => {
+      const orders = await purchaseOrdersRepo.getPurchaseOrdersByTenantId(tenantId)
+      return orders
+    },
+  })
+
+export const getPurchaseOrderDetailQueryOptions = (
+  tenantId: string,
+  orderId: string
+) =>
+  queryOptions({
+    queryKey: ["purchase-orders", tenantId, "detail", orderId],
+    queryFn: async () => {
+      if (!tenantId || !orderId) {
+        return null
+      }
+      const order = await purchaseOrdersRepo.getPurchaseOrderByIdWithItems({
+        tenantId,
+        orderId,
+      })
+      return order
     },
   })
 

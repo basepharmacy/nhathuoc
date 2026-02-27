@@ -38,6 +38,7 @@ type PurchaseOrdersItemsProps = {
   onUpdateItem: (itemId: string, next: Partial<OrderItem>) => void
   onRemoveItem: (itemId: string) => void
   batchesByProductId: Record<string, InventoryBatch[]>
+  readOnly?: boolean
 }
 
 const renderUnitLabel = (unit: ProductUnit) => `${unit.unit_name}`
@@ -58,6 +59,7 @@ export function PurchaseOrdersItems({
   onUpdateItem,
   onRemoveItem,
   batchesByProductId,
+  readOnly = false,
 }: PurchaseOrdersItemsProps) {
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
   const [batchCode, setBatchCode] = useState('')
@@ -102,6 +104,7 @@ export function PurchaseOrdersItems({
   }, [matchedBatch])
 
   const handleSaveBatch = () => {
+    if (readOnly) return
     if (!activeItem) return
     onUpdateItem(activeItem.id, {
       batchCode: batchCode.trim(),
@@ -159,7 +162,11 @@ export function PurchaseOrdersItems({
                                 variant='ghost'
                                 size='sm'
                                 className='h-6 px-2 text-xs'
-                                onClick={() => setActiveItemId(item.id)}
+                                onClick={() => {
+                                  if (readOnly) return
+                                  setActiveItemId(item.id)
+                                }}
+                                disabled={readOnly}
                               >
                                 Đổi lô
                               </Button>
@@ -170,7 +177,11 @@ export function PurchaseOrdersItems({
                               variant='outline'
                               size='sm'
                               className='h-6 px-2 text-xs'
-                              onClick={() => setActiveItemId(item.id)}
+                              onClick={() => {
+                                if (readOnly) return
+                                setActiveItemId(item.id)
+                              }}
+                              disabled={readOnly}
                             >
                               Chọn lô
                             </Button>
@@ -181,14 +192,19 @@ export function PurchaseOrdersItems({
                         <Select
                           value={item.productUnitId ?? undefined}
                           onValueChange={(value) => {
+                            if (readOnly) return
                             const selectedUnit = unitOptions.find((unit) => unit.id === value)
                             onUpdateItem(item.id, {
                               productUnitId: value,
                               unitPrice: selectedUnit?.cost_price ?? item.unitPrice,
                             })
                           }}
+                          disabled={readOnly}
                         >
-                          <SelectTrigger className='h-8 w-full rounded-full text-xs'>
+                          <SelectTrigger
+                            className='h-8 w-full rounded-full text-xs'
+                            disabled={readOnly}
+                          >
                             <SelectValue placeholder='Đơn vị' />
                           </SelectTrigger>
                           <SelectContent>
@@ -203,24 +219,28 @@ export function PurchaseOrdersItems({
                       <TableCell className='align-middle'>
                         <Input
                           value={formatCurrency(item.unitPrice)}
-                          onChange={(event) =>
+                          onChange={(event) => {
+                            if (readOnly) return
                             onUpdateItem(item.id, {
                               unitPrice: normalizeNumber(event.target.value),
                             })
-                          }
+                          }}
                           className='h-8 w-full rounded-full text-end text-xs'
+                          disabled={readOnly}
                         />
                       </TableCell>
                       <TableCell className='align-middle'>
                         <div className='flex items-center justify-center'>
                           <Input
                             value={item.quantity}
-                            onChange={(event) =>
+                            onChange={(event) => {
+                              if (readOnly) return
                               onUpdateItem(item.id, {
                                 quantity: Math.max(1, Number(event.target.value || 1)),
                               })
-                            }
+                            }}
                             className='h-7 w-16 rounded-full text-center text-xs'
+                            disabled={readOnly}
                           />
                         </div>
                       </TableCell>
@@ -233,7 +253,11 @@ export function PurchaseOrdersItems({
                           variant='ghost'
                           size='icon'
                           className='h-7 w-7 text-muted-foreground'
-                          onClick={() => onRemoveItem(item.id)}
+                          onClick={() => {
+                            if (readOnly) return
+                            onRemoveItem(item.id)
+                          }}
+                          disabled={readOnly}
                         >
                           <Trash2 className='h-4 w-4' />
                         </Button>
@@ -246,7 +270,14 @@ export function PurchaseOrdersItems({
           </Table>
         </div>
       </ScrollArea>
-      <Dialog open={!!activeItemId} onOpenChange={(open) => (!open ? setActiveItemId(null) : null)}>
+      <Dialog
+        open={!!activeItemId && !readOnly}
+        onOpenChange={(open) => {
+          if (!open) {
+            setActiveItemId(null)
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Chọn lô sản phẩm</DialogTitle>
@@ -257,8 +288,12 @@ export function PurchaseOrdersItems({
               <Input
                 id='batch-code'
                 value={batchCode}
-                onChange={(event) => setBatchCode(event.target.value)}
+                onChange={(event) => {
+                  if (readOnly) return
+                  setBatchCode(event.target.value)
+                }}
                 placeholder='Nhập hoặc chọn lô'
+                disabled={readOnly}
               />
               {activeBatches.length > 0 ? (
                 <div className='flex flex-wrap gap-2'>
@@ -270,9 +305,11 @@ export function PurchaseOrdersItems({
                       size='sm'
                       className='h-7 px-3 text-xs'
                       onClick={() => {
+                        if (readOnly) return
                         setBatchCode(batch.batch_code)
                         setExpiryDate(toDateInputValue(batch.expiry_date))
                       }}
+                      disabled={readOnly}
                     >
                       {batch.batch_code}
                     </Button>
@@ -287,6 +324,7 @@ export function PurchaseOrdersItems({
               <DatePicker
                 selected={expirySelected}
                 onSelect={(date) => {
+                  if (readOnly) return
                   if (isExpiryLocked) return
                   if (!date) {
                     setExpiryDate('')
@@ -296,15 +334,19 @@ export function PurchaseOrdersItems({
                 }}
                 placeholder='Chọn hạn sử dụng'
                 className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-                disabled={isExpiryLocked}
+                disabled={isExpiryLocked || readOnly}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button type='button' variant='outline' onClick={() => setActiveItemId(null)}>
+            <Button
+              type='button'
+              variant='outline'
+              onClick={() => setActiveItemId(null)}
+            >
               Hủy
             </Button>
-            <Button type='button' onClick={handleSaveBatch}>
+            <Button type='button' onClick={handleSaveBatch} disabled={readOnly}>
               Lưu
             </Button>
           </DialogFooter>

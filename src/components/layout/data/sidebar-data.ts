@@ -38,6 +38,11 @@ const staticNavGroups = [
         url: '/apps',
         icon: Warehouse,
       },
+      {
+        title: 'Nhập hàng',
+        url: '/purchase-orders',
+        icon: ClipboardList,
+      },
     ],
   },
   {
@@ -90,8 +95,8 @@ const staticNavGroups = [
             icon: Building2,
           },
           {
-            title: 'Đơn nhập hàng',
-            url: '/purchase-orders',
+            title: 'Lịch sử nhập hàng',
+            url: '/purchase-orders/history',
             icon: ClipboardList,
           },
         ],

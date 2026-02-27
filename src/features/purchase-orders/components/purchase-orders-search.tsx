@@ -7,6 +7,7 @@ type PurchaseOrdersSearchProps = {
   onSearchTermChange: (value: string) => void
   productsFiltered: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
+  readOnly?: boolean
 }
 
 export function PurchaseOrdersSearch({
@@ -14,6 +15,7 @@ export function PurchaseOrdersSearch({
   onSearchTermChange,
   productsFiltered,
   onAddProduct,
+  readOnly = false,
 }: PurchaseOrdersSearchProps) {
   return (
     <div className='relative w-full max-w-xl'>
@@ -22,6 +24,7 @@ export function PurchaseOrdersSearch({
         value={searchTerm}
         onChange={(event) => onSearchTermChange(event.target.value)}
         onKeyDown={(event) => {
+          if (readOnly) return
           if (event.key === 'Enter' && productsFiltered.length > 0) {
             event.preventDefault()
             onAddProduct(productsFiltered[0])
@@ -29,8 +32,9 @@ export function PurchaseOrdersSearch({
         }}
         placeholder='Quét mã hoặc nhập để tìm kiếm (F2)'
         className='h-10 rounded-full pl-10 text-sm'
+        disabled={readOnly}
       />
-      {productsFiltered.length > 0 && (
+      {!readOnly && productsFiltered.length > 0 && (
         <div className='absolute z-10 mt-2 w-full rounded-lg border bg-popover p-1 shadow-lg'>
           {productsFiltered.map((product) => (
             <button

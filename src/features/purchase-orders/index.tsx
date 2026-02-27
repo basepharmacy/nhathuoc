@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
 import {
   getInventoryBatchesQueryOptions,
+  getPurchaseOrderDetailQueryOptions,
   getProductsQueryOptions,
   getSuppliersQueryOptions,
 } from '@/client/queries'
@@ -21,11 +23,17 @@ import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
 import { PurchaseOrdersSearch } from './components/purchase-orders-search'
 import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
 
+const route = getRouteApi('/_authenticated/purchase-orders/')
+
 export function PurchaseOrders() {
+  const { orderId, mode } = route.useSearch()
+  const navigate = route.useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
   const locationId = user?.location?.id ?? null
+  const isEdit = Boolean(orderId)
+  const isView = mode === 'view'
 
   const [searchTerm, setSearchTerm] = useState('')
   const [items, setItems] = useState<OrderItem[]>([])
@@ -34,8 +42,9 @@ export function PurchaseOrders() {
   const [paidAmount, setPaidAmount] = useState(0)
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('1_UNPAID')
   const [notes, setNotes] = useState('')
+  const [hasInitialized, setHasInitialized] = useState(false)
 
-  const orderCode = useMemo(() => {
+  const generatedOrderCode = useMemo(() => {
     const now = new Date()
     const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
       now.getDate()
@@ -43,6 +52,11 @@ export function PurchaseOrders() {
     const random = Math.floor(100 + Math.random() * 900)
     return `PN-${stamp}-${random}`
   }, [])
+
+  const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
+    ...getPurchaseOrderDetailQueryOptions(tenantId, orderId ?? ''),
+    enabled: !!tenantId && !!orderId,
+  })
 
   const { data: products = [] } = useQuery({
     ...getProductsQueryOptions(tenantId),
@@ -53,6 +67,12 @@ export function PurchaseOrders() {
     ...getSuppliersQueryOptions(tenantId),
     enabled: !!tenantId,
   })
+
+  const orderCode = isEdit
+    ? orderDetail?.purchase_order_code ?? ''
+    : generatedOrderCode
+
+  const isReadOnly = isView || (isEdit && orderDetail?.status !== '1_DRAFT')
 
   const productIds = useMemo(
     () => Array.from(new Set(items.map((item) => item.product.id))).sort(),
@@ -92,17 +112,21 @@ export function PurchaseOrders() {
     return { subtotal, total, debt }
   }, [items, orderDiscount, paidAmount])
 
+  const validateOrder = () => {
+    if (!tenantId || !userId) {
+      throw new Error('Thiếu thông tin người dùng.')
+    }
+    if (!supplierId) {
+      throw new Error('Vui lòng chọn nhà cung cấp.')
+    }
+    if (items.length === 0) {
+      throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
+    }
+  }
+
   const createMutation = useMutation({
-    mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
-      if (!tenantId || !userId) {
-        throw new Error('Thiếu thông tin người dùng.')
-      }
-      if (!supplierId) {
-        throw new Error('Vui lòng chọn nhà cung cấp.')
-      }
-      if (items.length === 0) {
-        throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
-      }
+    mutationFn: async (status: '1_DRAFT' | '4_STORED') => {
+      validateOrder()
 
       const normalizedPaid = Math.min(paidAmount, totals.total)
       const normalizedStatus: PaymentStatus =
@@ -158,7 +182,60 @@ export function PurchaseOrders() {
     },
   })
 
+  const updateMutation = useMutation({
+    mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
+      if (!orderId || !orderDetail) {
+        throw new Error('Không tìm thấy đơn nhập hàng.')
+      }
+      validateOrder()
+
+      const normalizedPaid = Math.min(paidAmount, totals.total)
+      const normalizedStatus: PaymentStatus =
+        normalizedPaid <= 0
+          ? '1_UNPAID'
+          : normalizedPaid >= totals.total
+            ? '3_PAID'
+            : '2_PARTIALLY_PAID'
+
+      await purchaseOrdersRepo.updatePurchaseOrderWithItems({
+        orderId: orderDetail.id,
+        tenantId,
+        order: {
+          supplier_id: supplierId,
+          status,
+          payment_status: normalizedStatus,
+          paid_amount: normalizedPaid,
+          discount: orderDiscount,
+          total_amount: totals.total,
+          notes: notes.trim().length > 0 ? notes.trim() : null,
+        },
+        items: items.map((item) => ({
+          tenant_id: tenantId,
+          product_id: item.product.id,
+          product_unit_id: item.productUnitId,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          discount: item.discount,
+          batch_code: item.batchCode || undefined,
+          expiry_date: item.expiryDate || undefined,
+        })),
+      })
+    },
+    onSuccess: () => {
+      toast.success('Đã cập nhật đơn nhập hàng.')
+      navigate({ to: '/purchase-orders/history' })
+    },
+    onError: (error) => {
+      const message =
+        error && typeof error === 'object' && 'message' in error
+          ? String((error as { message: string }).message)
+          : 'Đã xảy ra lỗi, vui lòng thử lại.'
+      toast.error(message)
+    },
+  })
+
   const addProduct = (product: ProductWithUnits) => {
+    if (isReadOnly) return
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.cost_price ?? 0
 
@@ -179,14 +256,17 @@ export function PurchaseOrders() {
   }
 
   const updateItem = (itemId: string, next: Partial<OrderItem>) => {
+    if (isReadOnly) return
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, ...next } : item)))
   }
 
   const removeItem = (itemId: string) => {
+    if (isReadOnly) return
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
   const handlePaymentStatusChange = (value: PaymentStatus) => {
+    if (isReadOnly) return
     setPaymentStatus(value)
     if (value === '1_UNPAID') {
       setPaidAmount(0)
@@ -195,6 +275,55 @@ export function PurchaseOrders() {
       setPaidAmount(totals.total)
     }
   }
+
+  useEffect(() => {
+    if (!orderId || isOrderLoading) return
+
+    if (!orderDetail) {
+      toast.error('Không tìm thấy đơn nhập hàng.')
+      navigate({ to: '/purchase-orders/history' })
+      return
+    }
+
+    if (orderDetail.status !== '1_DRAFT' && !isView) {
+      toast.error('Chỉ có thể chỉnh sửa đơn nháp.')
+      navigate({ to: '/purchase-orders/history' })
+    }
+  }, [orderDetail, orderId, isOrderLoading, isView, navigate])
+
+  useEffect(() => {
+    if (!orderDetail || hasInitialized || products.length === 0) return
+
+    const productLookup = new Map(products.map((product) => [product.id, product]))
+    const mappedItems = (orderDetail.items ?? [])
+      .map((item) => {
+        const product = productLookup.get(item.product_id)
+        if (!product) return null
+        return {
+          id: String(item.id),
+          product,
+          productUnitId: item.product_unit_id ?? null,
+          quantity: item.quantity ?? 0,
+          unitPrice: item.unit_price ?? 0,
+          discount: item.discount ?? 0,
+          batchCode: item.batch_code ?? '',
+          expiryDate: item.expiry_date ?? '',
+        }
+      })
+      .filter((item): item is OrderItem => Boolean(item))
+
+    setItems(mappedItems)
+    setSupplierId(orderDetail.supplier_id)
+    setOrderDiscount(orderDetail.discount ?? 0)
+    setPaidAmount(orderDetail.paid_amount ?? 0)
+    setPaymentStatus(orderDetail.payment_status)
+    setNotes(orderDetail.notes ?? '')
+    setSearchTerm('')
+    setHasInitialized(true)
+  }, [orderDetail, hasInitialized, products])
+
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
+  const isLoadingEditData = isEdit && (!orderDetail || !hasInitialized || isOrderLoading)
 
   return (
     <>
@@ -205,6 +334,7 @@ export function PurchaseOrders() {
             onSearchTermChange={setSearchTerm}
             productsFiltered={productsFiltered}
             onAddProduct={addProduct}
+            readOnly={isReadOnly}
           />
           <div className='ms-auto flex items-center space-x-4'>
             <ThemeSwitch />
@@ -215,39 +345,51 @@ export function PurchaseOrders() {
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='grid min-h-[calc(100svh-200px)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]'>
-          <div className='flex flex-col gap-4'>
-            <PurchaseOrdersMeta
-              userName={user?.profile?.name ?? 'Nhân viên'}
-              orderCode={orderCode}
-            />
+        {isLoadingEditData ? (
+          <div className='flex items-center justify-center py-10 text-muted-foreground'>
+            Đang tải...
+          </div>
+        ) : (
+          <div className='grid min-h-[calc(100svh-200px)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]'>
+            <div className='flex flex-col gap-4'>
+              <PurchaseOrdersMeta
+                userName={user?.profile?.name ?? 'Nhân viên'}
+                orderCode={orderCode}
+              />
 
-            <PurchaseOrdersItems
-              items={items}
-              onUpdateItem={updateItem}
-              onRemoveItem={removeItem}
-              batchesByProductId={batchesByProductId}
+              <PurchaseOrdersItems
+                items={items}
+                onUpdateItem={updateItem}
+                onRemoveItem={removeItem}
+                batchesByProductId={batchesByProductId}
+                readOnly={isReadOnly}
+              />
+            </div>
+
+            <PurchaseOrdersSummary
+              suppliers={suppliers}
+              supplierId={supplierId}
+              onSupplierChange={setSupplierId}
+              totals={totals}
+              orderDiscount={orderDiscount}
+              onOrderDiscountChange={setOrderDiscount}
+              paymentStatus={paymentStatus}
+              onPaymentStatusChange={handlePaymentStatusChange}
+              paidAmount={paidAmount}
+              onPaidAmountChange={setPaidAmount}
+              notes={notes}
+              onNotesChange={setNotes}
+              onSaveDraft={() =>
+                isEdit ? updateMutation.mutate('1_DRAFT') : createMutation.mutate('1_DRAFT')
+              }
+              onSubmit={() =>
+                isEdit ? updateMutation.mutate('4_STORED') : createMutation.mutate('4_STORED')
+              }
+              isSubmitting={isSubmitting}
+                readOnly={isReadOnly}
             />
           </div>
-
-          <PurchaseOrdersSummary
-            suppliers={suppliers}
-            supplierId={supplierId}
-            onSupplierChange={setSupplierId}
-            totals={totals}
-            orderDiscount={orderDiscount}
-            onOrderDiscountChange={setOrderDiscount}
-            paymentStatus={paymentStatus}
-            onPaymentStatusChange={handlePaymentStatusChange}
-            paidAmount={paidAmount}
-            onPaidAmountChange={setPaidAmount}
-            notes={notes}
-            onNotesChange={setNotes}
-            onSaveDraft={() => createMutation.mutate('1_DRAFT')}
-            onSubmit={() => createMutation.mutate('2_ORDERED')}
-            isSubmitting={createMutation.isPending}
-          />
-        </div>
+        )}
       </Main>
     </>
   )

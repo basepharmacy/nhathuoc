@@ -14,12 +14,14 @@ type SupplierSwitcherProps = {
   suppliers: Supplier[]
   activeSupplierId: string
   onChange: (supplierId: string) => void
+  disabled?: boolean
 }
 
 export function SupplierSwitcher({
   suppliers,
   activeSupplierId,
   onChange,
+  disabled = false,
 }: SupplierSwitcherProps) {
   const activeSupplier =
     suppliers.find((supplier) => supplier.id === activeSupplierId) ?? null
@@ -30,6 +32,7 @@ export function SupplierSwitcher({
         <Button
           variant='outline'
           className='h-14 w-full justify-between rounded-xl px-4'
+          disabled={disabled}
         >
           <div className='flex items-center gap-3 text-start'>
             <div className='flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary'>
