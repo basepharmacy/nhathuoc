@@ -1,4 +1,6 @@
 import * as React from 'react'
+import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
@@ -33,8 +35,8 @@ function Calendar({
       )}
       captionLayout={captionLayout}
       formatters={{
-        formatMonthDropdown: (date) =>
-          date.toLocaleString('default', { month: 'short' }),
+        formatMonthDropdown: (date, options) =>
+          format(date, 'MMMM', { locale: options?.locale ?? vi }),
         ...formatters,
       }}
       classNames={{

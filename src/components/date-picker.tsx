@@ -1,4 +1,5 @@
 import { format } from 'date-fns'
+import { vi } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -12,23 +13,33 @@ type DatePickerProps = {
   selected: Date | undefined
   onSelect: (date: Date | undefined) => void
   placeholder?: string
+  className?: string
+  disabled?: boolean
 }
 
 export function DatePicker({
   selected,
   onSelect,
-  placeholder = 'Pick a date',
+  placeholder = 'Chọn ngày',
+  className,
+  disabled = false,
 }: DatePickerProps) {
+  const currentYear = new Date().getFullYear()
+  const maxYear = currentYear + 100
   return (
     <Popover>
       <PopoverTrigger asChild>
         <Button
           variant='outline'
           data-empty={!selected}
-          className='w-[240px] justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+          disabled={disabled}
+          className={
+            className ??
+            'w-[240px] justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+          }
         >
           {selected ? (
-            format(selected, 'MMM d, yyyy')
+            format(selected, 'dd/MM/yyyy', { locale: vi })
           ) : (
             <span>{placeholder}</span>
           )}
@@ -39,11 +50,20 @@ export function DatePicker({
         <Calendar
           mode='single'
           captionLayout='dropdown'
+          locale={vi}
+          fromYear={currentYear}
+          toYear={maxYear}
           selected={selected}
           onSelect={onSelect}
-          disabled={(date: Date) =>
-            date > new Date() || date < new Date('1900-01-01')
-          }
+          disabled={(date: Date) => {
+            if (disabled) return true
+            const today = new Date()
+            today.setHours(0, 0, 0, 0)
+            const target = new Date(date)
+            target.setHours(0, 0, 0, 0)
+            if (target < today) return true
+            return target.getFullYear() > maxYear
+          }}
         />
       </PopoverContent>
     </Popover>

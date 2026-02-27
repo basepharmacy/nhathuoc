@@ -7,6 +7,7 @@ import {
   suppliersRepo,
   customersRepo,
   productsRepo,
+  inventoryBatchesRepo,
 } from '.'
 
 export const getProfilesQueryOptions = (userId: string) =>
@@ -78,5 +79,25 @@ export const getProductsQueryOptions = (tenantId: string) =>
     queryFn: async () => {
       const products = await productsRepo.getAllProductsByTenantId(tenantId)
       return products
+    },
+  })
+
+export const getInventoryBatchesQueryOptions = (
+  tenantId: string,
+  productIds: string[],
+  locationId?: string | null
+) =>
+  queryOptions({
+    queryKey: ["inventory-batches", tenantId, locationId ?? 'all', productIds],
+    queryFn: async () => {
+      if (!tenantId || productIds.length === 0) {
+        return []
+      }
+      const batches = await inventoryBatchesRepo.getInventoryBatchesByProductIds({
+        tenantId,
+        productIds,
+        locationId,
+      })
+      return batches
     },
   })
