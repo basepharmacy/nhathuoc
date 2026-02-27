@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileText,
   Folder,
+  Users,
   LayoutDashboard,
   LineChart,
   ShoppingCart,
@@ -43,6 +44,22 @@ const staticNavGroups = [
     title: 'Quản lý',
     items: [
       {
+        title: 'Bán hàng',
+        icon: Truck,
+        items: [
+          {
+            title: 'Khách hàng',
+            url: '/customers',
+            icon: Users,
+          },
+          {
+            title: 'Lịch sử bán hàng',
+            url: '/sales/history',
+            icon: ClipboardList,
+          },
+        ],
+      },
+      {
         title: 'Sản phẩm',
         icon: Boxes,
         items: [
@@ -68,7 +85,7 @@ const staticNavGroups = [
         icon: Truck,
         items: [
           {
-            title: 'Quản lý nhà cung cấp',
+            title: 'Nhà cung cấp',
             url: '/suppliers',
             icon: Building2,
           },
