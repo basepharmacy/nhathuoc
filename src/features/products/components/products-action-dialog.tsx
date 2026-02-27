@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
-import { z } from 'zod'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -10,6 +9,11 @@ import { getCategoriesQueryOptions } from '@/client/queries'
 import { productsRepo } from '@/client'
 import { Button } from '@/components/ui/button'
 import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible'
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -17,6 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Form,
   FormControl,
@@ -35,58 +40,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ChevronDown } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import {
+  type ProductForm,
   type Product,
-  productStatusValues,
-  productTypeValues,
+  productFormSchema,
 } from '../data/schema'
-
-const formSchema = z.object({
-  product_name: z
-    .string()
-    .min(1, 'Tên sản phẩm là bắt buộc.')
-    .max(255, 'Tên sản phẩm không được vượt quá 255 ký tự.'),
-  product_type: z.enum(productTypeValues),
-  status: z.enum(productStatusValues),
-  category_id: z.string().optional(),
-  min_stock: z.preprocess(
-    (value) => {
-      if (value === '' || value === null || value === undefined) return null
-      const numberValue = Number(value)
-      return Number.isNaN(numberValue) ? null : numberValue
-    },
-    z
-      .number({ invalid_type_error: 'Tồn tối thiểu phải là số.' })
-      .min(0, 'Tồn tối thiểu không được âm.')
-      .nullable()
-  ),
-  active_ingredient: z
-    .string()
-    .max(255, 'Hoạt chất không được vượt quá 255 ký tự.')
-    .optional(),
-  regis_number: z
-    .string()
-    .max(255, 'Số đăng ký không được vượt quá 255 ký tự.')
-    .optional(),
-  jan_code: z
-    .string()
-    .max(255, 'Mã JAN không được vượt quá 255 ký tự.')
-    .optional(),
-  made_company_name: z
-    .string()
-    .max(255, 'Nhà sản xuất không được vượt quá 255 ký tự.')
-    .optional(),
-  sale_company_name: z
-    .string()
-    .max(255, 'Nhà phân phối không được vượt quá 255 ký tự.')
-    .optional(),
-  description: z
-    .string()
-    .max(1000, 'Mô tả không được vượt quá 1000 ký tự.')
-    .optional(),
-})
-
-type ProductForm = z.infer<typeof formSchema>
 
 type ProductsActionDialogProps = {
   currentRow?: Product
@@ -116,12 +76,12 @@ export function ProductsActionDialog({
   })
 
   const form = useForm<ProductForm>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(productFormSchema),
     defaultValues: isEdit
       ? {
         product_name: currentRow.product_name,
         product_type: currentRow.product_type,
-        status: currentRow.status,
+        status: currentRow.status === '1_DRAFT' ? '2_ACTIVE' : currentRow.status,
         category_id: currentRow.category_id ?? 'none',
         min_stock: currentRow.min_stock ?? null,
         active_ingredient: currentRow.active_ingredient ?? '',
@@ -134,7 +94,7 @@ export function ProductsActionDialog({
       : {
         product_name: '',
         product_type: '1_OTC',
-        status: '1_DRAFT',
+        status: '2_ACTIVE',
         category_id: 'none',
         min_stock: null,
         active_ingredient: '',
@@ -147,6 +107,17 @@ export function ProductsActionDialog({
   })
 
   const isOpenRef = useRef(open)
+  const defaultDetailsOpen = useMemo(() => {
+    if (!isEdit || !currentRow) return false
+    return Boolean(
+      currentRow.active_ingredient ||
+        currentRow.regis_number ||
+        currentRow.made_company_name ||
+        currentRow.sale_company_name ||
+        currentRow.description
+    )
+  }, [currentRow, isEdit])
+  const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen)
 
   const createMutation = useMutation({
     mutationFn: (values: ProductForm) =>
@@ -200,6 +171,7 @@ export function ProductsActionDialog({
     if (open) {
       createMutation.reset()
       updateMutation.reset()
+      setDetailsOpen(defaultDetailsOpen)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -211,6 +183,16 @@ export function ProductsActionDialog({
       createMutation.mutate(values)
     }
   }
+
+  const submitWithStatus = (status: ProductForm['status']) =>
+    form.handleSubmit((values) => {
+      const payload = { ...values, status }
+      if (isEdit) {
+        updateMutation.mutate(payload)
+      } else {
+        createMutation.mutate(payload)
+      }
+    })()
 
   const isPending = createMutation.isPending || updateMutation.isPending
   const mutationError = createMutation.error ?? updateMutation.error
@@ -229,7 +211,7 @@ export function ProductsActionDialog({
         onOpenChange(state)
       }}
     >
-      <DialogContent className='sm:max-w-2xl'>
+      <DialogContent className='sm:max-w-2xl max-h-[85vh] overflow-hidden'>
         <DialogHeader className='text-start'>
           <DialogTitle>
             {isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
@@ -243,237 +225,269 @@ export function ProductsActionDialog({
           <form
             id='product-form'
             onSubmit={form.handleSubmit(onSubmit)}
-            className='space-y-4'
+            className='flex max-h-[70vh] flex-col'
           >
-            <FormField
-              control={form.control}
-              name='product_name'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Tên sản phẩm...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='product_type'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Loại</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className='col-span-4 w-full'>
-                        <SelectValue placeholder='Chọn loại sản phẩm' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='1_OTC'>OTC</SelectItem>
-                        <SelectItem value='2_PRESCRIPTION_REQUIRED'>Cần đơn</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='status'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Trạng thái</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger className='col-span-4 w-full'>
-                        <SelectValue placeholder='Chọn trạng thái' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='1_DRAFT'>Nháp</SelectItem>
-                        <SelectItem value='2_ACTIVE'>Đang bán</SelectItem>
-                        <SelectItem value='3_INACTIVE'>Ngừng bán</SelectItem>
-                        <SelectItem value='4_ARCHIVED'>Lưu trữ</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='category_id'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Danh mục</FormLabel>
-                  <FormControl>
-                    <Select
-                      onValueChange={field.onChange}
-                      value={field.value ?? 'none'}
-                    >
-                      <SelectTrigger className='col-span-4 w-full'>
-                        <SelectValue placeholder='Chọn danh mục' />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value='none'>Không chọn</SelectItem>
-                        {categories.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='min_stock'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Tồn tối thiểu</FormLabel>
-                  <FormControl>
-                    <Input
-                      type='number'
-                      placeholder='Số lượng tối thiểu...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      value={field.value ?? ''}
-                      onChange={(event) => field.onChange(event.target.value)}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='active_ingredient'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Hoạt chất</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Hoạt chất...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='regis_number'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Số đăng ký</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Số đăng ký...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='jan_code'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Mã JAN</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Mã JAN...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='made_company_name'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Nhà sản xuất</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Nhà sản xuất...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='sale_company_name'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Nhà phân phối</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Nhà phân phối...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 pt-2 text-end'>Mô tả</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder='Mô tả sản phẩm...'
-                      className='col-span-4 resize-none'
-                      rows={3}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
+            <input type='hidden' {...form.register('product_type')} />
+            <ScrollArea className='max-h-[60vh] pr-3'>
+              <div className='space-y-6 pb-2'>
+                <div className='space-y-4'>
+                  <div className='text-sm font-semibold text-muted-foreground'>
+                    Thông tin cơ bản
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name='category_id'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Danh mục</FormLabel>
+                        <FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value ?? 'none'}
+                          >
+                            <SelectTrigger className='col-span-4 w-full'>
+                              <SelectValue placeholder='Chọn danh mục' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='none'>Không chọn</SelectItem>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='jan_code'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Mã JAN</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='Mã JAN...'
+                            className='col-span-4'
+                            autoComplete='off'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='product_name'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='Tên sản phẩm...'
+                            className='col-span-4'
+                            autoComplete='off'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            {errorMessage && (
-              <Alert variant='destructive'>
-                <AlertDescription>{errorMessage}</AlertDescription>
-              </Alert>
-            )}
+                <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
+                  <div className='space-y-4'>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        type='button'
+                        className='group flex w-full items-center justify-center gap-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground'
+                      >
+                        {detailsOpen ? 'Ẩn thông tin chi tiết' : 'Thêm thông tin chi tiết'}
+                        <ChevronDown className='size-4 transition-transform group-data-[state=open]:rotate-180' />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className='space-y-4'>
+                      <div className='text-sm font-semibold text-muted-foreground'>
+                        Thông tin chi tiết
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name='active_ingredient'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 text-end'>Hoạt chất</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder='Hoạt chất...'
+                                className='col-span-4'
+                                autoComplete='off'
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name='regis_number'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 text-end'>Số đăng ký</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder='Số đăng ký...'
+                                className='col-span-4'
+                                autoComplete='off'
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name='made_company_name'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 text-end'>Nhà sản xuất</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder='Nhà sản xuất...'
+                                className='col-span-4'
+                                autoComplete='off'
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name='sale_company_name'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 text-end'>Nhà phân phối</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder='Nhà phân phối...'
+                                className='col-span-4'
+                                autoComplete='off'
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name='description'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 pt-2 text-end'>Mô tả</FormLabel>
+                            <FormControl>
+                              <Textarea
+                                placeholder='Mô tả sản phẩm...'
+                                className='col-span-4 resize-none'
+                                rows={3}
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <div className='space-y-4'>
+                        <div className='text-sm font-semibold text-muted-foreground'>
+                          Thông tin tồn kho
+                        </div>
+                        <FormField
+                          control={form.control}
+                          name='status'
+                          render={({ field }) => (
+                            <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
+                              <FormLabel className='col-span-2 pt-2 text-end'>Tình trạng</FormLabel>
+                              <FormControl>
+                                <div className='col-span-4 flex flex-wrap gap-2'>
+                                  {[
+                                    { value: '2_ACTIVE', label: 'Đang bán' },
+                                    { value: '3_INACTIVE', label: 'Ngừng bán' },
+                                    { value: '4_ARCHIVED', label: 'Lưu trữ' },
+                                  ].map((option) => (
+                                    <button
+                                      key={option.value}
+                                      type='button'
+                                      onClick={() => field.onChange(option.value)}
+                                      className={cn(
+                                        'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
+                                        field.value === option.value
+                                          ? 'border-primary bg-primary text-primary-foreground'
+                                          : 'border-input bg-background text-foreground hover:bg-muted'
+                                      )}
+                                      aria-pressed={field.value === option.value}
+                                    >
+                                      {option.label}
+                                    </button>
+                                  ))}
+                                </div>
+                              </FormControl>
+                              <FormMessage className='col-span-4 col-start-3' />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name='min_stock'
+                          render={({ field }) => (
+                            <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                              <FormLabel className='col-span-2 text-end'>Tồn tối thiểu</FormLabel>
+                              <FormControl>
+                                <Input
+                                  type='number'
+                                  placeholder='Số lượng tối thiểu...'
+                                  className='col-span-4'
+                                  autoComplete='off'
+                                  value={field.value ?? ''}
+                                  onChange={(event) => field.onChange(event.target.value)}
+                                />
+                              </FormControl>
+                              <FormMessage className='col-span-4 col-start-3' />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
+
+                {errorMessage && (
+                  <Alert variant='destructive'>
+                    <AlertDescription>{errorMessage}</AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            </ScrollArea>
           </form>
         </Form>
         <DialogFooter className='gap-2'>
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             Hủy
+          </Button>
+          <Button
+            type='button'
+            variant='secondary'
+            disabled={isPending}
+            onClick={() => submitWithStatus('1_DRAFT')}
+          >
+            Lưu nháp
           </Button>
           <Button type='submit' form='product-form' disabled={isPending}>
             {isEdit ? 'Lưu' : 'Thêm'}
