@@ -121,13 +121,13 @@ Dependencies:
   - Each row must include `unit_name`, `sell_price`, `cost_price` (required, maps to NOT NULL column), `conversion_factor`.
   - Remove `Tên viết tắt` (short_name) — no DB column exists; field is deferred to Phase 2.
   - Ref: main plan section `7.1`
-- [ ] `T4.5` Build details section (`description`, `status`, `min_stock`, `category_id`).
+- [x] `T4.5` Build details section (`description`, `status`, `min_stock`, `category_id`).
   - Ref: main plan section `7.1`
-- [ ] `T4.6` Load category options from existing categories query.
+- [x] `T4.6` Load category options from existing categories query.
   - Ref: main plan section `7.1`
-- [ ] `T4.7` Implement submit mutation -> `productsRepo.createProductWithUnits`.
+- [x] `T4.7` Implement submit mutation -> `productsRepo.createProductWithUnits`.
   - Ref: main plan section `7.4`
-- [ ] `T4.8` Add pending/error/success UI behavior and query invalidation.
+- [x] `T4.8` Add pending/error/success UI behavior and query invalidation.
   - Ref: main plan section `7.4`
 
 Dependencies:
@@ -139,17 +139,17 @@ Dependencies:
 
 ## Phase 5 - Product Autocomplete + Autofill
 
-- [ ] `T5.1` Add debounced input handler for product name (300-500ms).
+- [x] `T5.1` Add debounced input handler for product name (300-500ms).
   - Ref: main plan section `7.3`
-- [ ] `T5.2` Query `productsRepo.searchByName` with current keyword and tenant scope.
+- [x] `T5.2` Query `productsRepo.searchByName` with current keyword and tenant scope.
   - Ref: main plan section `7.3`
-- [ ] `T5.3` Render suggestion dropdown with keyboard/mouse selection.
+- [x] `T5.3` Render suggestion dropdown with keyboard/mouse selection.
   - Ref: main plan section `7.3`
-- [ ] `T5.4` On selection, autofill product fields.
+- [x] `T5.4` On selection, autofill product fields.
   - Ref: main plan section `7.3`
-- [ ] `T5.5` Autofill first unit row if units empty.
+- [x] `T5.5` Autofill first unit row if units empty.
   - Ref: main plan section `7.3`
-- [ ] `T5.6` Apply existing `category_id` from selected product (if available).
+- [x] `T5.6` Apply existing `category_id` from selected product (if available).
   - Ref: main plan section `7.3`
 
 Dependencies:
@@ -172,14 +172,73 @@ Dependencies:
 
 ---
 
-## Optional Phase 7 - Post-MVP Enhancements
+## Phase 7 - Required Enhancements (In Scope Now)
 
-- [ ] `T7.1` Add edit product flow.
-  - Ref: main plan section `2.2`
-- [ ] `T7.2` Add delete flow with dependency guardrails.
+> Note: Phase 6 is intentionally deferred and will be executed later.
+
+### 7A - Edit Product Flow
+
+- [ ] `T7.1` Add `updateProductWithUnits(input)` in `productsRepo` with typed input/output.
+  - Ref: main plan section `2.2`, `3`, `5.2`, `9.6`
+- [ ] `T7.2` Implement update strategy for units in repo (replace-all or controlled upsert) with stable return shape.
+  - Must explicitly handle Supabase errors and preserve tenant scoping.
+  - Ref: main plan section `3`, `5.2`, `9.6`, `10`
+- [ ] `T7.3` Add edit action entry point in products table row actions.
+  - Ref: main plan section `2.2`, `8.1`
+- [ ] `T7.4` Reuse/add dialog mode for edit in `products-action-dialog.tsx`.
+  - Prefill all editable fields (`product`, `units`, details), keep validation parity with create flow.
+  - Ref: main plan section `2.2`, `7.1`, `7.2`
+- [ ] `T7.5` Wire edit submit mutation + loading/error/success UI + products query invalidation.
+  - Ref: main plan section `7.4`, `9.6`, `13`
+
+### 7B - Delete Product Flow (With Guardrails)
+
+- [ ] `T7.6` Add `deleteProductById(tenantId, productId)` repo method with explicit guardrail checks.
+  - Guardrail goal: prevent unsafe delete when dependencies exist.
+  - Ref: main plan section `2.2`, `9.6`, `10`
+- [ ] `T7.7` Define and implement dependency check strategy for delete (fail-fast with clear error message).
+  - Keep stable error mapping for UI display.
+  - Ref: main plan section `10`
+- [ ] `T7.8` Add destructive confirm dialog for delete from row actions.
   - Ref: main plan section `2.2`, `10`
-- [ ] `T7.3` Add filters for status/category/search.
-  - Ref: main plan section `8`
+- [ ] `T7.9` Wire delete mutation + pending state + success/error toast/alert + query invalidation.
+  - Ref: main plan section `7.4`, `9.6`, `13`
+
+### 7C - Product List Filters
+
+- [ ] `T7.10` Define filter state model for keyword, status, and category.
+  - Ref: main plan section `2.2`, `8`, `9.6`
+- [ ] `T7.11` Build filter controls in products list toolbar (status/category/search).
+  - Keep UX minimal and consistent with existing table patterns.
+  - Ref: main plan section `8.1`
+- [ ] `T7.12` Apply filters to table dataset (client-side first unless server filtering is required).
+  - Ref: main plan section `8.2`
+- [ ] `T7.13` Add reset/clear filters behavior and empty-state messaging for filtered results.
+  - Ref: main plan section `8.2`
+
+### 7D - Phase 7 Validation (Local)
+
+- [ ] `T7.14` Manual test: edit flow (including units changes) end-to-end.
+  - Ref: main plan section `11`, `13`
+- [ ] `T7.15` Manual test: delete flow guardrails (blocked + allowed scenarios).
+  - Ref: main plan section `10`, `11`, `13`
+- [ ] `T7.16` Manual test: filters combine correctly (status + category + keyword).
+  - Ref: main plan section `8`, `11`, `13`
+
+Dependencies:
+
+- `T7.2` depends on `T7.1`
+- `T7.4` depends on `T7.3`
+- `T7.5` depends on `T7.2` + `T7.4`
+- `T7.7` depends on `T7.6`
+- `T7.8` depends on `T7.3`
+- `T7.9` depends on `T7.7` + `T7.8`
+- `T7.11` depends on `T7.10`
+- `T7.12` depends on `T7.11`
+- `T7.13` depends on `T7.12`
+- `T7.14` depends on `T7.5`
+- `T7.15` depends on `T7.9`
+- `T7.16` depends on `T7.13`
 
 ---
 
@@ -190,6 +249,8 @@ Dependencies:
 - [ ] `C3` add product modal (manual create flow)
 - [ ] `C4` autocomplete + autofill
 - [ ] `C5` QA fixes
+  - Deferred until after required Phase 7 implementation.
+- [ ] `C6` phase 7 enhancements (edit + delete + filters)
 
 ---
 
@@ -199,7 +260,7 @@ Dependencies:
 - Phase 1: `Done`
 - Phase 2: `Done`
 - Phase 3: `Done`
-- Phase 4: `In Progress`
-- Phase 5: `Not Started`
+- Phase 4: `Done`
+- Phase 5: `Done`
 - Phase 6: `Not Started`
-- Phase 7: `Optional`
+- Phase 7: `Required - Not Started`

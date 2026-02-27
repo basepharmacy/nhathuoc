@@ -24,16 +24,18 @@ This document is a step-by-step execution plan intended to be reused later witho
   - `Tên sản phẩm` (required)
   - Dynamic unit rows (`Đơn vị`, `Giá bán`, `Giá vốn`, `số lượng quy đổi`)
   - Product details (`Mô tả`, `Tình trạng`, `Ngưỡng cảnh báo tồn kho`, `Danh mục`)
-  - Note: `Tên viết tắt` is deferred to Phase 2 — no `short_name` column exists in `products`
+  - Note: `Tên viết tắt` is deferred out of current scope — no `short_name` column exists in `products`
 - Save to DB using `products` + `product_units`
 - Product name autocomplete using existing `products` (tenant-scoped)
 - Autofill when an existing product item is selected
 
-### 2.2 Nice-to-have (Phase 2)
+### 2.2 Required Enhancements (Phase 7 - In Scope Now)
 
 - Edit product modal
 - Delete product action with guardrails
 - Better table filters (status, category, keyword)
+
+> Execution note: Phase 6 QA/stabilization is intentionally deferred and will be completed after Phase 7 delivery.
 
 ---
 
@@ -105,6 +107,11 @@ Methods for Phase 1:
 
 1. `getProductsByTenantId(tenantId: string): Promise<ProductWithMeta[]>`
 2. `createProductWithUnits(input: CreateProductWithUnitsInput): Promise<CreateProductWithUnitsResult>`
+
+Additional methods for required Phase 7:
+
+3. `updateProductWithUnits(input: UpdateProductWithUnitsInput): Promise<CreateProductWithUnitsResult>`
+4. `deleteProductById(tenantId: string, productId: string): Promise<void>`
 
 `ProductWithMeta` definition (join products + product_units + category name):
 
@@ -301,7 +308,7 @@ Suggested minimum columns:
 - Min stock
 - Units summary (ex: `Viên, Vỉ`)
 - Created at
-- Row actions (`Edit`, `Delete` for phase 2)
+- Row actions (`Edit`, `Delete`)
 
 ## 8.2 Query behavior
 
@@ -349,6 +356,17 @@ Suggested minimum columns:
 - [ ] `pnpm build`
 - [ ] Manual flow checks (see section 11)
 
+## 9.6 Required Phase 7 enhancements
+
+- [ ] Add repo methods for edit/delete with explicit error handling and stable return shape
+- [ ] Add edit flow UI + mutation + invalidation
+- [ ] Add delete flow UI + guardrail checks + mutation + invalidation
+- [ ] Add list filters (status/category/keyword) + clear filters behavior
+
+## 9.7 Deferred QA gate (run after phase 7)
+
+- [ ] Execute full lint/build/manual checks after completing phase 7 enhancements
+
 ---
 
 ## 10. Risk Register and Mitigations
@@ -382,6 +400,14 @@ Suggested minimum columns:
    - expect client validation errors
 9. Retry with API error simulation:
    - expect modal remains open and error message displayed
+10. Open row action `Edit`, update product fields + units, submit
+11. Verify edited row data is updated in list and persisted in DB
+12. Open row action `Delete` for product without guarded dependencies, confirm delete
+13. Verify deleted row no longer appears in list
+14. Attempt delete for product with guarded dependencies
+15. Verify delete is blocked with clear error message and row remains
+16. Apply filters by status, category, and keyword (alone + combined)
+17. Verify filtered results are correct and clear/reset filters restores full list
 
 ---
 
@@ -393,7 +419,9 @@ Suggested minimum columns:
 4. Scaffold `/products` page with list table (read-only)
 5. Implement Add Product modal (manual input first)
 6. Add autocomplete + autofill
-7. Run lint/build and complete manual test script
+7. Implement required enhancements: edit + delete (guardrails) + filters
+8. Run manual tests for create/edit/delete/filter flows
+9. Run Phase 6 QA gate (`pnpm lint`, `pnpm build`) later as stabilization pass
 
 ---
 
@@ -401,6 +429,9 @@ Suggested minimum columns:
 
 - `/products` route is accessible and stable
 - User can create product with at least one unit
+- User can edit product and units from row actions
+- User can delete product with dependency guardrails enforced
+- User can filter list by status/category/keyword and clear filters
 - Product name search hits tenant-scoped `products`
 - Selecting existing product autofills form
 - Data is persisted correctly in `products` and `product_units`
