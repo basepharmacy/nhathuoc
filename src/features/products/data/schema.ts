@@ -73,6 +73,47 @@ export const productFormSchema = z.object({
     .string()
     .max(1000, 'Mô tả không được vượt quá 1000 ký tự.')
     .optional(),
+  units: z
+    .array(
+      z.object({
+        unit_name: z
+          .string()
+          .min(1, 'Đơn vị là bắt buộc.')
+          .max(50, 'Đơn vị không được vượt quá 50 ký tự.'),
+        conversion_factor: z.preprocess(
+          (value) => {
+            if (value === '' || value === null || value === undefined) return 0
+            const numberValue = Number(value)
+            return Number.isNaN(numberValue) ? 0 : numberValue
+          },
+          z
+            .number({ invalid_type_error: 'Hệ số quy đổi phải là số.' })
+            .min(1, 'Hệ số quy đổi phải lớn hơn hoặc bằng 1.')
+        ),
+        cost_price: z.preprocess(
+          (value) => {
+            if (value === '' || value === null || value === undefined) return 0
+            const numberValue = Number(value)
+            return Number.isNaN(numberValue) ? 0 : numberValue
+          },
+          z
+            .number({ invalid_type_error: 'Giá nhập phải là số.' })
+            .min(0, 'Giá nhập không được âm.')
+        ),
+        sell_price: z.preprocess(
+          (value) => {
+            if (value === '' || value === null || value === undefined) return 0
+            const numberValue = Number(value)
+            return Number.isNaN(numberValue) ? 0 : numberValue
+          },
+          z
+            .number({ invalid_type_error: 'Giá bán phải là số.' })
+            .min(0, 'Giá bán không được âm.')
+        ),
+        is_base_unit: z.boolean().optional(),
+      })
+    )
+    .min(1, 'Cần ít nhất một đơn vị.'),
 })
 
 export type ProductForm = z.infer<typeof productFormSchema>

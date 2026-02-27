@@ -258,18 +258,21 @@ export type Database = {
         Row: {
           conversion_factor: number
           id: string
+          is_base_unit: boolean
           product_master_id: string
           unit_name: string
         }
         Insert: {
           conversion_factor: number
           id?: string
+          is_base_unit?: boolean
           product_master_id: string
           unit_name: string
         }
         Update: {
           conversion_factor?: number
           id?: string
+          is_base_unit?: boolean
           product_master_id?: string
           unit_name?: string
         }
@@ -325,6 +328,7 @@ export type Database = {
           cost_price: number
           created_at: string | null
           id: string
+          is_base_unit: boolean
           product_id: string
           sell_price: number
           tenant_id: string
@@ -335,6 +339,7 @@ export type Database = {
           cost_price: number
           created_at?: string | null
           id?: string
+          is_base_unit?: boolean
           product_id: string
           sell_price: number
           tenant_id: string
@@ -345,6 +350,7 @@ export type Database = {
           cost_price?: number
           created_at?: string | null
           id?: string
+          is_base_unit?: boolean
           product_id?: string
           sell_price?: number
           tenant_id?: string

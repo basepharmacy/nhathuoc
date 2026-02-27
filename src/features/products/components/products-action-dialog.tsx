@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/client/provider'
@@ -40,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
   type ProductForm,
@@ -53,6 +53,18 @@ type ProductsActionDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+const unitNamePresets = [
+  'Viên',
+  'Vỉ',
+  'Hộp',
+  'Chai',
+  'Gói',
+  'Lọ',
+  'Tuýp',
+  'Ống',
+  'Thùng',
+] as const
 
 const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
@@ -75,6 +87,25 @@ export function ProductsActionDialog({
     enabled: !!tenantId,
   })
 
+  const { data: productUnits = [], isLoading: isUnitsLoading } = useQuery({
+    queryKey: ['product-units', currentRow?.id],
+    queryFn: () => productsRepo.getProductUnitsByProductId(currentRow!.id),
+    enabled: isEdit && !!currentRow?.id,
+  })
+
+  const defaultUnits = useMemo(
+    () => [
+      {
+        unit_name: '',
+        conversion_factor: 1,
+        cost_price: null,
+        sell_price: null,
+        is_base_unit: true,
+      },
+    ],
+    []
+  )
+
   const form = useForm<ProductForm>({
     resolver: zodResolver(productFormSchema),
     defaultValues: isEdit
@@ -90,6 +121,7 @@ export function ProductsActionDialog({
         made_company_name: currentRow.made_company_name ?? '',
         sale_company_name: currentRow.sale_company_name ?? '',
         description: currentRow.description ?? '',
+        units: defaultUnits,
       }
       : {
         product_name: '',
@@ -103,7 +135,23 @@ export function ProductsActionDialog({
         made_company_name: '',
         sale_company_name: '',
         description: '',
+        units: defaultUnits,
       },
+  })
+
+  const {
+    fields: unitFields,
+    append: appendUnit,
+    remove: removeUnit,
+  } = useFieldArray({
+    control: form.control,
+    name: 'units',
+  })
+
+
+  const unitsWatch = useWatch({
+    control: form.control,
+    name: 'units',
   })
 
   const isOpenRef = useRef(open)
@@ -119,21 +167,113 @@ export function ProductsActionDialog({
   }, [currentRow, isEdit])
   const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen)
 
+  useEffect(() => {
+    if (!isEdit || !currentRow?.id || !open) return
+    if (isUnitsLoading) return
+    const normalizedUnits = productUnits.length
+      ? [...productUnits]
+        .sort(
+          (left, right) =>
+            Number(right.is_base_unit) - Number(left.is_base_unit)
+        )
+        .map((unit) => ({
+          unit_name: unit.unit_name,
+          conversion_factor: unit.is_base_unit ? 1 : unit.conversion_factor,
+          cost_price: unit.cost_price,
+          sell_price: unit.sell_price,
+          is_base_unit: unit.is_base_unit,
+        }))
+      : defaultUnits
+
+    form.setValue('units', normalizedUnits, { shouldDirty: false })
+  }, [
+    defaultUnits,
+    form,
+    isEdit,
+    isUnitsLoading,
+    open,
+    productUnits,
+    currentRow?.id,
+  ])
+
+  const autoCalcRef = useRef<{
+    baseCost: number
+    baseSell: number
+    factors: number[]
+  }>({ baseCost: 0, baseSell: 0, factors: [] })
+
+  useEffect(() => {
+    if (!unitsWatch?.length) return
+    const baseUnit = unitsWatch[0]
+    const baseCost = Number(baseUnit?.cost_price ?? 0)
+    const baseSell = Number(baseUnit?.sell_price ?? 0)
+    const factors = unitsWatch.map((unit) =>
+      Number(unit?.conversion_factor ?? 0)
+    )
+
+    const prev = autoCalcRef.current
+    const baseChanged = baseCost !== prev.baseCost || baseSell !== prev.baseSell
+    const factorChanged = factors.some(
+      (factor, index) => index > 0 && factor !== prev.factors[index]
+    )
+
+    if (!baseChanged && !factorChanged) {
+      return
+    }
+
+    unitsWatch.forEach((unit, index) => {
+      if (index === 0) return
+      const factor = factors[index]
+      if (!Number.isFinite(factor) || factor <= 0) return
+
+      const nextCost = baseCost * factor
+      const nextSell = baseSell * factor
+
+      if (unit?.cost_price !== nextCost) {
+        form.setValue(`units.${index}.cost_price`, nextCost, {
+          shouldDirty: true,
+          shouldValidate: false,
+        })
+      }
+
+      if (unit?.sell_price !== nextSell) {
+        form.setValue(`units.${index}.sell_price`, nextSell, {
+          shouldDirty: true,
+          shouldValidate: false,
+        })
+      }
+    })
+
+    autoCalcRef.current = { baseCost, baseSell, factors }
+  }, [form, unitsWatch])
+
+  const normalizeUnits = (units: ProductForm['units']) =>
+    units.map((unit, index) => ({
+      unit_name: unit.unit_name.trim(),
+      conversion_factor: index === 0 ? 1 : unit.conversion_factor,
+      cost_price: unit.cost_price,
+      sell_price: unit.sell_price,
+      is_base_unit: index === 0,
+    }))
+
   const createMutation = useMutation({
     mutationFn: (values: ProductForm) =>
-      productsRepo.createProduct({
-        tenant_id: tenantId,
-        product_name: values.product_name,
-        product_type: values.product_type,
-        status: values.status,
-        category_id: normalizeOptionalCategoryId(values.category_id),
-        min_stock: values.min_stock ?? null,
-        active_ingredient: normalizeOptionalText(values.active_ingredient),
-        regis_number: normalizeOptionalText(values.regis_number),
-        jan_code: normalizeOptionalText(values.jan_code),
-        made_company_name: normalizeOptionalText(values.made_company_name),
-        sale_company_name: normalizeOptionalText(values.sale_company_name),
-        description: normalizeOptionalText(values.description),
+      productsRepo.createProductWithUnits({
+        product: {
+          tenant_id: tenantId,
+          product_name: values.product_name,
+          product_type: values.product_type,
+          status: values.status,
+          category_id: normalizeOptionalCategoryId(values.category_id),
+          min_stock: values.min_stock ?? null,
+          active_ingredient: normalizeOptionalText(values.active_ingredient),
+          regis_number: normalizeOptionalText(values.regis_number),
+          jan_code: normalizeOptionalText(values.jan_code),
+          made_company_name: normalizeOptionalText(values.made_company_name),
+          sale_company_name: normalizeOptionalText(values.sale_company_name),
+          description: normalizeOptionalText(values.description),
+        },
+        units: normalizeUnits(values.units),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
@@ -145,18 +285,23 @@ export function ProductsActionDialog({
 
   const updateMutation = useMutation({
     mutationFn: (values: ProductForm) =>
-      productsRepo.updateProduct(currentRow!.id, {
-        product_name: values.product_name,
-        product_type: values.product_type,
-        status: values.status,
-        category_id: normalizeOptionalCategoryId(values.category_id),
-        min_stock: values.min_stock ?? null,
-        active_ingredient: normalizeOptionalText(values.active_ingredient),
-        regis_number: normalizeOptionalText(values.regis_number),
-        jan_code: normalizeOptionalText(values.jan_code),
-        made_company_name: normalizeOptionalText(values.made_company_name),
-        sale_company_name: normalizeOptionalText(values.sale_company_name),
-        description: normalizeOptionalText(values.description),
+      productsRepo.updateProductWithUnits({
+        productId: currentRow!.id,
+        tenantId,
+        product: {
+          product_name: values.product_name,
+          product_type: values.product_type,
+          status: values.status,
+          category_id: normalizeOptionalCategoryId(values.category_id),
+          min_stock: values.min_stock ?? null,
+          active_ingredient: normalizeOptionalText(values.active_ingredient),
+          regis_number: normalizeOptionalText(values.regis_number),
+          jan_code: normalizeOptionalText(values.jan_code),
+          made_company_name: normalizeOptionalText(values.made_company_name),
+          sale_company_name: normalizeOptionalText(values.sale_company_name),
+          description: normalizeOptionalText(values.description),
+        },
+        units: normalizeUnits(values.units),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
@@ -211,7 +356,7 @@ export function ProductsActionDialog({
         onOpenChange(state)
       }}
     >
-      <DialogContent className='sm:max-w-2xl max-h-[85vh] overflow-hidden'>
+      <DialogContent className='sm:max-w-4xl max-h-[85vh] overflow-hidden'>
         <DialogHeader className='text-start'>
           <DialogTitle>
             {isEdit ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
@@ -231,9 +376,6 @@ export function ProductsActionDialog({
             <ScrollArea className='max-h-[60vh] pr-3'>
               <div className='space-y-6 pb-2'>
                 <div className='space-y-4'>
-                  <div className='text-sm font-semibold text-muted-foreground'>
-                    Thông tin cơ bản
-                  </div>
                   <FormField
                     control={form.control}
                     name='category_id'
@@ -249,7 +391,7 @@ export function ProductsActionDialog({
                               <SelectValue placeholder='Chọn danh mục' />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value='none'>Không chọn</SelectItem>
+                              <SelectItem value='none'></SelectItem>
                               {categories.map((category) => (
                                 <SelectItem key={category.id} value={category.id}>
                                   {category.name}
@@ -298,6 +440,145 @@ export function ProductsActionDialog({
                       </FormItem>
                     )}
                   />
+                </div>
+
+                <div className='space-y-4'>
+                  <div className='flex flex-wrap items-center justify-between gap-2'>
+                    <div className='text-sm font-semibold text-end'>
+                      Đơn vị
+                    </div>
+                    <Button
+                      type='button'
+                      variant='outline'
+                      size='sm'
+                      className='gap-2'
+                      onClick={() =>
+                        appendUnit({
+                          unit_name: '',
+                          conversion_factor: null,
+                          cost_price: null,
+                          sell_price: null,
+                          is_base_unit: false,
+                        })
+                      }
+                    >
+                      <Plus className='size-4' />
+                      Thêm đơn vị
+                    </Button>
+                  </div>
+                  <div className='space-y-4'>
+                    {unitFields.map((unitField, index) => {
+                      const isBaseUnit = index === 0
+                      return (
+                        <div
+                          key={unitField.id}
+                          className='rounded-lg border bg-muted/30 p-4 shadow-sm'
+                        >
+                          <div className='mt-2 grid grid-cols-1 items-start gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(0,0.7fr)_minmax(0,0.9fr)_minmax(0,0.9fr)_auto] md:items-center'>
+                            <FormField
+                              control={form.control}
+                              name={`units.${index}.unit_name`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      list='unit-name-options'
+                                      placeholder='Tên đơn vị (ví dụ: Viên, Hộp...)'
+                                      autoComplete='off'
+                                      {...field}
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`units.${index}.conversion_factor`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type='number'
+                                      placeholder='Quy đổi'
+                                      disabled={isBaseUnit}
+                                      value={isBaseUnit ? 1 : field.value ?? ''}
+                                      onChange={(event) =>
+                                        field.onChange(event.target.value)
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`units.${index}.cost_price`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type='number'
+                                      placeholder='Giá nhập'
+                                      value={field.value ?? ''}
+                                      onChange={(event) =>
+                                        field.onChange(event.target.value)
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name={`units.${index}.sell_price`}
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormControl>
+                                    <Input
+                                      type='number'
+                                      placeholder='Giá bán'
+                                      value={field.value ?? ''}
+                                      onChange={(event) =>
+                                        field.onChange(event.target.value)
+                                      }
+                                    />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <div className='flex items-center justify-end gap-2 md:justify-start'>
+                              {isBaseUnit ? (
+                                <span className='rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary'>
+                                  Cơ sở
+                                </span>
+                              ) : null}
+                              {!isBaseUnit && (
+                                <Button
+                                  type='button'
+                                  variant='ghost'
+                                  size='icon'
+                                  className='text-muted-foreground'
+                                  onClick={() => removeUnit(index)}
+                                  aria-label='Xóa đơn vị'
+                                >
+                                  <Trash2 className='size-4' />
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <datalist id='unit-name-options'>
+                    {unitNamePresets.map((unit) => (
+                      <option key={unit} value={unit} />
+                    ))}
+                  </datalist>
                 </div>
 
                 <Collapsible open={detailsOpen} onOpenChange={setDetailsOpen}>
@@ -420,7 +701,6 @@ export function ProductsActionDialog({
                                   {[
                                     { value: '2_ACTIVE', label: 'Đang bán' },
                                     { value: '3_INACTIVE', label: 'Ngừng bán' },
-                                    { value: '4_ARCHIVED', label: 'Lưu trữ' },
                                   ].map((option) => (
                                     <button
                                       key={option.value}

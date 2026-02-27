@@ -23,12 +23,12 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
-import { type Product } from '../data/schema'
+import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type Category } from '@/features/categories/data/schema'
 import { getProductsColumns } from './products-columns'
 
 type ProductsTableProps = {
-  data: Product[]
+  data: ProductWithUnits[]
   categories: Category[]
 }
 
@@ -58,7 +58,6 @@ export function ProductsTable({ data, categories }: ProductsTableProps) {
       { label: 'Nháp', value: '1_DRAFT' },
       { label: 'Đang bán', value: '2_ACTIVE' },
       { label: 'Ngừng bán', value: '3_INACTIVE' },
-      { label: 'Lưu trữ', value: '4_ARCHIVED' },
     ],
     []
   )
