@@ -24,6 +24,7 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSuppliersIndexRouteImport } from './routes/_authenticated/suppliers/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
@@ -112,6 +113,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedProductsIndexRoute =
+  AuthenticatedProductsIndexRouteImport.update({
+    id: '/products/',
+    path: '/products/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedHelpCenterIndexRoute =
   AuthenticatedHelpCenterIndexRouteImport.update({
     id: '/help-center/',
@@ -192,6 +199,7 @@ export interface FileRoutesByFullPath {
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/products/': typeof AuthenticatedProductsIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -217,6 +225,7 @@ export interface FileRoutesByTo {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/products': typeof AuthenticatedProductsIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/suppliers': typeof AuthenticatedSuppliersIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -245,6 +254,7 @@ export interface FileRoutesById {
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/chats/'
     | '/customers/'
     | '/help-center/'
+    | '/products/'
     | '/settings/'
     | '/suppliers/'
     | '/tasks/'
@@ -298,6 +309,7 @@ export interface FileRouteTypes {
     | '/chats'
     | '/customers'
     | '/help-center'
+    | '/products'
     | '/settings'
     | '/suppliers'
     | '/tasks'
@@ -325,6 +337,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/'
     | '/_authenticated/customers/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/products/'
     | '/_authenticated/settings/'
     | '/_authenticated/suppliers/'
     | '/_authenticated/tasks/'
@@ -450,6 +463,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/products/': {
+      id: '/_authenticated/products/'
+      path: '/products'
+      fullPath: '/products/'
+      preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/help-center/': {
       id: '/_authenticated/help-center/'
       path: '/help-center'
@@ -555,6 +575,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedSuppliersIndexRoute: typeof AuthenticatedSuppliersIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -569,6 +590,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedSuppliersIndexRoute: AuthenticatedSuppliersIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,

@@ -4,6 +4,7 @@ import {
   Bell,
   ChevronsUpDown,
   CreditCard,
+  KeyRound,
   LogOut,
   Sparkles,
 } from 'lucide-react'
@@ -25,6 +26,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { SignOutDialog } from '@/components/sign-out-dialog'
+import { ChangePasswordDialog } from '@/components/change-password-dialog'
 
 type NavUserProps = {
   user: {
@@ -36,7 +38,8 @@ type NavUserProps = {
 
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
-  const [open, setOpen] = useDialogState()
+  const [signOutOpen, setSignOutOpen] = useDialogState()
+  const [changePasswordOpen, setChangePasswordOpen] = useDialogState()
 
   return (
     <>
@@ -92,6 +95,10 @@ export function NavUser({ user }: NavUserProps) {
                     Account
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>
+                  <KeyRound />
+                  Đổi mật khẩu
+                </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to='/settings'>
                     <CreditCard />
@@ -108,7 +115,7 @@ export function NavUser({ user }: NavUserProps) {
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant='destructive'
-                onClick={() => setOpen(true)}
+                onClick={() => setSignOutOpen(true)}
               >
                 <LogOut />
                 Sign out
@@ -118,7 +125,11 @@ export function NavUser({ user }: NavUserProps) {
         </SidebarMenuItem>
       </SidebarMenu>
 
-      <SignOutDialog open={!!open} onOpenChange={setOpen} />
+      <SignOutDialog open={!!signOutOpen} onOpenChange={setSignOutOpen} />
+      <ChangePasswordDialog
+        open={!!changePasswordOpen}
+        onOpenChange={setChangePasswordOpen}
+      />
     </>
   )
 }

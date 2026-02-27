@@ -45,6 +45,23 @@ const createAuthClient = (client: BasePharmacySupabaseClient) => ({
     const { error } = await client.auth.signOut()
     if (error) throw error
   },
+
+  async changePassword(params: {
+    email: string
+    currentPassword: string
+    newPassword: string
+  }): Promise<void> {
+    const { error: signInError } = await client.auth.signInWithPassword({
+      email: params.email,
+      password: params.currentPassword,
+    })
+    if (signInError) throw signInError
+
+    const { error } = await client.auth.updateUser({
+      password: params.newPassword,
+    })
+    if (error) throw error
+  },
 })
 
 export { createAuthClient }

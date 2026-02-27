@@ -5,6 +5,7 @@ import {
   createCategoryRepository,
   createSupplierRepository,
   createCustomerRepository,
+  createProductRepository,
 } from '@/services/supabase'
 
 import { supabaseAuth, supabaseClient } from '@/services/supabase'
@@ -15,4 +16,5 @@ export const locationsRepo = createLocationRepository(supabaseClient)
 export const categoriesRepo = createCategoryRepository(supabaseClient)
 export const suppliersRepo = createSupplierRepository(supabaseClient)
 export const customersRepo = createCustomerRepository(supabaseClient)
+export const productsRepo = createProductRepository(supabaseClient)
 export const auth = supabaseAuth

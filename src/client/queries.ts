@@ -6,6 +6,7 @@ import {
   categoriesRepo,
   suppliersRepo,
   customersRepo,
+  productsRepo,
 } from '.'
 
 export const getProfilesQueryOptions = (userId: string) =>
@@ -68,5 +69,14 @@ export const getCustomersQueryOptions = (tenantId: string) =>
     queryFn: async () => {
       const customers = await customersRepo.getAllCustomersByTenantId(tenantId)
       return customers
+    },
+  })
+
+export const getProductsQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ["products", tenantId],
+    queryFn: async () => {
+      const products = await productsRepo.getAllProductsByTenantId(tenantId)
+      return products
     },
   })
