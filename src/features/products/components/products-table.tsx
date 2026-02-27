@@ -5,11 +5,12 @@ import {
   type VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { DataTableToolbar } from '@/components/data-table'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -19,7 +20,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { type Product } from '../data/schema'
+import { DataTableToolbar } from '@/components/data-table'
+import { type Product, type ProductListFilterState } from '../data/schema'
 import { productsColumns as columns } from './products-columns'
 
 type ProductsTableProps = {
@@ -31,6 +33,26 @@ export function ProductsTable({ data }: ProductsTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
+
+  const statusFilterOptions = [
+    { label: 'Nháp', value: '1_DRAFT' },
+    { label: 'Đang bán', value: '2_ACTIVE' },
+    { label: 'Ngưng bán', value: '3_INACTIVE' },
+    { label: 'Lưu trữ', value: '4_ARCHIVED' },
+  ] satisfies { label: string; value: Product['status'] }[]
+
+  const categoryFilterOptions = Array.from(
+    new Set(
+      data
+        .map((product) => product.categories?.name)
+        .filter((categoryName): categoryName is string => Boolean(categoryName))
+    )
+  )
+    .sort((a, b) => a.localeCompare(b, 'vi'))
+    .map((categoryName) => ({
+      label: categoryName,
+      value: categoryName,
+    }))
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -50,7 +72,22 @@ export function ProductsTable({ data }: ProductsTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
   })
+
+  const filterState: ProductListFilterState = {
+    keyword:
+      (table.getColumn('product_name')?.getFilterValue() as string) ?? '',
+    status: ((table.getColumn('status')?.getFilterValue() as string[]) ??
+      []) as ProductListFilterState['status'],
+    category: (table.getColumn('category')?.getFilterValue() as string[]) ?? [],
+  }
+
+  const hasActiveFilters =
+    filterState.keyword.trim().length > 0 ||
+    filterState.status.length > 0 ||
+    filterState.category.length > 0
 
   return (
     <div className='flex flex-1 flex-col gap-4'>
@@ -58,6 +95,18 @@ export function ProductsTable({ data }: ProductsTableProps) {
         table={table}
         searchPlaceholder='Tìm sản phẩm...'
         searchKey='product_name'
+        filters={[
+          {
+            columnId: 'status',
+            title: 'Trạng thái',
+            options: statusFilterOptions,
+          },
+          {
+            columnId: 'category',
+            title: 'Danh mục',
+            options: categoryFilterOptions,
+          },
+        ]}
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>
@@ -102,15 +151,23 @@ export function ProductsTable({ data }: ProductsTableProps) {
                         cell.column.columnDef.meta?.tdClassName
                       )}
                     >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext()
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={columns.length} className='h-24 text-center'>
-                  Không có sản phẩm nào.
+                <TableCell
+                  colSpan={columns.length}
+                  className='h-24 text-center'
+                >
+                  {hasActiveFilters
+                    ? 'Không tìm thấy sản phẩm phù hợp với bộ lọc.'
+                    : 'Không có sản phẩm nào.'}
                 </TableCell>
               </TableRow>
             )}

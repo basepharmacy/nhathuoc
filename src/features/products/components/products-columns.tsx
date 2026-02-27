@@ -1,8 +1,9 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { Badge } from '@/components/ui/badge'
 import { type Product } from '../data/schema'
+import { DataTableRowActions } from './data-table-row-actions'
 
 const productStatusLabelMap: Record<Product['status'], string> = {
   '1_DRAFT': 'Nháp',
@@ -40,8 +41,13 @@ export const productsColumns: ColumnDef<Product>[] = [
       <DataTableColumnHeader column={column} title='Danh mục' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-48'>{row.original.categories?.name ?? '—'}</LongText>
+      <LongText className='max-w-48'>
+        {row.original.categories?.name ?? '—'}
+      </LongText>
     ),
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
+    },
     enableSorting: false,
   },
   {
@@ -52,6 +58,9 @@ export const productsColumns: ColumnDef<Product>[] = [
     cell: ({ row }) => {
       const status = row.getValue('status') as Product['status']
       return <Badge variant='outline'>{productStatusLabelMap[status]}</Badge>
+    },
+    filterFn: (row, id, value) => {
+      return value.includes(row.getValue(id))
     },
   },
   {
@@ -66,7 +75,8 @@ export const productsColumns: ColumnDef<Product>[] = [
   },
   {
     id: 'units_summary',
-    accessorFn: (row) => row.product_units.map((unit) => unit.unit_name).join(', '),
+    accessorFn: (row) =>
+      row.product_units.map((unit) => unit.unit_name).join(', '),
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Đơn vị' />
     ),
@@ -90,10 +100,14 @@ export const productsColumns: ColumnDef<Product>[] = [
       const date = row.getValue('created_at') as string | null
       if (!date) return <span>—</span>
       return (
-        <span className='text-nowrap text-sm'>
+        <span className='text-sm text-nowrap'>
           {new Date(date).toLocaleDateString('vi-VN')}
         </span>
       )
     },
+  },
+  {
+    id: 'actions',
+    cell: DataTableRowActions,
   },
 ]

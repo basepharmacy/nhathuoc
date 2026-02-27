@@ -81,6 +81,24 @@ export const defaultProductActionFormValues: ProductActionFormInput = {
   ],
 }
 
+const mapProductToFormValues = (product: Product): ProductActionFormInput => ({
+  product_name: product.product_name,
+  jan_code: product.jan_code ?? '',
+  description: product.description ?? '',
+  status: product.status,
+  min_stock: product.min_stock,
+  category_id: product.category_id,
+  units:
+    product.product_units.length > 0
+      ? product.product_units.map((unit) => ({
+          unit_name: unit.unit_name,
+          sell_price: unit.sell_price,
+          cost_price: unit.cost_price,
+          conversion_factor: unit.conversion_factor,
+        }))
+      : defaultProductActionFormValues.units,
+})
+
 type ProductsActionDialogProps = {
   currentRow?: Product
   open: boolean
@@ -265,24 +283,28 @@ export function ProductsActionDialog({
     }
   }
 
+  const mapFormValuesToRepoInput = (values: ProductActionForm) => ({
+    product: {
+      product_name: values.product_name,
+      jan_code: values.jan_code?.trim() ? values.jan_code : null,
+      description: values.description?.trim() ? values.description : null,
+      category_id: values.category_id,
+      min_stock: values.min_stock,
+      status: values.status,
+    },
+    units: values.units.map((unit) => ({
+      unit_name: unit.unit_name,
+      sell_price: unit.sell_price,
+      cost_price: unit.cost_price,
+      conversion_factor: unit.conversion_factor,
+    })),
+  })
+
   const createMutation = useMutation({
     mutationFn: (values: ProductActionForm) =>
       productsRepo.createProductWithUnits({
         tenant_id: tenantId,
-        product: {
-          product_name: values.product_name,
-          jan_code: values.jan_code?.trim() ? values.jan_code : null,
-          description: values.description?.trim() ? values.description : null,
-          category_id: values.category_id,
-          min_stock: values.min_stock,
-          status: values.status,
-        },
-        units: values.units.map((unit) => ({
-          unit_name: unit.unit_name,
-          sell_price: unit.sell_price,
-          cost_price: unit.cost_price,
-          conversion_factor: unit.conversion_factor,
-        })),
+        ...mapFormValuesToRepoInput(values),
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
@@ -292,10 +314,30 @@ export function ProductsActionDialog({
     },
   })
 
+  const updateMutation = useMutation({
+    mutationFn: (values: ProductActionForm) => {
+      if (!currentRow) {
+        throw new Error('Không tìm thấy sản phẩm để cập nhật.')
+      }
+
+      return productsRepo.updateProductWithUnits({
+        tenant_id: tenantId,
+        product_id: currentRow.id,
+        ...mapFormValuesToRepoInput(values),
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
+      if (!isOpenRef.current) return
+      onOpenChange(false)
+    },
+  })
+
   useEffect(() => {
     isOpenRef.current = open
     if (open) {
       createMutation.reset()
+      updateMutation.reset()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -307,6 +349,24 @@ export function ProductsActionDialog({
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (!open) {
+      return
+    }
+
+    if (currentRow) {
+      form.reset(mapProductToFormValues(currentRow))
+      setDebouncedProductName('')
+      setSearchResults([])
+      setIsSuggestionsOpen(false)
+      setActiveSuggestionIndex(-1)
+      setSearchByNameError(null)
+      return
+    }
+
+    form.reset(defaultProductActionFormValues)
+  }, [currentRow, form, open])
 
   useEffect(() => {
     let cancelled = false
@@ -366,19 +426,29 @@ export function ProductsActionDialog({
   }, [debouncedProductName, open, tenantId])
 
   const onSubmit = (values: ProductActionForm) => {
-    if (isEdit || !tenantId) {
+    if (!tenantId) {
+      return
+    }
+
+    if (isEdit) {
+      updateMutation.mutate(values)
       return
     }
 
     createMutation.mutate(values)
   }
 
+  const activeMutationError = isEdit
+    ? updateMutation.error
+    : createMutation.error
+  const isSubmitting = createMutation.isPending || updateMutation.isPending
+
   const errorMessage =
-    (createMutation.error &&
-    typeof createMutation.error === 'object' &&
-    'message' in createMutation.error
-      ? String((createMutation.error as { message: string }).message)
-      : createMutation.error
+    (activeMutationError &&
+    typeof activeMutationError === 'object' &&
+    'message' in activeMutationError
+      ? String((activeMutationError as { message: string }).message)
+      : activeMutationError
         ? 'Đã xảy ra lỗi, vui lòng thử lại.'
         : null) ?? searchByNameError
 
@@ -780,9 +850,9 @@ export function ProductsActionDialog({
           <Button
             type='submit'
             form='product-action-form'
-            disabled={!tenantId || createMutation.isPending}
+            disabled={!tenantId || isSubmitting}
           >
-            {createMutation.isPending ? 'Đang lưu...' : 'Lưu'}
+            {isSubmitting ? 'Đang lưu...' : 'Lưu'}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -35,3 +35,9 @@ export const productSchema = z.object({
 export type Product = z.infer<typeof productSchema>
 
 export const productListSchema = z.array(productSchema)
+
+export type ProductListFilterState = {
+  keyword: string
+  status: Product['status'][]
+  category: string[]
+}

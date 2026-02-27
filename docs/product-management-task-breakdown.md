@@ -9,7 +9,7 @@ How to use:
 - Complete tasks in order.
 - Each task links to the related section in the main plan.
 - Do not skip dependency tasks.
-- When not needed, just run `npx tsc -b` command to check type issues, dont run build command.
+- When not needed, just run `npx.cmd tsc -b` command to check type issues, dont run build command.
 - After done coding, review the written code before continue. If any issues found, fix them first.
 If anything make u wonder and cannot decide, stop n ask user.
 - After finishing any task/phase, immediately update this file's checkbox and progress tracker in the same change.
@@ -178,42 +178,42 @@ Dependencies:
 
 ### 7A - Edit Product Flow
 
-- [ ] `T7.1` Add `updateProductWithUnits(input)` in `productsRepo` with typed input/output.
+- [x] `T7.1` Add `updateProductWithUnits(input)` in `productsRepo` with typed input/output.
   - Ref: main plan section `2.2`, `3`, `5.2`, `9.6`
-- [ ] `T7.2` Implement update strategy for units in repo (replace-all or controlled upsert) with stable return shape.
+- [x] `T7.2` Implement update strategy for units in repo (replace-all or controlled upsert) with stable return shape.
   - Must explicitly handle Supabase errors and preserve tenant scoping.
   - Ref: main plan section `3`, `5.2`, `9.6`, `10`
-- [ ] `T7.3` Add edit action entry point in products table row actions.
+- [x] `T7.3` Add edit action entry point in products table row actions.
   - Ref: main plan section `2.2`, `8.1`
-- [ ] `T7.4` Reuse/add dialog mode for edit in `products-action-dialog.tsx`.
+- [x] `T7.4` Reuse/add dialog mode for edit in `products-action-dialog.tsx`.
   - Prefill all editable fields (`product`, `units`, details), keep validation parity with create flow.
   - Ref: main plan section `2.2`, `7.1`, `7.2`
-- [ ] `T7.5` Wire edit submit mutation + loading/error/success UI + products query invalidation.
+- [x] `T7.5` Wire edit submit mutation + loading/error/success UI + products query invalidation.
   - Ref: main plan section `7.4`, `9.6`, `13`
 
 ### 7B - Delete Product Flow (With Guardrails)
 
-- [ ] `T7.6` Add `deleteProductById(tenantId, productId)` repo method with explicit guardrail checks.
+- [x] `T7.6` Add `deleteProductById(tenantId, productId)` repo method with explicit guardrail checks.
   - Guardrail goal: prevent unsafe delete when dependencies exist.
   - Ref: main plan section `2.2`, `9.6`, `10`
-- [ ] `T7.7` Define and implement dependency check strategy for delete (fail-fast with clear error message).
+- [x] `T7.7` Define and implement dependency check strategy for delete (fail-fast with clear error message).
   - Keep stable error mapping for UI display.
   - Ref: main plan section `10`
-- [ ] `T7.8` Add destructive confirm dialog for delete from row actions.
+- [x] `T7.8` Add destructive confirm dialog for delete from row actions.
   - Ref: main plan section `2.2`, `10`
-- [ ] `T7.9` Wire delete mutation + pending state + success/error toast/alert + query invalidation.
+- [x] `T7.9` Wire delete mutation + pending state + success/error toast/alert + query invalidation.
   - Ref: main plan section `7.4`, `9.6`, `13`
 
 ### 7C - Product List Filters
 
-- [ ] `T7.10` Define filter state model for keyword, status, and category.
+- [x] `T7.10` Define filter state model for keyword, status, and category.
   - Ref: main plan section `2.2`, `8`, `9.6`
-- [ ] `T7.11` Build filter controls in products list toolbar (status/category/search).
+- [x] `T7.11` Build filter controls in products list toolbar (status/category/search).
   - Keep UX minimal and consistent with existing table patterns.
   - Ref: main plan section `8.1`
-- [ ] `T7.12` Apply filters to table dataset (client-side first unless server filtering is required).
+- [x] `T7.12` Apply filters to table dataset (client-side first unless server filtering is required).
   - Ref: main plan section `8.2`
-- [ ] `T7.13` Add reset/clear filters behavior and empty-state messaging for filtered results.
+- [x] `T7.13` Add reset/clear filters behavior and empty-state messaging for filtered results.
   - Ref: main plan section `8.2`
 
 ### 7D - Phase 7 Validation (Local)
@@ -263,4 +263,4 @@ Dependencies:
 - Phase 4: `Done`
 - Phase 5: `Done`
 - Phase 6: `Not Started`
-- Phase 7: `Required - Not Started`
+- Phase 7: `Required - In Progress (T7.13 complete; T7.14+ pending validation)`

@@ -1,4 +1,5 @@
 import { ProductsActionDialog } from './products-action-dialog'
+import { ProductsDeleteDialog } from './products-delete-dialog'
 import { useProducts } from './products-provider'
 
 export function ProductsDialogs() {
@@ -25,6 +26,19 @@ export function ProductsDialogs() {
           }
         }}
       />
+
+      {currentRow && (
+        <ProductsDeleteDialog
+          currentRow={currentRow}
+          open={open === 'delete'}
+          onOpenChange={(state) => {
+            if (!state) {
+              setOpen(null)
+              setCurrentRow(null)
+            }
+          }}
+        />
+      )}
     </>
   )
 }
