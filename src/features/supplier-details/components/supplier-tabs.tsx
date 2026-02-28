@@ -1,42 +1,194 @@
+import { useEffect, useMemo, useState } from 'react'
+import {
+  type ColumnFiltersState,
+  type PaginationState,
+  type SortingState,
+  getCoreRowModel,
+  useReactTable,
+} from '@tanstack/react-table'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-} from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import { formatCurrency } from '@/features/purchase-orders/data/utils'
+import { useSuppliers } from '@/features/suppliers/components/suppliers-provider'
+import { type Supplier } from '@/features/suppliers/data/schema'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPayment } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import {
+  getPurchaseOrdersHistoryQueryOptions,
+  getSupplierPaymentsHistoryQueryOptions,
+} from '@/client/queries'
+import { PurchaseOrdersHistoryTable } from '@/features/purchase-orders-history/components/purchase-orders-history-table'
+import { supplierPaymentsColumns } from './supplier-payments-columns'
+import { SupplierPaymentsTable } from './supplier-payments-table'
+import { supplierOrdersHistoryColumns } from './supplier-orders-history-columns'
 
 type SupplierTabsProps = {
-  orders: PurchaseOrderWithRelations[]
-  payments: SupplierPayment[]
+  tenantId: string
+  supplierId: string
+  supplier?: Supplier | null
 }
 
-const orderStatusLabels: Record<PurchaseOrderWithRelations['status'], string> = {
-  '1_DRAFT': 'Nháp',
-  '2_ORDERED': 'Đã đặt',
-  '3_CHECKING': 'Đang kiểm',
-  '4_STORED': 'Đã nhập kho',
-  '9_CANCELLED': 'Đã hủy',
-}
+export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsProps) {
+  const { setCurrentRow, setOpen } = useSuppliers()
+  const [paymentFilters, setPaymentFilters] = useState<ColumnFiltersState>([])
+  const [paymentSorting, setPaymentSorting] = useState<SortingState>([
+    { id: 'created_at', desc: true },
+  ])
+  const [paymentPagination, setPaymentPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
-const formatDateLabel = (value?: string | null) => {
-  if (!value) return '—'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN').format(date)
-}
+  const [orderFilters, setOrderFilters] = useState<ColumnFiltersState>([])
+  const [orderSorting, setOrderSorting] = useState<SortingState>([])
+  const [orderPagination, setOrderPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
 
-export function SupplierTabs({ orders, payments }: SupplierTabsProps) {
+  const paymentSearchValue = useMemo(() => {
+    const searchFilter = paymentFilters.find((filter) => filter.id === 'note')
+    return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
+  }, [paymentFilters])
+
+  const { data: paymentsResult, isLoading: isPaymentsLoading } = useQuery({
+    ...getSupplierPaymentsHistoryQueryOptions({
+      tenantId,
+      supplierId,
+      pageIndex: paymentPagination.pageIndex,
+      pageSize: paymentPagination.pageSize,
+      search: paymentSearchValue,
+      sorting: paymentSorting,
+    }),
+    enabled: !!tenantId && !!supplierId,
+  })
+
+  const payments = paymentsResult?.data ?? []
+  const paymentsTotal = paymentsResult?.total ?? 0
+  const paymentsPageCount = Math.max(1, Math.ceil(paymentsTotal / paymentPagination.pageSize))
+
+  useEffect(() => {
+    setPaymentPagination((prev) => ({
+      ...prev,
+      pageIndex: 0,
+    }))
+  }, [paymentFilters, paymentSorting])
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const paymentsTable = useReactTable<SupplierPayment>({
+    data: payments,
+    columns: supplierPaymentsColumns,
+    state: {
+      pagination: paymentPagination,
+      columnFilters: paymentFilters,
+      sorting: paymentSorting,
+    },
+    onPaginationChange: setPaymentPagination,
+    onColumnFiltersChange: setPaymentFilters,
+    onSortingChange: setPaymentSorting,
+    getCoreRowModel: getCoreRowModel(),
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: paymentsPageCount,
+    rowCount: paymentsTotal,
+  })
+
+  const orderSearchValue = useMemo(() => {
+    const searchFilter = orderFilters.find(
+      (filter) => filter.id === 'purchase_order_code'
+    )
+    return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
+  }, [orderFilters])
+
+  const statusFilters = useMemo(() => {
+    const statusFilter = orderFilters.find((filter) => filter.id === 'status')
+    return Array.isArray(statusFilter?.value)
+      ? (statusFilter?.value as PurchaseOrderWithRelations['status'][])
+      : []
+  }, [orderFilters])
+
+  const paymentStatusFilters = useMemo(() => {
+    const paymentStatusFilter = orderFilters.find(
+      (filter) => filter.id === 'payment_status'
+    )
+    return Array.isArray(paymentStatusFilter?.value)
+      ? (paymentStatusFilter?.value as PurchaseOrderWithRelations['payment_status'][])
+      : []
+  }, [orderFilters])
+
+  const { data: ordersResult, isLoading: isOrdersLoading } = useQuery({
+    ...getPurchaseOrdersHistoryQueryOptions({
+      tenantId,
+      pageIndex: orderPagination.pageIndex,
+      pageSize: orderPagination.pageSize,
+      search: orderSearchValue,
+      supplierIds: supplierId ? [supplierId] : [],
+      statuses: statusFilters,
+      paymentStatuses: paymentStatusFilters,
+      sorting: orderSorting,
+    }),
+    enabled: !!tenantId && !!supplierId,
+  })
+
+  const orders = ordersResult?.data ?? []
+  const ordersTotal = ordersResult?.total ?? 0
+  const ordersPageCount = Math.max(1, Math.ceil(ordersTotal / orderPagination.pageSize))
+
+  useEffect(() => {
+    setOrderPagination((prev) => ({
+      ...prev,
+      pageIndex: 0,
+    }))
+  }, [orderFilters, orderSorting])
+
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const ordersTable = useReactTable<PurchaseOrderWithRelations>({
+    data: orders,
+    columns: supplierOrdersHistoryColumns,
+    state: {
+      pagination: orderPagination,
+      columnFilters: orderFilters,
+      sorting: orderSorting,
+    },
+    onPaginationChange: setOrderPagination,
+    onColumnFiltersChange: setOrderFilters,
+    onSortingChange: setOrderSorting,
+    getCoreRowModel: getCoreRowModel(),
+    manualFiltering: true,
+    manualPagination: true,
+    manualSorting: true,
+    pageCount: ordersPageCount,
+    rowCount: ordersTotal,
+  })
+
+  const orderFiltersConfig = useMemo(
+    () => [
+      {
+        columnId: 'status',
+        title: 'Trạng thái',
+        options: [
+          { label: 'Nháp', value: '1_DRAFT' },
+          { label: 'Đã đặt', value: '2_ORDERED' },
+          { label: 'Đang kiểm', value: '3_CHECKING' },
+          { label: 'Đã nhập kho', value: '4_STORED' },
+          { label: 'Đã hủy', value: '9_CANCELLED' },
+        ],
+      },
+      {
+        columnId: 'payment_status',
+        title: 'Trạng thái thanh toán',
+        options: [
+          { label: 'Chưa thanh toán', value: '1_UNPAID' },
+          { label: 'Thanh toán một phần', value: '2_PARTIALLY_PAID' },
+          { label: 'Đã thanh toán', value: '3_PAID' },
+        ],
+      },
+    ],
+    []
+  )
+
   return (
     <Tabs defaultValue='payments' className='gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
@@ -44,40 +196,23 @@ export function SupplierTabs({ orders, payments }: SupplierTabsProps) {
           <TabsTrigger value='payments'>Thanh toán</TabsTrigger>
           <TabsTrigger value='orders'>Lịch sử đặt hàng</TabsTrigger>
         </TabsList>
-        <Button size='sm'>Thanh toán</Button>
+        <Button
+          size='sm'
+          disabled={!supplier}
+          onClick={() => {
+            if (!supplier) return
+            setCurrentRow(supplier)
+            setOpen('payment')
+          }}
+        >
+          Thanh toán
+        </Button>
       </div>
 
       <TabsContent value='payments'>
         <Card className='py-4'>
           <CardContent className='px-4'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã thanh toán</TableHead>
-                  <TableHead>Ngày thanh toán</TableHead>
-                  <TableHead>Số tiền thanh toán</TableHead>
-                  <TableHead>Ghi chú</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {payments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className='text-center text-muted-foreground'>
-                      Chưa có dữ liệu thanh toán.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  payments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell>{payment.reference_code ?? payment.id}</TableCell>
-                      <TableCell>{formatDateLabel(payment.payment_date)}</TableCell>
-                      <TableCell>{formatCurrency(payment.amount)}đ</TableCell>
-                      <TableCell>{payment.note ?? '—'}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+            <SupplierPaymentsTable table={paymentsTable} isLoading={isPaymentsLoading} />
           </CardContent>
         </Card>
       </TabsContent>
@@ -85,40 +220,12 @@ export function SupplierTabs({ orders, payments }: SupplierTabsProps) {
       <TabsContent value='orders'>
         <Card className='py-4'>
           <CardContent className='px-4'>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Mã đơn</TableHead>
-                  <TableHead>Ngày đặt</TableHead>
-                  <TableHead>Tổng tiền</TableHead>
-                  <TableHead>Trạng thái</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {orders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className='text-center text-muted-foreground'>
-                      Chưa có lịch sử đặt hàng.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  orders.map((order) => {
-                    const totalAmount = order.total_amount ?? 0
-                    const discount = order.discount ?? 0
-                    return (
-                      <TableRow key={order.id}>
-                        <TableCell>{order.purchase_order_code}</TableCell>
-                        <TableCell>{formatDateLabel(order.issued_at ?? order.created_at)}</TableCell>
-                        <TableCell>
-                          {formatCurrency(Math.max(0, totalAmount - discount))}đ
-                        </TableCell>
-                        <TableCell>{orderStatusLabels[order.status] ?? '—'}</TableCell>
-                      </TableRow>
-                    )
-                  })
-                )}
-              </TableBody>
-            </Table>
+            <PurchaseOrdersHistoryTable
+              table={ordersTable}
+              isLoading={isOrdersLoading}
+              searchKey='purchase_order_code'
+              filters={orderFiltersConfig}
+            />
           </CardContent>
         </Card>
       </TabsContent>

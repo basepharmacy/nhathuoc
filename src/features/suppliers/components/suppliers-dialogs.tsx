@@ -1,5 +1,6 @@
 import { SuppliersActionDialog } from './suppliers-action-dialog'
 import { SuppliersDeleteDialog } from './suppliers-delete-dialog'
+import { SuppliersPaymentDialog } from './suppliers-payment-dialog'
 import { useSuppliers } from './suppliers-provider'
 
 export function SuppliersDialogs() {
@@ -14,6 +15,17 @@ export function SuppliersDialogs() {
 
       {currentRow && (
         <>
+          <SuppliersPaymentDialog
+            key={`supplier-payment-${currentRow.id}`}
+            open={open === 'payment'}
+            onOpenChange={() => {
+              setOpen('payment')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            currentRow={currentRow}
+          />
           <SuppliersActionDialog
             key={`supplier-edit-${currentRow.id}`}
             open={open === 'edit'}

@@ -42,6 +42,7 @@ import {
 } from '@/components/ui/select'
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { formatCurrency, normalizeNumber } from '@/features/purchase-orders/data/utils'
 import {
   type ProductForm,
   type Product,
@@ -71,6 +72,12 @@ const normalizeOptionalText = (value?: string) =>
 
 const normalizeOptionalCategoryId = (value?: string) =>
   value && value.trim().length > 0 && value !== 'none' ? value.trim() : null
+
+const formatCurrencyInput = (value: unknown) => {
+  if (value === '' || value === null || value === undefined) return ''
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(numericValue) ? formatCurrency(numericValue) : ''
+}
 
 export function ProductsActionDialog({
   currentRow,
@@ -159,10 +166,10 @@ export function ProductsActionDialog({
     if (!isEdit || !currentRow) return false
     return Boolean(
       currentRow.active_ingredient ||
-        currentRow.regis_number ||
-        currentRow.made_company_name ||
-        currentRow.sale_company_name ||
-        currentRow.description
+      currentRow.regis_number ||
+      currentRow.made_company_name ||
+      currentRow.sale_company_name ||
+      currentRow.description
     )
   }, [currentRow, isEdit])
   const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen)
@@ -519,12 +526,18 @@ export function ProductsActionDialog({
                                 <FormItem>
                                   <FormControl>
                                     <Input
-                                      type='number'
                                       placeholder='Giá nhập'
-                                      value={field.value ?? ''}
-                                      onChange={(event) =>
-                                        field.onChange(event.target.value)
-                                      }
+                                      inputMode='numeric'
+                                      {...field}
+                                      value={formatCurrencyInput(field.value)}
+                                      onChange={(event) => {
+                                        const rawValue = event.target.value
+                                        if (!rawValue) {
+                                          field.onChange('')
+                                          return
+                                        }
+                                        field.onChange(normalizeNumber(rawValue))
+                                      }}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -538,12 +551,18 @@ export function ProductsActionDialog({
                                 <FormItem>
                                   <FormControl>
                                     <Input
-                                      type='number'
                                       placeholder='Giá bán'
-                                      value={field.value ?? ''}
-                                      onChange={(event) =>
-                                        field.onChange(event.target.value)
-                                      }
+                                      inputMode='numeric'
+                                      {...field}
+                                      value={formatCurrencyInput(field.value)}
+                                      onChange={(event) => {
+                                        const rawValue = event.target.value
+                                        if (!rawValue) {
+                                          field.onChange('')
+                                          return
+                                        }
+                                        field.onChange(normalizeNumber(rawValue))
+                                      }}
                                     />
                                   </FormControl>
                                   <FormMessage />

@@ -105,7 +105,11 @@ export function SupplierDetail() {
 					<>
 						<SupplierSummaryCards summary={summary} />
 						<SupplierInfoCard supplier={supplier} />
-						<SupplierTabs orders={orders} payments={payments} />
+						<SupplierTabs
+							tenantId={tenantId}
+							supplierId={supplierId}
+							supplier={supplier}
+						/>
 					</>
 				)}
 			</Main>

@@ -13,6 +13,7 @@ import {
   saleOrdersRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 import { type SaleOrdersHistoryQueryInput } from '@/services/supabase/database/repo/saleOrdersRepo'
 import {
   type InventoryBatchesListQueryInput,
@@ -234,6 +235,31 @@ export const getSupplierPaymentsBySupplierIdQueryOptions = (
         supplierId,
       })
       return payments
+    },
+  })
+
+export const getSupplierPaymentsHistoryQueryOptions = (
+  params: SupplierPaymentsHistoryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'supplier-payments',
+      params.tenantId,
+      params.supplierId,
+      'history',
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        sorting: params.sorting ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId || !params.supplierId) {
+        return { data: [], total: 0 }
+      }
+      const result = await supplierPaymentsRepo.getSupplierPaymentsHistory(params)
+      return result
     },
   })
 

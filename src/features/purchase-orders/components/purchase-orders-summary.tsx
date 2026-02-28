@@ -97,9 +97,10 @@ export function PurchaseOrdersSummary({
         <div className='flex items-center justify-between text-muted-foreground'>
           <span>Chiết khấu</span>
           <Input
-            value={orderDiscount}
+            value={formatCurrency(orderDiscount)}
             onChange={(event) => onOrderDiscountChange(normalizeNumber(event.target.value))}
             className='h-8 w-28 rounded-full text-right text-xs'
+            inputMode='numeric'
             disabled={isReadOnly}
           />
         </div>
@@ -140,9 +141,10 @@ export function PurchaseOrdersSummary({
             <div className='flex items-center justify-between text-muted-foreground'>
               <span>Số tiền thanh toán</span>
               <Input
-                value={paidAmount}
+                value={formatCurrency(paidAmount)}
                 onChange={(event) => onPaidAmountChange(normalizeNumber(event.target.value))}
                 className='h-8 w-28 rounded-full text-right text-xs'
+                inputMode='numeric'
                 disabled={isReadOnly}
               />
             </div>
