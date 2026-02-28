@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
+import { cn, includesSearchValue } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
@@ -41,137 +41,139 @@ const formatPrice = (value: ProductUnit['cost_price'] | null | undefined) =>
 export const getProductsColumns = (
   categoryLookup: CategoryLookup
 ): ColumnDef<ProductWithUnits>[] => [
-  {
-    accessorKey: 'product_name',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Tên sản phẩm' />
-    ),
-    cell: ({ row }) => (
-      <LongText className='max-w-56 ps-3'>
-        {row.getValue('product_name')}
-      </LongText>
-    ),
-    meta: {
-      className: cn(
-        'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
-        'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
+    {
+      accessorKey: 'product_name',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Tên sản phẩm' />
       ),
+      cell: ({ row }) => (
+        <LongText className='max-w-56 ps-3'>
+          {row.getValue('product_name')}
+        </LongText>
+      ),
+      meta: {
+        className: cn(
+          'drop-shadow-[0_1px_2px_rgb(0_0_0_/_0.1)] dark:drop-shadow-[0_1px_2px_rgb(255_255_255_/_0.1)]',
+          'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
+        ),
+      },
+      filterFn: (row, id, value) =>
+        includesSearchValue(String(row.getValue(id) ?? ''), String(value ?? '')),
+      enableHiding: false,
     },
-    enableHiding: false,
-  },
-  {
-    accessorKey: 'product_type',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Loại' />
-    ),
-    cell: ({ row }) => {
-      const type = row.getValue('product_type') as Product['product_type']
-      return <span className='text-sm'>{productTypeLabels[type]}</span>
+    {
+      accessorKey: 'product_type',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Loại' />
+      ),
+      cell: ({ row }) => {
+        const type = row.getValue('product_type') as Product['product_type']
+        return <span className='text-sm'>{productTypeLabels[type]}</span>
+      },
+      meta: { label: 'Loại' },
+      enableSorting: false,
     },
-    meta: { label: 'Loại' },
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'status',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Trạng thái' />
-    ),
-    cell: ({ row }) => {
-      const status = row.getValue('status') as Product['status']
-      return (
-        <div className='flex space-x-2'>
-          <Badge
-            variant='outline'
-            className={cn('text-sm font-medium', productStatusColors[status])}
-          >
-            {productStatusLabels[status]}
-          </Badge>
-        </div>
-      )
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Trạng thái' />
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue('status') as Product['status']
+        return (
+          <div className='flex space-x-2'>
+            <Badge
+              variant='outline'
+              className={cn('text-sm font-medium', productStatusColors[status])}
+            >
+              {productStatusLabels[status]}
+            </Badge>
+          </div>
+        )
+      },
+      meta: { label: 'Trạng thái' },
+      enableSorting: false,
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
     },
-    meta: { label: 'Trạng thái' },
-    enableSorting: false,
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+    {
+      accessorKey: 'category_id',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Danh mục' />
+      ),
+      cell: ({ row }) => {
+        const categoryId = row.getValue('category_id') as string | null
+        if (!categoryId) return <span className='text-sm'>—</span>
+        return (
+          <span className='text-sm'>
+            {categoryLookup[categoryId] ?? '—'}
+          </span>
+        )
+      },
+      meta: { label: 'Danh mục' },
+      enableSorting: false,
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
     },
-  },
-  {
-    accessorKey: 'category_id',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Danh mục' />
-    ),
-    cell: ({ row }) => {
-      const categoryId = row.getValue('category_id') as string | null
-      if (!categoryId) return <span className='text-sm'>—</span>
-      return (
-        <span className='text-sm'>
-          {categoryLookup[categoryId] ?? '—'}
-        </span>
-      )
+    {
+      id: 'base_unit_name',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Đơn vị' />
+      ),
+      cell: ({ row }) => {
+        const baseUnit = getBaseUnit(row.original)
+        return <span className='text-sm'>{baseUnit?.unit_name ?? '—'}</span>
+      },
+      meta: { label: 'Đơn vị' },
+      enableSorting: false,
     },
-    meta: { label: 'Danh mục' },
-    enableSorting: false,
-    filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+    {
+      id: 'base_cost_price',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Giá nhập' />
+      ),
+      cell: ({ row }) => {
+        const baseUnit = getBaseUnit(row.original)
+        return (
+          <span className='text-nowrap text-sm'>
+            {formatPrice(baseUnit?.cost_price)}
+          </span>
+        )
+      },
+      meta: { label: 'Giá nhập' },
+      enableSorting: false,
     },
-  },
-  {
-    id: 'base_unit_name',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Đơn vị' />
-    ),
-    cell: ({ row }) => {
-      const baseUnit = getBaseUnit(row.original)
-      return <span className='text-sm'>{baseUnit?.unit_name ?? '—'}</span>
+    {
+      id: 'base_sell_price',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Giá bán' />
+      ),
+      cell: ({ row }) => {
+        const baseUnit = getBaseUnit(row.original)
+        return (
+          <span className='text-nowrap text-sm'>
+            {formatPrice(baseUnit?.sell_price)}
+          </span>
+        )
+      },
+      meta: { label: 'Giá bán' },
+      enableSorting: false,
     },
-    meta: { label: 'Đơn vị' },
-    enableSorting: false,
-  },
-  {
-    id: 'base_cost_price',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Giá nhập' />
-    ),
-    cell: ({ row }) => {
-      const baseUnit = getBaseUnit(row.original)
-      return (
-        <span className='text-nowrap text-sm'>
-          {formatPrice(baseUnit?.cost_price)}
-        </span>
-      )
+    {
+      accessorKey: 'min_stock',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Tồn tối thiểu' />
+      ),
+      cell: ({ row }) => {
+        const minStock = row.getValue('min_stock') as number | null
+        return <span className='text-sm'>{minStock ?? '—'}</span>
+      },
+      meta: { label: 'Tồn tối thiểu' },
     },
-    meta: { label: 'Giá nhập' },
-    enableSorting: false,
-  },
-  {
-    id: 'base_sell_price',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Giá bán' />
-    ),
-    cell: ({ row }) => {
-      const baseUnit = getBaseUnit(row.original)
-      return (
-        <span className='text-nowrap text-sm'>
-          {formatPrice(baseUnit?.sell_price)}
-        </span>
-      )
+    {
+      id: 'actions',
+      cell: DataTableRowActions,
     },
-    meta: { label: 'Giá bán' },
-    enableSorting: false,
-  },
-  {
-    accessorKey: 'min_stock',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Tồn tối thiểu' />
-    ),
-    cell: ({ row }) => {
-      const minStock = row.getValue('min_stock') as number | null
-      return <span className='text-sm'>{minStock ?? '—'}</span>
-    },
-    meta: { label: 'Tồn tối thiểu' },
-  },
-  {
-    id: 'actions',
-    cell: DataTableRowActions,
-  },
-]
+  ]

@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
+import { cn, includesSearchValue } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
@@ -21,6 +21,8 @@ export const suppliersColumns: ColumnDef<Supplier>[] = [
         'ps-0.5 max-md:sticky start-6 @4xl/content:table-cell @4xl/content:drop-shadow-none'
       ),
     },
+    filterFn: (row, id, value) =>
+      includesSearchValue(String(row.getValue(id) ?? ''), String(value ?? '')),
     enableHiding: false,
   },
   {

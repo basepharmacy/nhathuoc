@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { Building2, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import type { Supplier } from '@/services/supabase/database/repo/suppliersRepo'
 
 type SupplierSwitcherProps = {
@@ -23,8 +25,28 @@ export function SupplierSwitcher({
   onChange,
   disabled = false,
 }: SupplierSwitcherProps) {
+  const [searchTerm, setSearchTerm] = useState('')
   const activeSupplier =
     suppliers.find((supplier) => supplier.id === activeSupplierId) ?? null
+  const filteredSuppliers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+    if (!query) {
+      return suppliers
+    }
+
+    return suppliers.filter((supplier) => {
+      const haystack = [
+        supplier.name,
+        supplier.address ?? '',
+        supplier.phone ?? '',
+        supplier.representative ?? '',
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(query)
+    })
+  }, [searchTerm, suppliers])
 
   return (
     <DropdownMenu>
@@ -54,7 +76,22 @@ export function SupplierSwitcher({
         <DropdownMenuLabel className='text-xs text-muted-foreground'>
           Nhà cung cấp
         </DropdownMenuLabel>
-        {suppliers.map((supplier) => (
+        <div className='px-2 pb-2'>
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder='Tìm nhà cung cấp...'
+            className='h-8 rounded-md text-sm'
+            onKeyDown={(event) => event.stopPropagation()}
+          />
+        </div>
+        <DropdownMenuSeparator />
+        {filteredSuppliers.length === 0 ? (
+          <div className='px-3 py-2 text-xs text-muted-foreground'>
+            Không tìm thấy nhà cung cấp phù hợp.
+          </div>
+        ) : null}
+        {filteredSuppliers.map((supplier) => (
           <DropdownMenuItem
             key={supplier.id}
             onClick={() => onChange(supplier.id)}
@@ -71,7 +108,7 @@ export function SupplierSwitcher({
             </div>
           </DropdownMenuItem>
         ))}
-        {suppliers.length > 1 && <DropdownMenuSeparator />}
+        {filteredSuppliers.length > 1 && <DropdownMenuSeparator />}
       </DropdownMenuContent>
     </DropdownMenu>
   )

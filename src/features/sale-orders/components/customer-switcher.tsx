@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react'
 import { ChevronDown, UserPlus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -8,6 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { Input } from '@/components/ui/input'
 import type { Customer } from '@/services/supabase/database/repo/customersRepo'
 
 type CustomerSwitcherProps = {
@@ -25,8 +27,28 @@ export function CustomerSwitcher({
   onAddCustomer,
   disabled = false,
 }: CustomerSwitcherProps) {
+  const [searchTerm, setSearchTerm] = useState('')
   const activeCustomer =
     customers.find((customer) => customer.id === activeCustomerId) ?? null
+  const filteredCustomers = useMemo(() => {
+    const query = searchTerm.trim().toLowerCase()
+    if (!query) {
+      return customers
+    }
+
+    return customers.filter((customer) => {
+      const haystack = [
+        customer.name,
+        customer.address ?? '',
+        customer.phone ?? '',
+        customer.description ?? '',
+      ]
+        .join(' ')
+        .toLowerCase()
+
+      return haystack.includes(query)
+    })
+  }, [searchTerm, customers])
 
   return (
     <DropdownMenu>
@@ -72,7 +94,22 @@ export function CustomerSwitcher({
             <DropdownMenuSeparator />
           </>
         )}
-        {customers.map((customer) => (
+        <div className='px-2 pb-2'>
+          <Input
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            placeholder='Tìm khách hàng...'
+            className='h-8 rounded-md text-sm'
+            onKeyDown={(event) => event.stopPropagation()}
+          />
+        </div>
+        <DropdownMenuSeparator />
+        {filteredCustomers.length === 0 ? (
+          <div className='px-3 py-2 text-xs text-muted-foreground'>
+            Không tìm thấy khách hàng phù hợp.
+          </div>
+        ) : null}
+        {filteredCustomers.map((customer) => (
           <DropdownMenuItem
             key={customer.id}
             onClick={() => onChange(customer.id)}
@@ -89,7 +126,7 @@ export function CustomerSwitcher({
             </div>
           </DropdownMenuItem>
         ))}
-        {customers.length > 1 && <DropdownMenuSeparator />}
+        {filteredCustomers.length > 1 && <DropdownMenuSeparator />}
       </DropdownMenuContent>
     </DropdownMenu>
   )
