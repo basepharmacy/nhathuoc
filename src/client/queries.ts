@@ -11,6 +11,7 @@ import {
   purchaseOrdersRepo,
   inventoryBatchesRepo,
 } from '.'
+import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
 export const getProfilesQueryOptions = (userId: string) =>
   queryOptions({
@@ -108,6 +109,30 @@ export const getPurchaseOrdersQueryOptions = (tenantId: string) =>
     queryFn: async () => {
       const orders = await purchaseOrdersRepo.getPurchaseOrdersByTenantId(tenantId)
       return orders
+    },
+  })
+
+export const getPurchaseOrdersHistoryQueryOptions = (
+  params: PurchaseOrdersHistoryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      "purchase-orders",
+      params.tenantId,
+      "history",
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        supplierIds: params.supplierIds ?? [],
+        statuses: params.statuses ?? [],
+        paymentStatuses: params.paymentStatuses ?? [],
+        sorting: params.sorting ?? [],
+      },
+    ],
+    queryFn: async () => {
+      const result = await purchaseOrdersRepo.getPurchaseOrdersHistory(params)
+      return result
     },
   })
 

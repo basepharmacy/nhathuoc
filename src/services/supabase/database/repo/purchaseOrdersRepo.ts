@@ -15,6 +15,22 @@ export type PurchaseOrderWithItems = PurchaseOrder & {
   items?: PurchaseOrderItem[]
 }
 
+export type PurchaseOrdersHistoryQueryInput = {
+  tenantId: string
+  pageIndex: number
+  pageSize: number
+  search?: string
+  supplierIds?: string[]
+  statuses?: Array<PurchaseOrder['status']>
+  paymentStatuses?: Array<PurchaseOrder['payment_status']>
+  sorting?: Array<{ id: string; desc: boolean }>
+}
+
+export type PurchaseOrdersHistoryQueryResult = {
+  data: PurchaseOrderWithRelations[]
+  total: number
+}
+
 export const createPurchaseOrderRepository = (
   client: BasePharmacySupabaseClient
 ) => {
@@ -56,6 +72,70 @@ export const createPurchaseOrderRepository = (
       }
 
       return (data ?? []) as PurchaseOrderWithRelations[]
+    },
+    async getPurchaseOrdersHistory(
+      params: PurchaseOrdersHistoryQueryInput
+    ): Promise<PurchaseOrdersHistoryQueryResult> {
+      const start = params.pageIndex * params.pageSize
+      const end = start + params.pageSize - 1
+      const searchValue = params.search?.trim()
+
+      let query = client
+        .from('purchase_orders')
+        .select(
+          '*, supplier:suppliers(id, name), location:locations(id, name), user:profiles(id, name)',
+          { count: 'exact' }
+        )
+        .eq('tenant_id', params.tenantId)
+
+      if (searchValue) {
+        query = query.ilike('purchase_order_code', `%${searchValue}%`)
+      }
+
+      if (params.supplierIds?.length) {
+        query = query.in('supplier_id', params.supplierIds)
+      }
+
+      if (params.statuses?.length) {
+        query = query.in('status', params.statuses)
+      }
+
+      if (params.paymentStatuses?.length) {
+        query = query.in('payment_status', params.paymentStatuses)
+      }
+
+      const sort = params.sorting?.[0]
+      const sortColumnMap: Record<string, string> = {
+        purchase_order_code: 'purchase_order_code',
+        issued_at: 'issued_at',
+        paid_amount: 'paid_amount',
+        amount_due: 'total_amount',
+        status: 'status',
+        payment_status: 'payment_status',
+        created_at: 'created_at',
+        total_amount: 'total_amount',
+      }
+
+      const sortColumn = sort ? sortColumnMap[sort.id] : undefined
+
+      if (sortColumn) {
+        query = query.order(sortColumn, { ascending: !sort?.desc })
+      } else {
+        query = query.order('issued_at', { ascending: false }).order('created_at', {
+          ascending: false,
+        })
+      }
+
+      const { data, error, count } = await query.range(start, end)
+
+      if (error) {
+        throw error
+      }
+
+      return {
+        data: (data ?? []) as PurchaseOrderWithRelations[],
+        total: count ?? 0,
+      }
     },
     async createPurchaseOrderWithItems(params: {
       order: PurchaseOrderInsert
