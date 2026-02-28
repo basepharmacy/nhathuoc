@@ -10,8 +10,14 @@ import {
   productsRepo,
   purchaseOrdersRepo,
   inventoryBatchesRepo,
+  saleOrdersRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type SaleOrdersHistoryQueryInput } from '@/services/supabase/database/repo/saleOrdersRepo'
+import {
+  type InventoryBatchesListQueryInput,
+  type InventoryBatchesSummaryQueryInput,
+} from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 export const getProfilesQueryOptions = (userId: string) =>
   queryOptions({
@@ -172,6 +178,47 @@ export const getPurchaseOrderDetailQueryOptions = (
     },
   })
 
+export const getSaleOrderDetailQueryOptions = (
+  tenantId: string,
+  orderId: string
+) =>
+  queryOptions({
+    queryKey: ["sale-orders", tenantId, "detail", orderId],
+    queryFn: async () => {
+      if (!tenantId || !orderId) {
+        return null
+      }
+      const order = await saleOrdersRepo.getSaleOrderByIdWithItems({
+        tenantId,
+        orderId,
+      })
+      return order
+    },
+  })
+
+export const getSaleOrdersHistoryQueryOptions = (
+  params: SaleOrdersHistoryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'sale-orders',
+      params.tenantId,
+      'history',
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        customerIds: params.customerIds ?? [],
+        statuses: params.statuses ?? [],
+        sorting: params.sorting ?? [],
+      },
+    ],
+    queryFn: async () => {
+      const result = await saleOrdersRepo.getSaleOrdersHistory(params)
+      return result
+    },
+  })
+
 export const getSupplierPaymentsBySupplierIdQueryOptions = (
   tenantId: string,
   supplierId: string
@@ -207,5 +254,51 @@ export const getInventoryBatchesQueryOptions = (
         locationId,
       })
       return batches
+    },
+  })
+
+export const getInventoryBatchesListQueryOptions = (
+  params: InventoryBatchesListQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'inventory-batches',
+      params.tenantId,
+      'list',
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        locationIds: params.locationIds ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
+      const result = await inventoryBatchesRepo.getInventoryBatchesList(params)
+      return result
+    },
+  })
+
+export const getInventoryBatchesSummaryQueryOptions = (
+  params: InventoryBatchesSummaryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'inventory-batches',
+      params.tenantId,
+      'summary',
+      {
+        search: params.search ?? '',
+        locationIds: params.locationIds ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { totalProducts: 0, totalQuantity: 0, totalValue: 0 }
+      }
+      const result = await inventoryBatchesRepo.getInventoryBatchesSummary(params)
+      return result
     },
   })

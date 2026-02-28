@@ -647,6 +647,161 @@ export type Database = {
           },
         ]
       }
+      sale_order_items: {
+        Row: {
+          batch_id: string | null
+          created_at: string | null
+          discount: number
+          id: number
+          product_id: string
+          product_unit_id: string | null
+          quantity: number
+          sale_order_id: string
+          tenant_id: string
+          unit_price: number
+        }
+        Insert: {
+          batch_id?: string | null
+          created_at?: string | null
+          discount?: number
+          id?: never
+          product_id: string
+          product_unit_id?: string | null
+          quantity?: number
+          sale_order_id: string
+          tenant_id: string
+          unit_price?: number
+        }
+        Update: {
+          batch_id?: string | null
+          created_at?: string | null
+          discount?: number
+          id?: never
+          product_id?: string
+          product_unit_id?: string | null
+          quantity?: number
+          sale_order_id?: string
+          tenant_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_order_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_batches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_items_product_unit_id_fkey"
+            columns: ["product_unit_id"]
+            isOneToOne: false
+            referencedRelation: "product_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_items_sale_order_id_fkey"
+            columns: ["sale_order_id"]
+            isOneToOne: false
+            referencedRelation: "sale_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_order_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sale_orders: {
+        Row: {
+          created_at: string | null
+          customer_id: string | null
+          customer_paid_amount: number
+          discount: number
+          id: string
+          issued_at: string | null
+          location_id: string | null
+          notes: string | null
+          sale_order_code: string
+          status: Database["public"]["Enums"]["sale_order_status"]
+          tenant_id: string
+          total_amount: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          customer_id?: string | null
+          customer_paid_amount?: number
+          discount?: number
+          id?: string
+          issued_at?: string | null
+          location_id?: string | null
+          notes?: string | null
+          sale_order_code: string
+          status?: Database["public"]["Enums"]["sale_order_status"]
+          tenant_id: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          customer_id?: string | null
+          customer_paid_amount?: number
+          discount?: number
+          id?: string
+          issued_at?: string | null
+          location_id?: string | null
+          notes?: string | null
+          sale_order_code?: string
+          status?: Database["public"]["Enums"]["sale_order_status"]
+          tenant_id?: string
+          total_amount?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sale_orders_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_adjustments: {
         Row: {
           batch_code: string
@@ -710,36 +865,46 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
+          is_payment_on_purchase_order: boolean
           note: string | null
           payment_date: string | null
+          purchase_order_id: string | null
           reference_code: string | null
           supplier_id: string
           tenant_id: string
-          user_id: string
         }
         Insert: {
           amount: number
           created_at?: string | null
           id?: string
+          is_payment_on_purchase_order?: boolean
           note?: string | null
           payment_date?: string | null
+          purchase_order_id?: string | null
           reference_code?: string | null
           supplier_id: string
           tenant_id: string
-          user_id: string
         }
         Update: {
           amount?: number
           created_at?: string | null
           id?: string
+          is_payment_on_purchase_order?: boolean
           note?: string | null
           payment_date?: string | null
+          purchase_order_id?: string | null
           reference_code?: string | null
           supplier_id?: string
           tenant_id?: string
-          user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "supplier_payments_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "supplier_payments_supplier_id_fkey"
             columns: ["supplier_id"]
@@ -752,13 +917,6 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "supplier_payments_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -880,6 +1038,7 @@ export type Database = {
         | "3_CHECKING"
         | "4_STORED"
         | "9_CANCELLED"
+      sale_order_status: "1_DRAFT" | "2_COMPLETE" | "9_CANCELLED"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
     }
     CompositeTypes: {
@@ -1020,6 +1179,7 @@ export const Constants = {
         "4_STORED",
         "9_CANCELLED",
       ],
+      sale_order_status: ["1_DRAFT", "2_COMPLETE", "9_CANCELLED"],
       tenant_status: ["1_ACTIVE", "2_LICENSE_EXPIRED", "3_CANCELLED"],
     },
   },

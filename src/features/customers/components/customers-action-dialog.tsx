@@ -54,6 +54,7 @@ type CustomersActionDialogProps = {
   currentRow?: Customer
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCreated?: (customer: Customer) => void
 }
 
 const normalizeOptionalText = (value?: string) =>
@@ -63,6 +64,7 @@ export function CustomersActionDialog({
   currentRow,
   open,
   onOpenChange,
+  onCreated,
 }: CustomersActionDialogProps) {
   const isEdit = !!currentRow
   const { user } = useUser()
@@ -97,8 +99,9 @@ export function CustomersActionDialog({
         address: normalizeOptionalText(values.address),
         description: normalizeOptionalText(values.description),
       }),
-    onSuccess: () => {
+    onSuccess: (customer) => {
       queryClient.invalidateQueries({ queryKey: ['customers', tenantId] })
+      onCreated?.(customer as Customer)
       if (!isOpenRef.current) return
       form.reset()
       onOpenChange(false)

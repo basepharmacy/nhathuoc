@@ -30,12 +30,12 @@ const staticNavGroups = [
       },
       {
         title: 'Bán hàng',
-        url: '/tasks',
+        url: '/sale-orders',
         icon: ShoppingCart,
       },
       {
         title: 'Tồn kho',
-        url: '/apps',
+        url: '/inventory',
         icon: Warehouse,
       },
       {
@@ -53,13 +53,18 @@ const staticNavGroups = [
         icon: Truck,
         items: [
           {
+            title: 'Đơn bán hàng',
+            url: '/sale-orders',
+            icon: ShoppingCart,
+          },
+          {
             title: 'Khách hàng',
             url: '/customers',
             icon: Users,
           },
           {
             title: 'Lịch sử bán hàng',
-            url: '/sales/history',
+            url: '/sale-orders/history',
             icon: ClipboardList,
           },
         ],

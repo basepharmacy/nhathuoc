@@ -24,8 +24,10 @@ import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSuppliersIndexRouteImport } from './routes/_authenticated/suppliers/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
+import { Route as AuthenticatedSaleOrdersIndexRouteImport } from './routes/_authenticated/sale-orders/index'
 import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_authenticated/purchase-orders/index'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products/index'
+import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers/index'
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
@@ -36,6 +38,7 @@ import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes
 import { Route as AuthenticatedSettingsDisplayRouteImport } from './routes/_authenticated/settings/display'
 import { Route as AuthenticatedSettingsAppearanceRouteImport } from './routes/_authenticated/settings/appearance'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
+import { Route as AuthenticatedSaleOrdersHistoryRouteImport } from './routes/_authenticated/sale-orders/history'
 import { Route as AuthenticatedPurchaseOrdersHistoryRouteImport } from './routes/_authenticated/purchase-orders/history'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 
@@ -116,6 +119,12 @@ const AuthenticatedSettingsIndexRoute =
     path: '/',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSaleOrdersIndexRoute =
+  AuthenticatedSaleOrdersIndexRouteImport.update({
+    id: '/sale-orders/',
+    path: '/sale-orders/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchaseOrdersIndexRoute =
   AuthenticatedPurchaseOrdersIndexRouteImport.update({
     id: '/purchase-orders/',
@@ -126,6 +135,12 @@ const AuthenticatedProductsIndexRoute =
   AuthenticatedProductsIndexRouteImport.update({
     id: '/products/',
     path: '/products/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedInventoryIndexRoute =
+  AuthenticatedInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedHelpCenterIndexRoute =
@@ -186,6 +201,12 @@ const AuthenticatedSettingsAccountRoute =
     path: '/account',
     getParentRoute: () => AuthenticatedSettingsRouteRoute,
   } as any)
+const AuthenticatedSaleOrdersHistoryRoute =
+  AuthenticatedSaleOrdersHistoryRouteImport.update({
+    id: '/sale-orders/history',
+    path: '/sale-orders/history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchaseOrdersHistoryRoute =
   AuthenticatedPurchaseOrdersHistoryRouteImport.update({
     id: '/purchase-orders/history',
@@ -212,6 +233,7 @@ export interface FileRoutesByFullPath {
   '/503': typeof errors503Route
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -222,8 +244,10 @@ export interface FileRoutesByFullPath {
   '/chats/': typeof AuthenticatedChatsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -241,6 +265,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -251,8 +276,10 @@ export interface FileRoutesByTo {
   '/chats': typeof AuthenticatedChatsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/help-center': typeof AuthenticatedHelpCenterIndexRoute
+  '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/sale-orders': typeof AuthenticatedSaleOrdersIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/suppliers': typeof AuthenticatedSuppliersIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
@@ -273,6 +300,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/_authenticated/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/settings/appearance': typeof AuthenticatedSettingsAppearanceRoute
   '/_authenticated/settings/display': typeof AuthenticatedSettingsDisplayRoute
@@ -283,8 +311,10 @@ export interface FileRoutesById {
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
+  '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
+  '/_authenticated/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
@@ -305,6 +335,7 @@ export interface FileRouteTypes {
     | '/503'
     | '/errors/$error'
     | '/purchase-orders/history'
+    | '/sale-orders/history'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -315,8 +346,10 @@ export interface FileRouteTypes {
     | '/chats/'
     | '/customers/'
     | '/help-center/'
+    | '/inventory/'
     | '/products/'
     | '/purchase-orders/'
+    | '/sale-orders/'
     | '/settings/'
     | '/suppliers/'
     | '/tasks/'
@@ -334,6 +367,7 @@ export interface FileRouteTypes {
     | '/'
     | '/errors/$error'
     | '/purchase-orders/history'
+    | '/sale-orders/history'
     | '/settings/account'
     | '/settings/appearance'
     | '/settings/display'
@@ -344,8 +378,10 @@ export interface FileRouteTypes {
     | '/chats'
     | '/customers'
     | '/help-center'
+    | '/inventory'
     | '/products'
     | '/purchase-orders'
+    | '/sale-orders'
     | '/settings'
     | '/suppliers'
     | '/tasks'
@@ -365,6 +401,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/errors/$error'
     | '/_authenticated/purchase-orders/history'
+    | '/_authenticated/sale-orders/history'
     | '/_authenticated/settings/account'
     | '/_authenticated/settings/appearance'
     | '/_authenticated/settings/display'
@@ -375,8 +412,10 @@ export interface FileRouteTypes {
     | '/_authenticated/chats/'
     | '/_authenticated/customers/'
     | '/_authenticated/help-center/'
+    | '/_authenticated/inventory/'
     | '/_authenticated/products/'
     | '/_authenticated/purchase-orders/'
+    | '/_authenticated/sale-orders/'
     | '/_authenticated/settings/'
     | '/_authenticated/suppliers/'
     | '/_authenticated/tasks/'
@@ -502,6 +541,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/sale-orders/': {
+      id: '/_authenticated/sale-orders/'
+      path: '/sale-orders'
+      fullPath: '/sale-orders/'
+      preLoaderRoute: typeof AuthenticatedSaleOrdersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/purchase-orders/': {
       id: '/_authenticated/purchase-orders/'
       path: '/purchase-orders'
@@ -514,6 +560,13 @@ declare module '@tanstack/react-router' {
       path: '/products'
       fullPath: '/products/'
       preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/inventory/': {
+      id: '/_authenticated/inventory/'
+      path: '/inventory'
+      fullPath: '/inventory/'
+      preLoaderRoute: typeof AuthenticatedInventoryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/help-center/': {
@@ -586,6 +639,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsAccountRouteImport
       parentRoute: typeof AuthenticatedSettingsRouteRoute
     }
+    '/_authenticated/sale-orders/history': {
+      id: '/_authenticated/sale-orders/history'
+      path: '/sale-orders/history'
+      fullPath: '/sale-orders/history'
+      preLoaderRoute: typeof AuthenticatedSaleOrdersHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/purchase-orders/history': {
       id: '/_authenticated/purchase-orders/history'
       path: '/purchase-orders/history'
@@ -631,14 +691,17 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedPurchaseOrdersHistoryRoute: typeof AuthenticatedPurchaseOrdersHistoryRoute
+  AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedCategoriesIndexRoute: typeof AuthenticatedCategoriesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
+  AuthenticatedInventoryIndexRoute: typeof AuthenticatedInventoryIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseOrdersIndexRoute: typeof AuthenticatedPurchaseOrdersIndexRoute
+  AuthenticatedSaleOrdersIndexRoute: typeof AuthenticatedSaleOrdersIndexRoute
   AuthenticatedSuppliersIndexRoute: typeof AuthenticatedSuppliersIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
@@ -650,14 +713,17 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedPurchaseOrdersHistoryRoute:
     AuthenticatedPurchaseOrdersHistoryRoute,
+  AuthenticatedSaleOrdersHistoryRoute: AuthenticatedSaleOrdersHistoryRoute,
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedCategoriesIndexRoute: AuthenticatedCategoriesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
+  AuthenticatedInventoryIndexRoute: AuthenticatedInventoryIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseOrdersIndexRoute: AuthenticatedPurchaseOrdersIndexRoute,
+  AuthenticatedSaleOrdersIndexRoute: AuthenticatedSaleOrdersIndexRoute,
   AuthenticatedSuppliersIndexRoute: AuthenticatedSuppliersIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
