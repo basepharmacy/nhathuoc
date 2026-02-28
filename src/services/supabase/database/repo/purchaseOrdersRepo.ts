@@ -61,9 +61,24 @@ export const createPurchaseOrderRepository = (
       order: PurchaseOrderInsert
       items: Array<Omit<PurchaseOrderItemInsert, 'purchase_order_id'>>
     }): Promise<PurchaseOrder> {
+      const orderPayload: PurchaseOrderInsert = {
+        tenant_id: params.order.tenant_id,
+        supplier_id: params.order.supplier_id,
+        user_id: params.order.user_id,
+        purchase_order_code: params.order.purchase_order_code,
+        location_id: params.order.location_id ?? null,
+        issued_at: params.order.issued_at ?? null,
+        status: params.order.status,
+        payment_status: params.order.payment_status,
+        paid_amount: params.order.paid_amount ?? 0,
+        discount: params.order.discount ?? 0,
+        total_amount: params.order.total_amount ?? 0,
+        notes: params.order.notes ?? null,
+      }
+
       const { data: order, error: orderError } = await client
         .from('purchase_orders')
-        .insert(params.order)
+        .insert(orderPayload)
         .select()
         .single()
 
@@ -119,7 +134,7 @@ export const createPurchaseOrderRepository = (
     }): Promise<PurchaseOrder> {
       const { data: existingOrder, error: existingOrderError } = await client
         .from('purchase_orders')
-        .select('id, status')
+        .select('id, status, payment_status')
         .eq('tenant_id', params.tenantId)
         .eq('id', params.orderId)
         .maybeSingle()
@@ -132,16 +147,23 @@ export const createPurchaseOrderRepository = (
         throw new Error('Không tìm thấy đơn nhập hàng.')
       }
 
-      if (existingOrder.status !== '1_DRAFT') {
-        throw new Error('Chỉ có thể chỉnh sửa đơn nháp.')
+      const orderPayload: PurchaseOrderUpdate = {
+        supplier_id: params.order.supplier_id,
+        status: params.order.status,
+        payment_status: params.order.payment_status,
+        paid_amount: params.order.paid_amount,
+        discount: params.order.discount,
+        total_amount: params.order.total_amount,
+        notes: params.order.notes ?? null,
+        location_id: params.order.location_id ?? null,
       }
 
       const { data: order, error: orderError } = await client
         .from('purchase_orders')
-        .update(params.order)
+        .update(orderPayload)
         .eq('tenant_id', params.tenantId)
         .eq('id', params.orderId)
-        .eq('status', '1_DRAFT')
+        .eq('status', existingOrder.status)
         .select()
         .single()
 
@@ -184,47 +206,16 @@ export const createPurchaseOrderRepository = (
     },
     async deletePurchaseOrder(params: {
       orderId: string
-      tenantId: string
     }): Promise<void> {
-      const { data: existingOrder, error: existingOrderError } = await client
-        .from('purchase_orders')
-        .select('id, status')
-        .eq('tenant_id', params.tenantId)
-        .eq('id', params.orderId)
-        .maybeSingle()
-
-      if (existingOrderError) {
-        throw existingOrderError
-      }
-
-      if (!existingOrder) {
-        throw new Error('Không tìm thấy đơn nhập hàng.')
-      }
-
-      if (existingOrder.status !== '1_DRAFT') {
-        throw new Error('Chỉ có thể xóa đơn nháp.')
-      }
-
-      const { error: deleteItemsError } = await client
-        .from('purchase_order_items')
-        .delete()
-        .eq('tenant_id', params.tenantId)
-        .eq('purchase_order_id', params.orderId)
-
-      if (deleteItemsError) {
-        throw deleteItemsError
-      }
-
       const { error: deleteOrderError } = await client
         .from('purchase_orders')
         .delete()
-        .eq('tenant_id', params.tenantId)
         .eq('id', params.orderId)
-        .eq('status', '1_DRAFT')
 
       if (deleteOrderError) {
         throw deleteOrderError
       }
+      // Không cần xóa thủ công items vì đã thiết lập ON DELETE CASCADE ở database
     },
   }
 }

@@ -1,33 +1,44 @@
+import { useMemo, useState } from 'react'
 import { SearchIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 
 type PurchaseOrdersSearchProps = {
-  searchTerm: string
-  onSearchTermChange: (value: string) => void
-  productsFiltered: ProductWithUnits[]
+  products: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
   readOnly?: boolean
 }
 
 export function PurchaseOrdersSearch({
-  searchTerm,
-  onSearchTermChange,
-  productsFiltered,
+  products,
   onAddProduct,
   readOnly = false,
 }: PurchaseOrdersSearchProps) {
+  const [searchTerm, setSearchTerm] = useState('')
+  const productsFiltered = useMemo(() => {
+    const term = searchTerm.trim().toLowerCase()
+    if (!term) return []
+    return products
+      .filter((product) => product.product_name.toLowerCase().includes(term))
+      .slice(0, 6)
+  }, [products, searchTerm])
+
+  const handleAddProduct = (product: ProductWithUnits) => {
+    onAddProduct(product)
+    setSearchTerm('')
+  }
+
   return (
     <div className='relative w-full max-w-xl'>
       <SearchIcon className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />
       <Input
         value={searchTerm}
-        onChange={(event) => onSearchTermChange(event.target.value)}
+        onChange={(event) => setSearchTerm(event.target.value)}
         onKeyDown={(event) => {
           if (readOnly) return
           if (event.key === 'Enter' && productsFiltered.length > 0) {
             event.preventDefault()
-            onAddProduct(productsFiltered[0])
+            handleAddProduct(productsFiltered[0])
           }
         }}
         placeholder='Quét mã hoặc nhập để tìm kiếm (F2)'
@@ -42,7 +53,7 @@ export function PurchaseOrdersSearch({
               key={product.id}
               onMouseDown={(event) => {
                 event.preventDefault()
-                onAddProduct(product)
+                handleAddProduct(product)
               }}
               className='flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-accent'
             >

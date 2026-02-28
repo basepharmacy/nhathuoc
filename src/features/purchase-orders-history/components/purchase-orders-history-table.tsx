@@ -60,7 +60,6 @@ export function PurchaseOrdersHistoryTable({ data }: PurchaseOrdersHistoryTableP
       }
       await purchaseOrdersRepo.deletePurchaseOrder({
         orderId: deleteTarget.id,
-        tenantId,
       })
     },
     onSuccess: () => {
@@ -80,12 +79,10 @@ export function PurchaseOrdersHistoryTable({ data }: PurchaseOrdersHistoryTableP
 
   const handleEdit = useCallback(
     (order: PurchaseOrderWithRelations) => {
-      const isDraft = order.status === '1_DRAFT'
       navigate({
-        to: '/purchase-orders/',
+        to: '/purchase-orders',
         search: {
           orderId: order.id,
-          mode: isDraft ? undefined : 'view',
         },
       })
     },

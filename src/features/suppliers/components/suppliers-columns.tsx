@@ -69,11 +69,14 @@ export const suppliersColumns: ColumnDef<Supplier>[] = [
       if (isActive === null) return <span>—</span>
       return (
         <Badge variant={isActive ? 'secondary' : 'outline'}>
-          {isActive ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+          {isActive ? 'Đang giao dịch' : 'Ngừng giao dịch'}
         </Badge>
       )
     },
     meta: { label: 'Trạng thái' },
+    filterFn: (row, id, value) => {
+      return value.includes(String(row.getValue(id)))
+    },
   },
   {
     accessorKey: 'created_at',

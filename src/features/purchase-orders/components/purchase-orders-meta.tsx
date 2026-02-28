@@ -1,21 +1,65 @@
-import { ChevronDown } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { cn } from '@/lib/utils'
+import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import type { PurchaseOrder } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
 type PurchaseOrdersMetaProps = {
-  userName: string
+  locations: Location[]
+  locationId: string
+  onLocationChange: (locationId: string) => void
+  locationDisabled?: boolean
   orderCode: string
+  status: PurchaseOrder['status']
 }
 
-export function PurchaseOrdersMeta({ userName, orderCode }: PurchaseOrdersMetaProps) {
+const statusLabels: Record<PurchaseOrder['status'], string> = {
+  '1_DRAFT': 'Nháp',
+  '2_ORDERED': 'Đã đặt',
+  '3_CHECKING': 'Đang kiểm',
+  '4_STORED': 'Đã nhập kho',
+  '9_CANCELLED': 'Đã hủy',
+}
+
+const statusColors: Record<PurchaseOrder['status'], string> = {
+  '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
+  '2_ORDERED': 'bg-blue-100/40 text-blue-900 dark:text-blue-200 border-blue-200',
+  '3_CHECKING': 'bg-amber-200/40 text-amber-900 dark:text-amber-100 border-amber-300',
+  '4_STORED': 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
+  '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
+}
+
+export function PurchaseOrdersMeta({
+  locations,
+  locationId,
+  onLocationChange,
+  locationDisabled = false,
+  orderCode,
+  status,
+}: PurchaseOrdersMetaProps) {
   return (
     <div className='flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm'>
       <div className='flex flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-sm'>
         <div className='flex items-center gap-2 text-muted-foreground'>
-          Người tạo:
-          <Button variant='outline' size='sm' className='h-8 gap-1 rounded-full'>
-            <span className='font-medium text-foreground'>{userName}</span>
-            <ChevronDown className='h-3.5 w-3.5 text-muted-foreground' />
-          </Button>
+          Chi nhánh:
+          <Select value={locationId} onValueChange={onLocationChange}>
+            <SelectTrigger className='h-8 min-w-[180px] rounded-full' disabled={locationDisabled}>
+              <SelectValue placeholder='Chọn chi nhánh' />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((location) => (
+                <SelectItem key={location.id} value={location.id}>
+                  {location.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         <div className='flex items-center gap-2 text-muted-foreground'>
           Đơn nhập hàng:
@@ -24,6 +68,11 @@ export function PurchaseOrdersMeta({ userName, orderCode }: PurchaseOrdersMetaPr
         <div className='flex items-center gap-2 text-muted-foreground'>
           {new Date().toLocaleDateString('vi-VN')}{' '}
           {new Date().toLocaleTimeString('vi-VN')}
+        </div>
+        <div className='ms-auto'>
+          <Badge variant='outline' className={cn('text-sm font-medium', statusColors[status])}>
+            {statusLabels[status]}
+          </Badge>
         </div>
       </div>
     </div>

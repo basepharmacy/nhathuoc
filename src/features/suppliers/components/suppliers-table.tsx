@@ -1,10 +1,12 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getSortedRowModel,
   useReactTable,
@@ -29,8 +31,18 @@ type SuppliersTableProps = {
 export function SuppliersTable({ data }: SuppliersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: 'is_active', value: ['true'] },
+  ])
   const [sorting, setSorting] = useState<SortingState>([])
+
+  const statusOptions = useMemo(
+    () => [
+      { label: 'Đang giao dịch', value: 'true' },
+      { label: 'Ngừng giao dịch', value: 'false' },
+    ],
+    []
+  )
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -49,6 +61,8 @@ export function SuppliersTable({ data }: SuppliersTableProps) {
     onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
+    getFacetedRowModel: getFacetedRowModel(),
+    getFacetedUniqueValues: getFacetedUniqueValues(),
     getSortedRowModel: getSortedRowModel(),
   })
 
@@ -58,6 +72,13 @@ export function SuppliersTable({ data }: SuppliersTableProps) {
         table={table}
         searchPlaceholder='Tìm nhà cung cấp...'
         searchKey='name'
+        filters={[
+          {
+            columnId: 'is_active',
+            title: 'Trạng thái',
+            options: statusOptions,
+          },
+        ]}
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

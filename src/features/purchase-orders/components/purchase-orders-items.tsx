@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -31,7 +32,6 @@ import { DatePicker } from '@/components/date-picker'
 import { formatCurrency, normalizeNumber } from '../data/utils'
 import { type OrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
-import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 type PurchaseOrdersItemsProps = {
   items: OrderItem[]

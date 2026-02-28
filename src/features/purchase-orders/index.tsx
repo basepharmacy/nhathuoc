@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
 import {
   getInventoryBatchesQueryOptions,
+  getLocationsQueryOptions,
   getPurchaseOrderDetailQueryOptions,
   getProductsQueryOptions,
   getSuppliersQueryOptions,
@@ -17,6 +18,7 @@ import { ThemeSwitch } from '@/components/theme-switch'
 import { ConfigDrawer } from '@/components/config-drawer'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type PurchaseOrder } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type OrderItem, type PaymentStatus, getDefaultUnit } from './data/types'
 import { PurchaseOrdersItems } from './components/purchase-orders-items'
 import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
@@ -26,16 +28,16 @@ import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
 const route = getRouteApi('/_authenticated/purchase-orders/')
 
 export function PurchaseOrders() {
-  const { orderId, mode } = route.useSearch()
+  const { orderId } = route.useSearch()
   const navigate = route.useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
-  const locationId = user?.location?.id ?? null
+  // TODO: Chuyển lại thành active location khi chọn location ở sidebar
+  const userLocationId = user?.location?.id ?? null
   const isEdit = Boolean(orderId)
-  const isView = mode === 'view'
 
-  const [searchTerm, setSearchTerm] = useState('')
+  // Form state
   const [items, setItems] = useState<OrderItem[]>([])
   const [supplierId, setSupplierId] = useState('')
   const [orderDiscount, setOrderDiscount] = useState(0)
@@ -43,16 +45,11 @@ export function PurchaseOrders() {
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('1_UNPAID')
   const [notes, setNotes] = useState('')
   const [hasInitialized, setHasInitialized] = useState(false)
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    userLocationId
+  )
 
-  const generatedOrderCode = useMemo(() => {
-    const now = new Date()
-    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
-      now.getDate()
-    ).padStart(2, '0')}`
-    const random = Math.floor(100 + Math.random() * 900)
-    return `PN-${stamp}-${random}`
-  }, [])
-
+  // Data fetching
   const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
     ...getPurchaseOrderDetailQueryOptions(tenantId, orderId ?? ''),
     enabled: !!tenantId && !!orderId,
@@ -68,11 +65,33 @@ export function PurchaseOrders() {
     enabled: !!tenantId,
   })
 
+  const { data: locations = [] } = useQuery({
+    ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+
+  const generatedOrderCode = useMemo(() => {
+    const now = new Date()
+    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
+      now.getDate()
+    ).padStart(2, '0')}`
+    const random = Math.floor(100 + Math.random() * 900)
+    return `PN-${stamp}-${random}`
+  }, [])
+
   const orderCode = isEdit
     ? orderDetail?.purchase_order_code ?? ''
     : generatedOrderCode
 
-  const isReadOnly = isView || (isEdit && orderDetail?.status !== '1_DRAFT')
+  const editableStatuses = useMemo<PurchaseOrder['status'][]>(
+    () => ['1_DRAFT', '2_ORDERED'],
+    []
+  )
+  const orderStatus = orderDetail?.status ?? '1_DRAFT'
+  const isOrdered = orderStatus === '2_ORDERED'
+  const isReadOnly = orderStatus !== '1_DRAFT' && orderStatus !== '2_ORDERED'
+  const isItemsReadOnly = orderStatus !== '1_DRAFT'
 
   const productIds = useMemo(
     () => Array.from(new Set(items.map((item) => item.product.id))).sort(),
@@ -80,7 +99,7 @@ export function PurchaseOrders() {
   )
 
   const { data: inventoryBatches = [] } = useQuery({
-    ...getInventoryBatchesQueryOptions(tenantId, productIds, locationId),
+    ...getInventoryBatchesQueryOptions(tenantId, productIds, selectedLocationId),
     enabled: !!tenantId && productIds.length > 0,
   })
 
@@ -93,14 +112,6 @@ export function PurchaseOrders() {
       return acc
     }, {})
   }, [inventoryBatches])
-
-  const productsFiltered = useMemo(() => {
-    const term = searchTerm.trim().toLowerCase()
-    if (!term) return []
-    return products
-      .filter((product) => product.product_name.toLowerCase().includes(term))
-      .slice(0, 6)
-  }, [products, searchTerm])
 
   const totals = useMemo(() => {
     const subtotal = items.reduce(
@@ -125,7 +136,7 @@ export function PurchaseOrders() {
   }
 
   const createMutation = useMutation({
-    mutationFn: async (status: '1_DRAFT' | '4_STORED') => {
+    mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
       validateOrder()
 
       const normalizedPaid = Math.min(paidAmount, totals.total)
@@ -135,14 +146,13 @@ export function PurchaseOrders() {
           : normalizedPaid >= totals.total
             ? '3_PAID'
             : '2_PARTIALLY_PAID'
-
       await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
           purchase_order_code: orderCode,
           supplier_id: supplierId,
           tenant_id: tenantId,
           user_id: userId,
-          location_id: locationId,
+          location_id: selectedLocationId,
           issued_at: new Date().toISOString(),
           status,
           payment_status: normalizedStatus,
@@ -171,7 +181,7 @@ export function PurchaseOrders() {
       setPaidAmount(0)
       setPaymentStatus('1_UNPAID')
       setNotes('')
-      setSearchTerm('')
+      setSelectedLocationId(userLocationId)
     },
     onError: (error) => {
       const message =
@@ -183,7 +193,7 @@ export function PurchaseOrders() {
   })
 
   const updateMutation = useMutation({
-    mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
+    mutationFn: async (status: '1_DRAFT' | '2_ORDERED' | '4_STORED') => {
       if (!orderId || !orderDetail) {
         throw new Error('Không tìm thấy đơn nhập hàng.')
       }
@@ -207,6 +217,7 @@ export function PurchaseOrders() {
           paid_amount: normalizedPaid,
           discount: orderDiscount,
           total_amount: totals.total,
+          location_id: selectedLocationId,
           notes: notes.trim().length > 0 ? notes.trim() : null,
         },
         items: items.map((item) => ({
@@ -235,7 +246,7 @@ export function PurchaseOrders() {
   })
 
   const addProduct = (product: ProductWithUnits) => {
-    if (isReadOnly) return
+    if (isItemsReadOnly) return
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.cost_price ?? 0
 
@@ -252,28 +263,16 @@ export function PurchaseOrders() {
         expiryDate: '',
       },
     ])
-    setSearchTerm('')
   }
 
   const updateItem = (itemId: string, next: Partial<OrderItem>) => {
-    if (isReadOnly) return
+    if (isItemsReadOnly) return
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, ...next } : item)))
   }
 
   const removeItem = (itemId: string) => {
-    if (isReadOnly) return
+    if (isItemsReadOnly) return
     setItems((prev) => prev.filter((item) => item.id !== itemId))
-  }
-
-  const handlePaymentStatusChange = (value: PaymentStatus) => {
-    if (isReadOnly) return
-    setPaymentStatus(value)
-    if (value === '1_UNPAID') {
-      setPaidAmount(0)
-    }
-    if (value === '3_PAID') {
-      setPaidAmount(totals.total)
-    }
   }
 
   useEffect(() => {
@@ -285,11 +284,7 @@ export function PurchaseOrders() {
       return
     }
 
-    if (orderDetail.status !== '1_DRAFT' && !isView) {
-      toast.error('Chỉ có thể chỉnh sửa đơn nháp.')
-      navigate({ to: '/purchase-orders/history' })
-    }
-  }, [orderDetail, orderId, isOrderLoading, isView, navigate])
+  }, [editableStatuses, orderDetail, orderId, isOrderLoading, navigate])
 
   useEffect(() => {
     if (!orderDetail || hasInitialized || products.length === 0) return
@@ -318,9 +313,9 @@ export function PurchaseOrders() {
     setPaidAmount(orderDetail.paid_amount ?? 0)
     setPaymentStatus(orderDetail.payment_status)
     setNotes(orderDetail.notes ?? '')
-    setSearchTerm('')
+    setSelectedLocationId(orderDetail.location_id ?? userLocationId)
     setHasInitialized(true)
-  }, [orderDetail, hasInitialized, products])
+  }, [orderDetail, hasInitialized, products, userLocationId])
 
   const isSubmitting = createMutation.isPending || updateMutation.isPending
   const isLoadingEditData = isEdit && (!orderDetail || !hasInitialized || isOrderLoading)
@@ -330,11 +325,9 @@ export function PurchaseOrders() {
       <Header fixed>
         <div className='flex w-full items-center gap-4'>
           <PurchaseOrdersSearch
-            searchTerm={searchTerm}
-            onSearchTermChange={setSearchTerm}
-            productsFiltered={productsFiltered}
+            products={products}
             onAddProduct={addProduct}
-            readOnly={isReadOnly}
+            readOnly={isItemsReadOnly}
           />
           <div className='ms-auto flex items-center space-x-4'>
             <ThemeSwitch />
@@ -353,8 +346,12 @@ export function PurchaseOrders() {
           <div className='grid min-h-[calc(100svh-200px)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]'>
             <div className='flex flex-col gap-4'>
               <PurchaseOrdersMeta
-                userName={user?.profile?.name ?? 'Nhân viên'}
+                locations={locations}
+                locationId={selectedLocationId ?? ''}
+                onLocationChange={(value) => setSelectedLocationId(value)}
+                locationDisabled={isReadOnly}
                 orderCode={orderCode}
+                status={orderStatus}
               />
 
               <PurchaseOrdersItems
@@ -362,7 +359,7 @@ export function PurchaseOrders() {
                 onUpdateItem={updateItem}
                 onRemoveItem={removeItem}
                 batchesByProductId={batchesByProductId}
-                readOnly={isReadOnly}
+                readOnly={isItemsReadOnly}
               />
             </div>
 
@@ -374,19 +371,21 @@ export function PurchaseOrders() {
               orderDiscount={orderDiscount}
               onOrderDiscountChange={setOrderDiscount}
               paymentStatus={paymentStatus}
-              onPaymentStatusChange={handlePaymentStatusChange}
+              onPaymentStatusChange={setPaymentStatus}
               paidAmount={paidAmount}
               onPaidAmountChange={setPaidAmount}
               notes={notes}
               onNotesChange={setNotes}
+              orderStatus={orderStatus}
               onSaveDraft={() =>
                 isEdit ? updateMutation.mutate('1_DRAFT') : createMutation.mutate('1_DRAFT')
               }
               onSubmit={() =>
-                isEdit ? updateMutation.mutate('4_STORED') : createMutation.mutate('4_STORED')
+                isEdit
+                  ? updateMutation.mutate(isOrdered ? '4_STORED' : '2_ORDERED')
+                  : createMutation.mutate('2_ORDERED')
               }
               isSubmitting={isSubmitting}
-                readOnly={isReadOnly}
             />
           </div>
         )}

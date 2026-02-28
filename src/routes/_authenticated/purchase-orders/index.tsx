@@ -5,7 +5,6 @@ import { PurchaseOrders } from '@/features/purchase-orders'
 export const Route = createFileRoute('/_authenticated/purchase-orders/')({
   validateSearch: z.object({
     orderId: z.string().optional().catch(undefined),
-    mode: z.enum(['view']).optional().catch(undefined),
   }),
   component: PurchaseOrders,
 })
