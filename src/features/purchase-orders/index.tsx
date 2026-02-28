@@ -146,7 +146,7 @@ export function PurchaseOrders() {
           : normalizedPaid >= totals.total
             ? '3_PAID'
             : '2_PARTIALLY_PAID'
-      await purchaseOrdersRepo.createPurchaseOrderWithItems({
+      return await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
           purchase_order_code: orderCode,
           supplier_id: supplierId,
@@ -173,15 +173,9 @@ export function PurchaseOrders() {
         })),
       })
     },
-    onSuccess: () => {
+    onSuccess: (order) => {
       toast.success('Đã tạo đơn nhập hàng.')
-      setItems([])
-      setSupplierId('')
-      setOrderDiscount(0)
-      setPaidAmount(0)
-      setPaymentStatus('1_UNPAID')
-      setNotes('')
-      setSelectedLocationId(userLocationId)
+      navigate({ search: { orderId: order.id } })
     },
     onError: (error) => {
       const message =
