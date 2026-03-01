@@ -101,6 +101,24 @@ export const getCustomersQueryOptions = (tenantId: string) =>
     },
   })
 
+export const getCustomerDetailQueryOptions = (
+  tenantId: string,
+  customerId: string
+) =>
+  queryOptions({
+    queryKey: ["customers", tenantId, "detail", customerId],
+    queryFn: async () => {
+      if (!tenantId || !customerId) {
+        return null
+      }
+      const customer = await customersRepo.getCustomerById({
+        tenantId,
+        customerId,
+      })
+      return customer
+    },
+  })
+
 export const getProductsQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: ["products", tenantId],
@@ -194,6 +212,24 @@ export const getSaleOrderDetailQueryOptions = (
         orderId,
       })
       return order
+    },
+  })
+
+export const getSaleOrdersByCustomerIdQueryOptions = (
+  tenantId: string,
+  customerId: string
+) =>
+  queryOptions({
+    queryKey: ["sale-orders", tenantId, "customer", customerId],
+    queryFn: async () => {
+      if (!tenantId || !customerId) {
+        return []
+      }
+      const orders = await saleOrdersRepo.getSaleOrdersByCustomerId({
+        tenantId,
+        customerId,
+      })
+      return orders
     },
   })
 

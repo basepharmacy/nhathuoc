@@ -92,6 +92,26 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
         total: count ?? 0,
       }
     },
+    async getSaleOrdersByCustomerId(params: {
+      tenantId: string
+      customerId: string
+    }): Promise<SaleOrderWithRelations[]> {
+      const { data, error } = await client
+        .from('sale_orders')
+        .select(
+          '*, customer:customers(id, name), location:locations(id, name), user:profiles(id, name)'
+        )
+        .eq('tenant_id', params.tenantId)
+        .eq('customer_id', params.customerId)
+        .order('issued_at', { ascending: false })
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as SaleOrderWithRelations[]
+    },
     async createSaleOrderWithItems(params: {
       order: SaleOrderInsert
       items: Array<Omit<SaleOrderItemInsert, 'sale_order_id'>>

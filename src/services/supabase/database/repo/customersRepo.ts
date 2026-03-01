@@ -6,6 +6,23 @@ export type CustomerInsert = TablesInsert<'customers'>
 export type CustomerUpdate = TablesUpdate<'customers'>
 
 export const createCustomerRepository = (client: BasePharmacySupabaseClient) => ({
+  async getCustomerById(params: {
+    tenantId: string
+    customerId: string
+  }): Promise<Customer | null> {
+    const { data, error } = await client
+      .from('customers')
+      .select('*')
+      .eq('tenant_id', params.tenantId)
+      .eq('id', params.customerId)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? null) as Customer | null
+  },
   async getAllCustomersByTenantId(tenantId: string): Promise<Customer[]> {
     const { data, error } = await client
       .from('customers')

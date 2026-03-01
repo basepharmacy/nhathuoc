@@ -1,6 +1,7 @@
 import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
+import { Eye, Pencil, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -19,6 +20,7 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useCustomers()
+  const navigate = useNavigate()
   return (
     <DropdownMenu modal={false}>
       <DropdownMenuTrigger asChild>
@@ -31,6 +33,20 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align='end' className='w-[160px]'>
+        <DropdownMenuItem
+          onClick={() =>
+            navigate({
+              to: '/customers/$customerId',
+              params: { customerId: row.original.id },
+            })
+          }
+        >
+          Xem chi tiết
+          <DropdownMenuShortcut>
+            <Eye size={16} />
+          </DropdownMenuShortcut>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={() => {
             setCurrentRow(row.original)

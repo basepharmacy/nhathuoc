@@ -41,6 +41,7 @@ import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_auth
 import { Route as AuthenticatedSaleOrdersHistoryRouteImport } from './routes/_authenticated/sale-orders/history'
 import { Route as AuthenticatedPurchaseOrdersHistoryRouteImport } from './routes/_authenticated/purchase-orders/history'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
+import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers/$customerId'
 
 const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
@@ -219,6 +220,12 @@ const AuthenticatedErrorsErrorRoute =
     path: '/errors/$error',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCustomersCustomerIdRoute =
+  AuthenticatedCustomersCustomerIdRouteImport.update({
+    id: '/customers/$customerId',
+    path: '/customers/$customerId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -231,6 +238,7 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
@@ -263,6 +271,7 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/': typeof AuthenticatedIndexRoute
+  '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
@@ -298,6 +307,7 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
   '/_authenticated/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
     | '/sale-orders/history'
@@ -365,6 +376,7 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/'
+    | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
     | '/sale-orders/history'
@@ -399,6 +411,7 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/_authenticated/'
+    | '/_authenticated/customers/$customerId'
     | '/_authenticated/errors/$error'
     | '/_authenticated/purchase-orders/history'
     | '/_authenticated/sale-orders/history'
@@ -660,6 +673,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedErrorsErrorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/customers/$customerId': {
+      id: '/_authenticated/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/customers/$customerId'
+      preLoaderRoute: typeof AuthenticatedCustomersCustomerIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
   }
 }
 
@@ -689,6 +709,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedPurchaseOrdersHistoryRoute: typeof AuthenticatedPurchaseOrdersHistoryRoute
   AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
@@ -710,6 +731,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedPurchaseOrdersHistoryRoute:
     AuthenticatedPurchaseOrdersHistoryRoute,

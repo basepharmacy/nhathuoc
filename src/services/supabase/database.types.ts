@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_accounts: {
+        Row: {
+          account_holder: string
+          account_number: string
+          bank_bin: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_holder: string
+          account_number: string
+          bank_bin: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_holder?: string
+          account_number?: string
+          bank_bin?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       categories: {
         Row: {
           created_at: string | null
@@ -853,6 +894,57 @@ export type Database = {
           },
           {
             foreignKeyName: "stock_adjustments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supplier_bank_accounts: {
+        Row: {
+          account_holder: string
+          account_number: string
+          bank_bin: string
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          supplier_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          account_holder: string
+          account_number: string
+          bank_bin: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          supplier_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          account_holder?: string
+          account_number?: string
+          bank_bin?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          supplier_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplier_bank_accounts_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_bank_accounts_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
