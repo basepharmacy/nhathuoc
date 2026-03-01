@@ -4,6 +4,7 @@ import {
   createLocationRepository,
   createCategoryRepository,
   createSupplierRepository,
+  createSupplierBankAccountRepository,
   createSupplierPaymentRepository,
   createCustomerRepository,
   createProductRepository,
@@ -19,6 +20,8 @@ export const tenantsRepo = createTenantRepository(supabaseClient)
 export const locationsRepo = createLocationRepository(supabaseClient)
 export const categoriesRepo = createCategoryRepository(supabaseClient)
 export const suppliersRepo = createSupplierRepository(supabaseClient)
+export const supplierBankAccountsRepo =
+  createSupplierBankAccountRepository(supabaseClient)
 export const supplierPaymentsRepo = createSupplierPaymentRepository(supabaseClient)
 export const customersRepo = createCustomerRepository(supabaseClient)
 export const productsRepo = createProductRepository(supabaseClient)

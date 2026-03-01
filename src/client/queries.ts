@@ -20,6 +20,15 @@ import {
   type InventoryBatchesSummaryQueryInput,
 } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
+export type VietQrBank = {
+  id: number | string
+  name: string
+  code: string
+  bin: string
+  shortName?: string
+  logo?: string
+}
+
 export const getProfilesQueryOptions = (userId: string) =>
   queryOptions({
     queryKey: ["profiles", userId],
@@ -254,6 +263,20 @@ export const getSaleOrdersHistoryQueryOptions = (
       const result = await saleOrdersRepo.getSaleOrdersHistory(params)
       return result
     },
+  })
+
+export const getVietQrBanksQueryOptions = () =>
+  queryOptions({
+    queryKey: ['vietqr-banks'],
+    queryFn: async () => {
+      const response = await fetch('https://api.vietqr.io/v2/banks')
+      if (!response.ok) {
+        throw new Error('Không thể tải danh sách ngân hàng.')
+      }
+      const payload = (await response.json()) as { data?: VietQrBank[] }
+      return payload?.data ?? []
+    },
+    staleTime: 24 * 60 * 60 * 1000,
   })
 
 export const getSupplierPaymentsBySupplierIdQueryOptions = (

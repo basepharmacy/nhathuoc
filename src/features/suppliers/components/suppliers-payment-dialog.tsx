@@ -4,10 +4,6 @@ import { useEffect, useMemo, useRef } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
-import { supplierPaymentsRepo } from '@/client'
-import { useUser } from '@/client/provider'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -51,14 +47,22 @@ const formSchema = z.object({
 
 type SupplierPaymentForm = z.infer<typeof formSchema>
 
+type MutationOptions = {
+  onSuccess?: () => void
+}
+
+type SupplierPaymentMutation = {
+  mutate: (values: SupplierPaymentForm, options?: MutationOptions) => void
+  isPending: boolean
+  reset: () => void
+}
+
 type SuppliersPaymentDialogProps = {
   currentRow?: Supplier
   open: boolean
   onOpenChange: (open: boolean) => void
+  createMutation: SupplierPaymentMutation
 }
-
-const normalizeOptionalText = (value?: string) =>
-  value && value.trim().length > 0 ? value.trim() : null
 
 const formatCurrencyInput = (value?: string) => {
   if (value === undefined || value === null || value === '') return ''
@@ -72,10 +76,8 @@ export function SuppliersPaymentDialog({
   currentRow,
   open,
   onOpenChange,
+  createMutation,
 }: SuppliersPaymentDialogProps) {
-  const { user } = useUser()
-  const tenantId = user?.profile?.tenant_id ?? ''
-  const queryClient = useQueryClient()
   const isOpenRef = useRef(open)
 
   const defaultValues = useMemo(
@@ -93,49 +95,6 @@ export function SuppliersPaymentDialog({
     defaultValues,
   })
 
-  const createMutation = useMutation({
-    mutationFn: (values: SupplierPaymentForm) => {
-      if (!tenantId) {
-        throw new Error('Không tìm thấy tenant.')
-      }
-      if (!currentRow) {
-        throw new Error('Không tìm thấy nhà cung cấp.')
-      }
-      return supplierPaymentsRepo.createSupplierPayment({
-        tenant_id: tenantId,
-        supplier_id: currentRow.id,
-        amount: Number(values.amount),
-        payment_date: values.payment_date,
-        reference_code: normalizeOptionalText(values.reference_code),
-        note: normalizeOptionalText(values.note),
-        is_payment_on_purchase_order: false,
-      })
-    },
-    onSuccess: () => {
-      if (!currentRow) return
-      queryClient.invalidateQueries({
-        queryKey: ['supplier-payments', tenantId, currentRow.id],
-      })
-      queryClient.invalidateQueries({
-        queryKey: ['supplier-payments', tenantId, currentRow.id, 'history'],
-      })
-      queryClient.invalidateQueries({ queryKey: ['suppliers', tenantId] })
-      if (!isOpenRef.current) return
-      form.reset({
-        ...defaultValues,
-        payment_date: getTodayDate(),
-      })
-      onOpenChange(false)
-    },
-    onError: (error) => {
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Đã xảy ra lỗi, vui lòng thử lại.'
-      toast.error(message)
-    },
-  })
-
   useEffect(() => {
     isOpenRef.current = open
     if (open) {
@@ -149,7 +108,16 @@ export function SuppliersPaymentDialog({
   }, [open])
 
   const onSubmit = (values: SupplierPaymentForm) => {
-    createMutation.mutate(values)
+    createMutation.mutate(values, {
+      onSuccess: () => {
+        if (!isOpenRef.current) return
+        form.reset({
+          ...defaultValues,
+          payment_date: getTodayDate(),
+        })
+        onOpenChange(false)
+      },
+    })
   }
 
   return (
