@@ -27,14 +27,9 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { type Category } from '../data/schema'
+import { categoryFormSchema, type Category } from '../data/schema'
 
-const formSchema = z.object({
-  name: z.string().min(1, 'Tên danh mục là bắt buộc.'),
-  description: z.string().optional(),
-})
-
-type CategoryForm = z.infer<typeof formSchema>
+type CategoryForm = z.infer<typeof categoryFormSchema>
 
 type CategoriesActionDialogProps = {
   currentRow?: Category
@@ -53,7 +48,7 @@ export function CategoriesActionDialog({
   const queryClient = useQueryClient()
 
   const form = useForm<CategoryForm>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(categoryFormSchema),
     defaultValues: isEdit
       ? {
         name: currentRow.name,

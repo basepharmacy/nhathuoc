@@ -4,19 +4,49 @@ import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
 export type Category = Tables<'categories'>
 export type CategoryInsert = TablesInsert<'categories'>
 export type CategoryUpdate = TablesUpdate<'categories'>
+export type CategoryWithActiveProductsCount = Category & {
+  active_products_count: number
+}
 
 export const createCategoryRepository = (client: BasePharmacySupabaseClient) => ({
-  async getAllCategoriesByTenantId(tenantId: string): Promise<Category[]> {
-    const { data, error } = await client
+  async getAllCategoriesByTenantId(
+    tenantId: string
+  ): Promise<CategoryWithActiveProductsCount[]> {
+    const { data: categories, error: categoriesError } = await client
       .from('categories')
       .select('*')
       .eq('tenant_id', tenantId)
       .order('created_at', { ascending: true })
-    if (error) {
-      throw error
+
+    if (categoriesError) {
+      throw categoriesError
     }
 
-    return data as Category[]
+    const { data: activeProducts, error: productsError } = await client
+      .from('products')
+      .select('category_id')
+      .eq('tenant_id', tenantId)
+      .eq('status', '2_ACTIVE')
+      .not('category_id', 'is', null)
+
+    if (productsError) {
+      throw productsError
+    }
+
+    const activeCountByCategory = (activeProducts ?? []).reduce<Record<string, number>>(
+      (acc, product) => {
+        const categoryId = product.category_id as string | null
+        if (!categoryId) return acc
+        acc[categoryId] = (acc[categoryId] ?? 0) + 1
+        return acc
+      },
+      {}
+    )
+
+    return (categories ?? []).map((category) => ({
+      ...category,
+      active_products_count: activeCountByCategory[category.id] ?? 0,
+    })) as CategoryWithActiveProductsCount[]
   },
   async createCategory(params: CategoryInsert): Promise<Category> {
     console.log("Creating category with params:", params)

@@ -25,6 +25,18 @@ export const categoriesColumns: ColumnDef<Category>[] = [
     enableHiding: false,
   },
   {
+    accessorKey: 'active_products_count',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='SP đang bán' />
+    ),
+    cell: ({ row }) => (
+      <span className='text-sm'>
+        {Number(row.getValue('active_products_count') ?? 0)}
+      </span>
+    ),
+    meta: { label: 'SP đang bán' },
+  },
+    {
     accessorKey: 'description',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Mô tả' />
