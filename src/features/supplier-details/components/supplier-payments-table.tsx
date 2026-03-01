@@ -1,5 +1,5 @@
 import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import {
   Table,
   TableBody,
@@ -44,14 +44,7 @@ export function SupplierPaymentsTable({ table, isLoading }: SupplierPaymentsTabl
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getAllLeafColumns().length}
-                  className='h-24 text-center'
-                >
-                  Đang tải...
-                </TableCell>
-              </TableRow>
+              <DataTableSkeletonRows table={table} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} className='group/row'>

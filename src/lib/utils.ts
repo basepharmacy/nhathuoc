@@ -62,6 +62,26 @@ export const normalizeNumber = (value: string) => {
   return normalized ? Number(normalized) : 0
 }
 
+export const formatDateLabel = (value?: string | null) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('vi-VN').format(date)
+}
+
+export const formatDateTimeLabel = (value?: string | null) => {
+  if (!value) return '-'
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value
+  return new Intl.DateTimeFormat('vi-VN', {
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(date)
+}
+
+export const formatQuantity = (value?: number | null) =>
+  new Intl.NumberFormat('vi-VN').format(value ?? 0)
+
 /**
  * Generates page numbers for pagination with ellipsis
  * @param currentPage - Current page number (1-based)

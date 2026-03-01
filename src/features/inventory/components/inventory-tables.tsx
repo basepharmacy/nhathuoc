@@ -8,15 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 
-export type InventoryProductRow = {
-  productId: string
-  productName: string
-  totalQuantity: number
-  batchCount: number
-  locations: string[]
-  earliestExpiry: string | null
+export type FilterOption = {
+  columnId: string
+  title: string
+  options: { label: string; value: string }[]
 }
 
 type InventoryTableProps<TData> = {
@@ -24,36 +21,9 @@ type InventoryTableProps<TData> = {
   isLoading: boolean
   searchKey: string
   searchPlaceholder?: string
-  filters?: {
-    columnId: string
-    title: string
-    options: { label: string; value: string }[]
-  }[]
+  filters?: FilterOption[]
   emptyMessage?: string
 }
-
-export const INVENTORY_SEARCH_COLUMN_ID = 'search'
-export const INVENTORY_LOCATION_COLUMN_ID = 'location_id'
-
-export const formatDateLabel = (value?: string | null) => {
-  if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN').format(date)
-}
-
-export const formatDateTimeLabel = (value?: string | null) => {
-  if (!value) return '-'
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN', {
-    dateStyle: 'short',
-    timeStyle: 'short',
-  }).format(date)
-}
-
-export const formatQuantity = (value?: number | null) =>
-  new Intl.NumberFormat('vi-VN').format(value ?? 0)
 
 export function InventoryTable<TData>({
   table,
@@ -99,14 +69,7 @@ export function InventoryTable<TData>({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getAllLeafColumns().length}
-                  className='h-24 text-center'
-                >
-                  Đang tải...
-                </TableCell>
-              </TableRow>
+              <DataTableSkeletonRows table={table} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

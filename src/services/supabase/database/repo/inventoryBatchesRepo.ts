@@ -53,9 +53,7 @@ export const createInventoryBatchRepository = (
       }
 
       if (searchValue) {
-        query = query.or(
-          `batch_code.ilike.%${searchValue}%,products.product_name.ilike.%${searchValue}%`
-        )
+        query = query.ilike('batch_code', `%${searchValue}%`)
       }
 
       const { data, error } = await query
@@ -103,7 +101,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('inventory_batches')
         .select(
-          'id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id, updated_at, products(id, product_name), locations(id, name)',
+          `id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name), locations(id, name)`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -113,9 +111,7 @@ export const createInventoryBatchRepository = (
       }
 
       if (searchValue) {
-        query = query.or(
-          `batch_code.ilike.%${searchValue}%,products.product_name.ilike.%${searchValue}%`
-        )
+        query = query.ilike('products.product_name', `%${searchValue}%`)
       }
 
       const { data, error, count } = await query

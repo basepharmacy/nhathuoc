@@ -18,15 +18,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableToolbar } from '@/components/data-table'
+import { DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type Category } from '../data/schema'
 import { categoriesColumns as columns } from './categories-columns'
 
 type CategoriesTableProps = {
   data: Category[]
+  isLoading: boolean
 }
 
-export function CategoriesTable({ data }: CategoriesTableProps) {
+export function CategoriesTable({ data, isLoading }: CategoriesTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -86,7 +87,9 @@ export function CategoriesTable({ data }: CategoriesTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <DataTableSkeletonRows table={table} />
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

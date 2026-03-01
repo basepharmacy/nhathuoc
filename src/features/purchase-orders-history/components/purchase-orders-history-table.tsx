@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
 type PurchaseOrdersHistoryTableProps = {
@@ -75,14 +75,7 @@ export function PurchaseOrdersHistoryTable({
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell
-                  colSpan={table.getAllLeafColumns().length}
-                  className='h-24 text-center'
-                >
-                  Đang tải...
-                </TableCell>
-              </TableRow>
+              <DataTableSkeletonRows table={table} />
             ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

@@ -146,15 +146,6 @@ export const getProductsQueryOptions = (tenantId: string) =>
     },
   })
 
-export const getPurchaseOrdersQueryOptions = (tenantId: string) =>
-  queryOptions({
-    queryKey: ["purchase-orders", tenantId],
-    queryFn: async () => {
-      const orders = await purchaseOrdersRepo.getPurchaseOrdersByTenantId(tenantId)
-      return orders
-    },
-  })
-
 export const getPurchaseOrdersHistoryQueryOptions = (
   params: PurchaseOrdersHistoryQueryInput
 ) =>
@@ -168,6 +159,7 @@ export const getPurchaseOrdersHistoryQueryOptions = (
         pageSize: params.pageSize,
         search: params.search ?? '',
         supplierIds: params.supplierIds ?? [],
+        locationIds: params.locationIds ?? [],
         statuses: params.statuses ?? [],
         paymentStatuses: params.paymentStatuses ?? [],
         sorting: params.sorting ?? [],

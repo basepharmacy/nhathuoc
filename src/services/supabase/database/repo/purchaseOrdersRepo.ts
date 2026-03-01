@@ -21,6 +21,7 @@ export type PurchaseOrdersHistoryQueryInput = {
   pageSize: number
   search?: string
   supplierIds?: string[]
+  locationIds?: string[]
   statuses?: Array<PurchaseOrder['status']>
   paymentStatuses?: Array<PurchaseOrder['payment_status']>
   sorting?: Array<{ id: string; desc: boolean }>
@@ -94,6 +95,10 @@ export const createPurchaseOrderRepository = (
 
       if (params.supplierIds?.length) {
         query = query.in('supplier_id', params.supplierIds)
+      }
+
+      if (params.locationIds?.length) {
+        query = query.in('location_id', params.locationIds)
       }
 
       if (params.statuses?.length) {

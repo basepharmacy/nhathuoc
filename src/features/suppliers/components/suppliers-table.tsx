@@ -20,15 +20,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableToolbar } from '@/components/data-table'
+import { DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type Supplier } from '../data/schema'
 import { suppliersColumns as columns } from './suppliers-columns'
 
 type SuppliersTableProps = {
   data: Supplier[]
+  isLoading: boolean
 }
 
-export function SuppliersTable({ data }: SuppliersTableProps) {
+export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
@@ -107,7 +108,9 @@ export function SuppliersTable({ data }: SuppliersTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <DataTableSkeletonRows table={table} />
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

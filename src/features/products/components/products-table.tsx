@@ -20,16 +20,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableToolbar } from '@/components/data-table'
+import { DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type ProductWithUnits, Category } from '@/services/supabase'
 import { getProductsColumns } from './products-columns'
 
 type ProductsTableProps = {
   data: ProductWithUnits[]
   categories: Category[]
+  isLoading: boolean
 }
 
-export function ProductsTable({ data, categories }: ProductsTableProps) {
+export function ProductsTable({ data, categories, isLoading }: ProductsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
@@ -145,7 +146,9 @@ export function ProductsTable({ data, categories }: ProductsTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <DataTableSkeletonRows table={table} />
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

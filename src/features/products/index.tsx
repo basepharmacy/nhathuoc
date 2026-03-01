@@ -3,7 +3,6 @@ import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { DataTableSkeleton } from '@/components/data-table'
 import { useUser } from '@/client/provider'
 import { getCategoriesQueryOptions, getProductsQueryOptions } from '@/client/queries'
 import { ProductsDialogs } from './components/products-dialogs'
@@ -49,11 +48,7 @@ export function Products() {
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        {isLoading ? (
-          <DataTableSkeleton rows={10} columns={8} />
-        ) : (
-          <ProductsTable data={products} categories={categories} />
-        )}
+        <ProductsTable data={products} categories={categories} isLoading={isLoading} />
       </Main>
 
       <ProductsDialogs categories={categories} />

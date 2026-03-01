@@ -208,13 +208,7 @@ function SuppliersContent() {
           </div>
           <SuppliersPrimaryButtons />
         </div>
-        {isLoading ? (
-          <div className='flex items-center justify-center py-10 text-muted-foreground'>
-            Đang tải...
-          </div>
-        ) : (
-          <SuppliersTable data={suppliers} />
-        )}
+        <SuppliersTable data={suppliers} isLoading={isLoading} />
       </Main>
 
       <SuppliersDialogs

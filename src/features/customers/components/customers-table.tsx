@@ -20,15 +20,16 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type Customer } from '../data/schema'
 import { customersColumns as columns } from './customers-columns'
 
 type CustomersTableProps = {
   data: Customer[]
+  isLoading: boolean
 }
 
-export function CustomersTable({ data }: CustomersTableProps) {
+export function CustomersTable({ data, isLoading }: CustomersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -95,7 +96,9 @@ export function CustomersTable({ data }: CustomersTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <DataTableSkeletonRows table={table} />
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
