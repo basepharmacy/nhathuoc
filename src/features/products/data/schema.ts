@@ -32,28 +32,6 @@ export const unitNamePresets = [
   'Thùng',
 ] as const
 
-export const productSchema = z.object({
-  id: z.string(),
-  product_name: z.string(),
-  product_type: z.enum(productTypeValues),
-  status: z.enum(productStatusValues),
-  category_id: z.string().nullable(),
-  min_stock: z.number().nullable(),
-  active_ingredient: z.string().nullable(),
-  regis_number: z.string().nullable(),
-  jan_code: z.string().nullable(),
-  made_company_name: z.string().nullable(),
-  sale_company_name: z.string().nullable(),
-  description: z.string().nullable(),
-  tenant_id: z.string(),
-  created_at: z.string().nullable(),
-  updated_at: z.string().nullable(),
-})
-
-export type Product = z.infer<typeof productSchema>
-
-export const productListSchema = z.array(productSchema)
-
 export const productFormSchema = z.object({
   product_name: z
     .string()
@@ -69,7 +47,7 @@ export const productFormSchema = z.object({
       return Number.isNaN(numberValue) ? null : numberValue
     },
     z
-      .number({ invalid_type_error: 'Tồn tối thiểu phải là số.' })
+      .number()
       .min(0, 'Tồn tối thiểu không được âm.')
       .nullable()
   ),
@@ -111,7 +89,7 @@ export const productFormSchema = z.object({
             return Number.isNaN(numberValue) ? 0 : numberValue
           },
           z
-            .number({ invalid_type_error: 'Hệ số quy đổi phải là số.' })
+            .number()
             .min(1, 'Hệ số quy đổi phải lớn hơn hoặc bằng 1.')
         ),
         cost_price: z.preprocess(
@@ -121,7 +99,7 @@ export const productFormSchema = z.object({
             return Number.isNaN(numberValue) ? 0 : numberValue
           },
           z
-            .number({ invalid_type_error: 'Giá nhập phải là số.' })
+            .number()
             .min(0, 'Giá nhập không được âm.')
         ),
         sell_price: z.preprocess(
@@ -131,7 +109,7 @@ export const productFormSchema = z.object({
             return Number.isNaN(numberValue) ? 0 : numberValue
           },
           z
-            .number({ invalid_type_error: 'Giá bán phải là số.' })
+            .number()
             .min(0, 'Giá bán không được âm.')
         ),
         is_base_unit: z.boolean().optional(),

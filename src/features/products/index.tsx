@@ -56,7 +56,7 @@ export function Products() {
         )}
       </Main>
 
-      <ProductsDialogs />
+      <ProductsDialogs categories={categories} />
     </ProductsProvider>
   )
 }

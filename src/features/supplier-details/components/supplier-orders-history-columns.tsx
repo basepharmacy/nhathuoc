@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
-import { formatCurrency } from '@/features/purchase-orders/data/utils'
+import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 
 const paymentStatusLabels: Record<PurchaseOrderWithRelations['payment_status'], string> = {

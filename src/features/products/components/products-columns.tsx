@@ -1,22 +1,17 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { cn, includesSearchValue } from '@/lib/utils'
+import { cn, formatCurrency, includesSearchValue } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import {
-  type Product,
-  productStatusLabels,
-} from '../data/schema'
-import {
-  type ProductUnit,
-  type ProductWithUnits,
-} from '@/services/supabase/database/repo/productsRepo'
+import { productStatusLabels } from '../data/schema'
+import { type ProductWithUnits } from '@/services/supabase/'
 import { DataTableRowActions } from './data-table-row-actions'
 
-const productStatusColors: Record<Product['status'], string> = {
+const productStatusColors: Record<ProductWithUnits['status'], string> = {
   '1_DRAFT': 'bg-neutral-300/40 border-neutral-300 text-foreground',
   '2_ACTIVE': 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
   '3_INACTIVE': 'bg-amber-200/40 text-amber-900 dark:text-amber-100 border-amber-300',
+  '4_ARCHIVED': 'bg-slate-200/40 text-slate-900 dark:text-slate-100 border-slate-300',
 }
 
 type CategoryLookup = Record<string, string>
@@ -24,11 +19,6 @@ type CategoryLookup = Record<string, string>
 const getBaseUnit = (product: ProductWithUnits) =>
   product.product_units?.find((unit) => unit.is_base_unit) ??
   product.product_units?.[0]
-
-const formatPrice = (value: ProductUnit['cost_price'] | null | undefined) =>
-  value === null || value === undefined
-    ? '—'
-    : new Intl.NumberFormat('vi-VN').format(value)
 
 export const getProductsColumns = (
   categoryLookup: CategoryLookup
@@ -109,7 +99,7 @@ export const getProductsColumns = (
         const baseUnit = getBaseUnit(row.original)
         return (
           <span className='text-nowrap text-sm'>
-            {formatPrice(baseUnit?.cost_price)}
+            {formatCurrency(baseUnit?.cost_price, { fallback: '—' })}
           </span>
         )
       },
@@ -133,7 +123,7 @@ export const getProductsColumns = (
         const baseUnit = getBaseUnit(row.original)
         return (
           <span className='text-nowrap text-sm'>
-            {formatPrice(baseUnit?.sell_price)}
+            {formatCurrency(baseUnit?.sell_price, { fallback: '—' })}
           </span>
         )
       },
@@ -164,7 +154,7 @@ export const getProductsColumns = (
         <DataTableColumnHeader column={column} title='Trạng thái' />
       ),
       cell: ({ row }) => {
-        const status = row.getValue('status') as Product['status']
+        const status = row.getValue('status') as ProductWithUnits['status']
         return (
           <div className='flex space-x-2'>
             <Badge

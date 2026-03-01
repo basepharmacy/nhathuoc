@@ -44,7 +44,7 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
       const { data, error } = await client
         .from('products')
         .select(
-          '*, product_units(id, unit_name, cost_price, sell_price, is_base_unit)'
+          '*, product_units(id, unit_name, conversion_factor, cost_price, sell_price, is_base_unit)'
         )
         .eq('tenant_id', tenantId)
         .order('created_at', { ascending: true })

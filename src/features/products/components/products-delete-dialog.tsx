@@ -4,12 +4,12 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/client/provider'
 import { productsRepo } from '@/client'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { type Product } from '../data/schema'
+import { ProductWithUnits } from '@/services/supabase'
 
 type ProductsDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentRow: Product
+  currentRow: ProductWithUnits
 }
 
 export function ProductsDeleteDialog({

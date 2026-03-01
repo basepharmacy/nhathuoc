@@ -23,7 +23,7 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
-import { formatCurrency, normalizeNumber } from '@/features/purchase-orders/data/utils'
+import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type Supplier } from '../data/schema'
 
 const formSchema = z.object({
@@ -62,12 +62,6 @@ type SuppliersPaymentDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   createMutation: SupplierPaymentMutation
-}
-
-const formatCurrencyInput = (value?: string) => {
-  if (value === undefined || value === null || value === '') return ''
-  const numericValue = Number(value)
-  return Number.isFinite(numericValue) ? formatCurrency(numericValue) : ''
 }
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10)
@@ -162,7 +156,7 @@ export function SuppliersPaymentDialog({
                       autoComplete='off'
                       inputMode='numeric'
                       {...field}
-                      value={formatCurrencyInput(field.value)}
+                      value={formatCurrency(field.value, { fallback: '' })}
                       onChange={(event) => {
                         const rawValue = event.target.value
                         if (!rawValue) {

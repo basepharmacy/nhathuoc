@@ -6,14 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { formatCurrency } from '@/lib/utils'
 import { type SupplierSummary } from '../data/schema'
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value)
 
 type SupplierSummaryCardsProps = {
   summary: SupplierSummary
@@ -38,7 +32,11 @@ export function SupplierSummaryCards({ summary }: SupplierSummaryCardsProps) {
         <CardHeader className='px-4 pb-0'>
           <CardDescription>Tổng tiền đặt hàng</CardDescription>
           <CardTitle className='text-2xl'>
-            {formatCurrency(summary.totalAmount)}
+            {formatCurrency(summary.totalAmount, {
+              style: 'currency',
+              currency: 'VND',
+              maximumFractionDigits: 0,
+            })}
           </CardTitle>
         </CardHeader>
         <CardContent className='px-4 pt-0'>
@@ -52,7 +50,11 @@ export function SupplierSummaryCards({ summary }: SupplierSummaryCardsProps) {
         <CardHeader className='px-4 pb-0'>
           <CardDescription>Đã thanh toán</CardDescription>
           <CardTitle className='text-2xl'>
-            {formatCurrency(summary.totalPaid)}
+            {formatCurrency(summary.totalPaid, {
+              style: 'currency',
+              currency: 'VND',
+              maximumFractionDigits: 0,
+            })}
           </CardTitle>
         </CardHeader>
         <CardContent className='px-4 pt-0'>
@@ -66,7 +68,11 @@ export function SupplierSummaryCards({ summary }: SupplierSummaryCardsProps) {
         <CardHeader className='px-4 pb-0'>
           <CardDescription>Ghi nợ</CardDescription>
           <CardTitle className='text-2xl'>
-            {formatCurrency(summary.totalDebt)}
+            {formatCurrency(summary.totalDebt, {
+              style: 'currency',
+              currency: 'VND',
+              maximumFractionDigits: 0,
+            })}
           </CardTitle>
         </CardHeader>
         <CardContent className='px-4 pt-0'>

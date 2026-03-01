@@ -1,13 +1,19 @@
 import { ProductsActionDialog } from './products-action-dialog'
 import { ProductsDeleteDialog } from './products-delete-dialog'
 import { useProducts } from './products-provider'
+import { type Category } from '@/services/supabase'
 
-export function ProductsDialogs() {
+type ProductsDialogsProps = {
+  categories: Category[]
+}
+
+export function ProductsDialogs({ categories }: ProductsDialogsProps) {
   const { open, setOpen, currentRow, setCurrentRow } = useProducts()
   return (
     <>
       <ProductsActionDialog
         key='product-add'
+        categories={categories}
         open={open === 'add'}
         onOpenChange={() => setOpen('add')}
       />
@@ -16,6 +22,7 @@ export function ProductsDialogs() {
         <>
           <ProductsActionDialog
             key={`product-edit-${currentRow.id}`}
+            categories={categories}
             open={open === 'edit'}
             onOpenChange={() => {
               setOpen('edit')

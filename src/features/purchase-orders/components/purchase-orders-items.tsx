@@ -29,7 +29,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DatePicker } from '@/components/date-picker'
-import { formatCurrency, normalizeNumber } from '../data/utils'
+import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
 

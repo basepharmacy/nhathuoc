@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, normalizeNumber } from '../data/utils'
+import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type SaleOrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
 

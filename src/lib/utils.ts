@@ -20,6 +20,48 @@ export function sleep(ms: number = 1000) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+type FormatCurrencyOptions = {
+  fallback?: string
+  locale?: string
+  style?: Intl.NumberFormatOptions['style']
+  currency?: string
+  maximumFractionDigits?: number
+  minimumFractionDigits?: number
+  clampZero?: boolean
+}
+
+export function formatCurrency(
+  value: number | string | null | undefined,
+  {
+    fallback = '—',
+    locale = 'vi-VN',
+    style = 'decimal',
+    currency = 'VND',
+    maximumFractionDigits,
+    minimumFractionDigits,
+    clampZero = true,
+  }: FormatCurrencyOptions = {}
+) {
+  if (value === '' || value === null || value === undefined) return fallback
+  const numericValue = typeof value === 'number' ? value : Number(value)
+  if (!Number.isFinite(numericValue)) return fallback
+  const safeValue = clampZero ? Math.max(0, numericValue) : numericValue
+  const formatter = new Intl.NumberFormat(locale, {
+    style,
+    currency,
+    maximumFractionDigits:
+      maximumFractionDigits ?? (style === 'currency' ? 0 : 0),
+    minimumFractionDigits,
+  })
+  return formatter.format(safeValue)
+}
+
+export const normalizeNumber = (value: string) => {
+  if (!value) return 0
+  const normalized = value.replace(/[^0-9]/g, '')
+  return normalized ? Number(normalized) : 0
+}
+
 /**
  * Generates page numbers for pagination with ellipsis
  * @param currentPage - Current page number (1-based)

@@ -21,8 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTableToolbar } from '@/components/data-table'
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
-import { type Category } from '@/features/categories/data/schema'
+import { type ProductWithUnits, Category } from '@/services/supabase'
 import { getProductsColumns } from './products-columns'
 
 type ProductsTableProps = {

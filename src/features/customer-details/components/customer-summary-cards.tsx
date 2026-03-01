@@ -6,14 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { formatCurrency } from '@/lib/utils'
 import { type CustomerSummary } from '../data/schema'
-
-const formatCurrency = (value: number) =>
-  new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    maximumFractionDigits: 0,
-  }).format(value)
 
 type CustomerSummaryCardsProps = {
   summary: CustomerSummary
@@ -38,7 +32,11 @@ export function CustomerSummaryCards({ summary }: CustomerSummaryCardsProps) {
         <CardHeader className='px-4 pb-0'>
           <CardDescription>Tổng tiền bán hàng</CardDescription>
           <CardTitle className='text-2xl'>
-            {formatCurrency(summary.totalAmount)}
+            {formatCurrency(summary.totalAmount, {
+              style: 'currency',
+              currency: 'VND',
+              maximumFractionDigits: 0,
+            })}
           </CardTitle>
         </CardHeader>
         <CardContent className='px-4 pt-0'>

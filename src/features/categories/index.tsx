@@ -5,7 +5,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { DataTableSkeleton } from '@/components/data-table'
 import { useUser } from '@/client/provider'
-import { getCategoriesQueryOptions } from '@/client/queries'
+import { getCategoriesWithActiveProductsCountQueryOptions } from '@/client/queries'
 import { CategoriesDialogs } from './components/categories-dialogs'
 import { CategoriesPrimaryButtons } from './components/categories-primary-buttons'
 import { CategoriesProvider } from './components/categories-provider'
@@ -16,7 +16,7 @@ export function Categories() {
   const tenantId = user?.profile?.tenant_id ?? ''
 
   const { data: categories = [], isLoading, isError } = useQuery({
-    ...getCategoriesQueryOptions(tenantId),
+    ...getCategoriesWithActiveProductsCountQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 

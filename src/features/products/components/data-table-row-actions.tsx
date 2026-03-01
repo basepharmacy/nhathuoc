@@ -10,11 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type Product } from '../data/schema'
+import { type ProductWithUnits } from '@/services/supabase'
 import { useProducts } from './products-provider'
 
 type DataTableRowActionsProps = {
-  row: Row<Product>
+  row: Row<ProductWithUnits>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {

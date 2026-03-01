@@ -9,7 +9,20 @@ export type CategoryWithActiveProductsCount = Category & {
 }
 
 export const createCategoryRepository = (client: BasePharmacySupabaseClient) => ({
-  async getAllCategoriesByTenantId(
+  async getCategories(tenantId: string): Promise<Category[]> {
+    const { data, error } = await client
+      .from('categories')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []) as Category[]
+  },
+  async getCategoriesWithActiveProductsCount(
     tenantId: string
   ): Promise<CategoryWithActiveProductsCount[]> {
     const { data: categories, error: categoriesError } = await client

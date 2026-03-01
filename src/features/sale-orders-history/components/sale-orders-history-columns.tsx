@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
 import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
-import { formatCurrency } from '@/features/sale-orders/data/utils'
+import { formatCurrency } from '@/lib/utils'
 import { SaleOrdersHistoryRowActions } from './sale-orders-history-row-actions.tsx'
 
 const orderStatusLabels: Record<SaleOrderWithRelations['status'], string> = {

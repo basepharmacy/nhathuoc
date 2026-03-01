@@ -3,9 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { z } from 'zod'
 import { useUser } from '@/client/provider'
-import { getCategoriesQueryOptions } from '@/client/queries'
 import { productsRepo } from '@/client'
 import { Button } from '@/components/ui/button'
 import {
@@ -41,22 +41,24 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { ChevronDown, Plus, Trash2 } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import { formatCurrency, normalizeNumber } from '@/features/purchase-orders/data/utils'
+import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import {
   type ProductForm,
-  type Product,
   unitNamePresets,
   productStatusLabels,
   productTypeLabels,
   productFormSchema,
 } from '../data/schema'
+import { type ProductWithUnits, Category } from '@/services/supabase'
 
 type ProductsActionDialogProps = {
-  currentRow?: Product
+  currentRow?: ProductWithUnits
+  categories: Category[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
+
+type ProductFormInput = z.input<typeof productFormSchema>
 
 const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
@@ -64,14 +66,9 @@ const normalizeOptionalText = (value?: string) =>
 const normalizeOptionalCategoryId = (value?: string) =>
   value && value.trim().length > 0 && value !== 'none' ? value.trim() : null
 
-const formatCurrencyInput = (value: unknown) => {
-  if (value === '' || value === null || value === undefined) return ''
-  const numericValue = typeof value === 'number' ? value : Number(value)
-  return Number.isFinite(numericValue) ? formatCurrency(numericValue) : ''
-}
-
 export function ProductsActionDialog({
   currentRow,
+  categories,
   open,
   onOpenChange,
 }: ProductsActionDialogProps) {
@@ -80,31 +77,20 @@ export function ProductsActionDialog({
   const tenantId = user?.profile?.tenant_id ?? ''
   const queryClient = useQueryClient()
 
-  const { data: categories = [] } = useQuery({
-    ...getCategoriesQueryOptions(tenantId),
-    enabled: !!tenantId,
-  })
-
-  const { data: productUnits = [], isLoading: isUnitsLoading } = useQuery({
-    queryKey: ['product-units', currentRow?.id],
-    queryFn: () => productsRepo.getProductUnitsByProductId(currentRow!.id),
-    enabled: isEdit && !!currentRow?.id,
-  })
-
   const defaultUnits = useMemo(
     () => [
       {
         unit_name: '',
         conversion_factor: 1,
-        cost_price: null,
-        sell_price: null,
+        cost_price: 0,
+        sell_price: 0,
         is_base_unit: true,
       },
     ],
     []
   )
 
-  const form = useForm<ProductForm>({
+  const form = useForm<ProductFormInput, unknown, ProductForm>({
     resolver: zodResolver(productFormSchema),
     defaultValues: isEdit
       ? {
@@ -124,7 +110,7 @@ export function ProductsActionDialog({
       : {
         product_name: '',
         product_type: '1_OTC',
-        status: '1_DRAFT',
+        status: '2_ACTIVE',
         category_id: 'none',
         min_stock: null,
         active_ingredient: '',
@@ -167,32 +153,24 @@ export function ProductsActionDialog({
 
   useEffect(() => {
     if (!isEdit || !currentRow?.id || !open) return
-    if (isUnitsLoading) return
-    const normalizedUnits = productUnits.length
-      ? [...productUnits]
+    const units = currentRow.product_units ?? []
+    const normalizedUnits = units.length
+      ? [...units]
         .sort(
           (left, right) =>
             Number(right.is_base_unit) - Number(left.is_base_unit)
         )
         .map((unit) => ({
           unit_name: unit.unit_name,
-          conversion_factor: unit.is_base_unit ? 1 : unit.conversion_factor,
-          cost_price: unit.cost_price,
-          sell_price: unit.sell_price,
+          conversion_factor: unit.is_base_unit ? 1 : Number(unit.conversion_factor ?? 1),
+          cost_price: Number(unit.cost_price ?? 0),
+          sell_price: Number(unit.sell_price ?? 0),
           is_base_unit: unit.is_base_unit,
         }))
       : defaultUnits
 
     form.setValue('units', normalizedUnits, { shouldDirty: false })
-  }, [
-    defaultUnits,
-    form,
-    isEdit,
-    isUnitsLoading,
-    open,
-    productUnits,
-    currentRow?.id,
-  ])
+  }, [defaultUnits, form, isEdit, open, currentRow?.id, currentRow?.product_units])
 
   const autoCalcRef = useRef<{
     baseCost: number
@@ -248,9 +226,9 @@ export function ProductsActionDialog({
   const normalizeUnits = (units: ProductForm['units']) =>
     units.map((unit, index) => ({
       unit_name: unit.unit_name.trim(),
-      conversion_factor: index === 0 ? 1 : unit.conversion_factor,
-      cost_price: unit.cost_price,
-      sell_price: unit.sell_price,
+      conversion_factor: index === 0 ? 1 : Number(unit.conversion_factor ?? 1),
+      cost_price: Number(unit.cost_price ?? 0),
+      sell_price: Number(unit.sell_price ?? 0),
       is_base_unit: index === 0,
     }))
 
@@ -453,9 +431,9 @@ export function ProductsActionDialog({
                       onClick={() =>
                         appendUnit({
                           unit_name: '',
-                          conversion_factor: null,
-                          cost_price: null,
-                          sell_price: null,
+                          conversion_factor: 1,
+                          cost_price: 0,
+                          sell_price: 0,
                           is_base_unit: false,
                         })
                       }
@@ -500,7 +478,14 @@ export function ProductsActionDialog({
                                       type='number'
                                       placeholder='Quy đổi'
                                       disabled={isBaseUnit}
-                                      value={isBaseUnit ? 1 : field.value ?? ''}
+                                      value={
+                                        isBaseUnit
+                                          ? 1
+                                          : typeof field.value === 'number' ||
+                                            typeof field.value === 'string'
+                                            ? field.value
+                                            : ''
+                                      }
                                       onChange={(event) =>
                                         field.onChange(event.target.value)
                                       }
@@ -520,7 +505,10 @@ export function ProductsActionDialog({
                                       placeholder='Giá nhập'
                                       inputMode='numeric'
                                       {...field}
-                                      value={formatCurrencyInput(field.value)}
+                                      value={formatCurrency(
+                                        field.value as string | number | null | undefined,
+                                        { fallback: '' }
+                                      )}
                                       onChange={(event) => {
                                         const rawValue = event.target.value
                                         if (!rawValue) {
@@ -545,7 +533,10 @@ export function ProductsActionDialog({
                                       placeholder='Giá bán'
                                       inputMode='numeric'
                                       {...field}
-                                      value={formatCurrencyInput(field.value)}
+                                      value={formatCurrency(
+                                        field.value as string | number | null | undefined,
+                                        { fallback: '' }
+                                      )}
                                       onChange={(event) => {
                                         const rawValue = event.target.value
                                         if (!rawValue) {
@@ -616,20 +607,20 @@ export function ProductsActionDialog({
                               <div className='col-span-4 flex flex-wrap gap-2'>
                                 {Object.entries(productTypeLabels).map(
                                   ([value, label]) => (
-                                  <button
-                                    key={value}
-                                    type='button'
-                                    onClick={() => field.onChange(value)}
-                                    className={cn(
-                                      'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
-                                      field.value === value
-                                        ? 'border-primary bg-primary text-primary-foreground'
-                                        : 'border-input bg-background text-foreground hover:bg-muted'
-                                    )}
-                                    aria-pressed={field.value === value}
-                                  >
-                                    {label}
-                                  </button>
+                                    <button
+                                      key={value}
+                                      type='button'
+                                      onClick={() => field.onChange(value)}
+                                      className={cn(
+                                        'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
+                                        field.value === value
+                                          ? 'border-primary bg-primary text-primary-foreground'
+                                          : 'border-input bg-background text-foreground hover:bg-muted'
+                                      )}
+                                      aria-pressed={field.value === value}
+                                    >
+                                      {label}
+                                    </button>
                                   )
                                 )}
                               </div>
@@ -743,20 +734,20 @@ export function ProductsActionDialog({
                                   {Object.entries(productStatusLabels)
                                     .filter(([value]) => value !== '4_ARCHIVED')
                                     .map(([value, label]) => (
-                                    <button
-                                      key={value}
-                                      type='button'
-                                      onClick={() => field.onChange(value)}
-                                      className={cn(
-                                        'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
-                                        field.value === value
-                                          ? 'border-primary bg-primary text-primary-foreground'
-                                          : 'border-input bg-background text-foreground hover:bg-muted'
-                                      )}
-                                      aria-pressed={field.value === value}
-                                    >
-                                      {label}
-                                    </button>
+                                      <button
+                                        key={value}
+                                        type='button'
+                                        onClick={() => field.onChange(value)}
+                                        className={cn(
+                                          'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
+                                          field.value === value
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'border-input bg-background text-foreground hover:bg-muted'
+                                        )}
+                                        aria-pressed={field.value === value}
+                                      >
+                                        {label}
+                                      </button>
                                     ))}
                                 </div>
                               </FormControl>
@@ -776,7 +767,12 @@ export function ProductsActionDialog({
                                   placeholder='Số lượng tối thiểu...'
                                   className='col-span-4'
                                   autoComplete='off'
-                                  value={field.value ?? ''}
+                                  value={
+                                    typeof field.value === 'number' ||
+                                      typeof field.value === 'string'
+                                      ? field.value
+                                      : ''
+                                  }
                                   onChange={(event) => field.onChange(event.target.value)}
                                 />
                               </FormControl>

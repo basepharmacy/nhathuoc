@@ -1,7 +1,7 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { LongText } from '@/components/long-text'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { formatCurrency } from '@/features/purchase-orders/data/utils'
+import { formatCurrency } from '@/lib/utils'
 import { type SupplierPayment } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 
 const formatDateLabel = (value?: string | null) => {
