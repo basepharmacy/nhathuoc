@@ -1,10 +1,9 @@
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ConfigDrawer } from '@/components/config-drawer'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
+import { DataTableSkeleton } from '@/components/data-table'
 import { useUser } from '@/client/provider'
 import { getCategoriesQueryOptions, getProductsQueryOptions } from '@/client/queries'
 import { ProductsDialogs } from './components/products-dialogs'
@@ -16,39 +15,42 @@ export function Products() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
 
-  const { data: products = [], isLoading } = useQuery({
+  const { data: products = [], isLoading, isError: isProductsError } = useQuery({
     ...getProductsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const { data: categories = [] } = useQuery({
+  const { data: categories = [], isError: isCategoriesError } = useQuery({
     ...getCategoriesQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
+  const hasShownError = useRef(false)
+
+  useEffect(() => {
+    if ((isProductsError || isCategoriesError) && !hasShownError.current) {
+      toast.error('Có lỗi khi lấy dữ liệu từ server, vui lòng thử lại')
+      hasShownError.current = true
+    }
+  }, [isProductsError, isCategoriesError])
+
   return (
     <ProductsProvider>
       <Header fixed>
-        <Search />
-        <div className='ms-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
+        <div className='flex w-full items-center justify-between gap-4'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <h2 className='text-2xl font-bold tracking-tight'>Sản phẩm</h2>
+            <p className='text-sm text-muted-foreground'>
+              Quản lý sản phẩm tại đây.
+            </p>
+          </div>
+          <ProductsPrimaryButtons />
         </div>
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Sản phẩm</h2>
-            <p className='text-muted-foreground'>Quản lý sản phẩm tại đây.</p>
-          </div>
-          <ProductsPrimaryButtons />
-        </div>
         {isLoading ? (
-          <div className='flex items-center justify-center py-10 text-muted-foreground'>
-            Đang tải...
-          </div>
+          <DataTableSkeleton rows={10} columns={8} />
         ) : (
           <ProductsTable data={products} categories={categories} />
         )}

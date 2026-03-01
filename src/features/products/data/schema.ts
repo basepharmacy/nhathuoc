@@ -8,6 +8,30 @@ export const productStatusValues = [
   '4_ARCHIVED',
 ] as const
 
+export const productTypeLabels: Record<(typeof productTypeValues)[number], string> = {
+  '1_OTC': 'Bán tại quầy',
+  '2_PRESCRIPTION_REQUIRED': 'Cần đơn',
+}
+
+export const productStatusLabels: Record<(typeof productStatusValues)[number], string> = {
+  '1_DRAFT': 'Nháp',
+  '2_ACTIVE': 'Đang bán',
+  '3_INACTIVE': 'Ngừng bán',
+  '4_ARCHIVED': 'Lưu trữ',
+}
+
+export const unitNamePresets = [
+  'Viên',
+  'Vỉ',
+  'Hộp',
+  'Chai',
+  'Gói',
+  'Lọ',
+  'Tuýp',
+  'Ống',
+  'Thùng',
+] as const
+
 export const productSchema = z.object({
   id: z.string(),
   product_name: z.string(),

@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
-  type PaginationState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -9,11 +8,10 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { cn } from '@/lib/utils'
+import { cn, includesSearchValue } from '@/lib/utils'
 import {
   Table,
   TableBody,
@@ -22,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTableToolbar } from '@/components/data-table'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type Category } from '@/features/categories/data/schema'
 import { getProductsColumns } from './products-columns'
@@ -35,12 +33,11 @@ type ProductsTableProps = {
 export function ProductsTable({ data, categories }: ProductsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: 'status', value: ['1_DRAFT', '2_ACTIVE'] },
+  ])
   const [sorting, setSorting] = useState<SortingState>([])
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  const [globalFilter, setGlobalFilter] = useState('')
 
   const categoryLookup = useMemo(
     () =>
@@ -77,18 +74,26 @@ export function ProductsTable({ data, categories }: ProductsTableProps) {
     columns,
     state: {
       sorting,
-      pagination,
       columnFilters,
       columnVisibility,
       rowSelection,
+      globalFilter,
     },
     enableRowSelection: true,
-    onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, filterValue) => {
+      const search = String(filterValue ?? '')
+      const nameValue = String(row.getValue('product_name') ?? '')
+      const codeValue = String(row.getValue('jan_code') ?? '')
+      return (
+        includesSearchValue(nameValue, search) ||
+        includesSearchValue(codeValue, search)
+      )
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
@@ -100,8 +105,7 @@ export function ProductsTable({ data, categories }: ProductsTableProps) {
     <div className='flex flex-1 flex-col gap-4'>
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Tìm sản phẩm...'
-        searchKey='product_name'
+        searchPlaceholder='Tìm mã hoặc tên sản phẩm...'
         filters={[
           {
             columnId: 'status',
@@ -173,7 +177,6 @@ export function ProductsTable({ data, categories }: ProductsTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
     </div>
   )
 }

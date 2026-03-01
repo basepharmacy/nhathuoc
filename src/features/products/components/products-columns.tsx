@@ -3,23 +3,15 @@ import { cn, includesSearchValue } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type Product } from '../data/schema'
+import {
+  type Product,
+  productStatusLabels,
+} from '../data/schema'
 import {
   type ProductUnit,
   type ProductWithUnits,
 } from '@/services/supabase/database/repo/productsRepo'
 import { DataTableRowActions } from './data-table-row-actions'
-
-const productTypeLabels: Record<Product['product_type'], string> = {
-  '1_OTC': 'OTC',
-  '2_PRESCRIPTION_REQUIRED': 'Cần đơn',
-}
-
-const productStatusLabels: Record<Product['status'], string> = {
-  '1_DRAFT': 'Nháp',
-  '2_ACTIVE': 'Đang bán',
-  '3_INACTIVE': 'Ngừng bán',
-}
 
 const productStatusColors: Record<Product['status'], string> = {
   '1_DRAFT': 'bg-neutral-300/40 border-neutral-300 text-foreground',
@@ -42,6 +34,20 @@ export const getProductsColumns = (
   categoryLookup: CategoryLookup
 ): ColumnDef<ProductWithUnits>[] => [
     {
+      accessorKey: 'jan_code',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Mã sản phẩm' />
+      ),
+      cell: ({ row }) => {
+        const code = row.getValue('jan_code') as string | null
+        return <span className='text-sm'>{code ?? '—'}</span>
+      },
+      meta: { label: 'Mã sản phẩm' },
+      enableSorting: false,
+      filterFn: (row, id, value) =>
+        includesSearchValue(String(row.getValue(id) ?? ''), String(value ?? '')),
+    },
+    {
       accessorKey: 'product_name',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Tên sản phẩm' />
@@ -60,42 +66,6 @@ export const getProductsColumns = (
       filterFn: (row, id, value) =>
         includesSearchValue(String(row.getValue(id) ?? ''), String(value ?? '')),
       enableHiding: false,
-    },
-    {
-      accessorKey: 'product_type',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Loại' />
-      ),
-      cell: ({ row }) => {
-        const type = row.getValue('product_type') as Product['product_type']
-        return <span className='text-sm'>{productTypeLabels[type]}</span>
-      },
-      meta: { label: 'Loại' },
-      enableSorting: false,
-    },
-    {
-      accessorKey: 'status',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Trạng thái' />
-      ),
-      cell: ({ row }) => {
-        const status = row.getValue('status') as Product['status']
-        return (
-          <div className='flex space-x-2'>
-            <Badge
-              variant='outline'
-              className={cn('text-sm font-medium', productStatusColors[status])}
-            >
-              {productStatusLabels[status]}
-            </Badge>
-          </div>
-        )
-      },
-      meta: { label: 'Trạng thái' },
-      enableSorting: false,
-      filterFn: (row, id, value) => {
-        return value.includes(row.getValue(id))
-      },
     },
     {
       accessorKey: 'category_id',
@@ -131,6 +101,7 @@ export const getProductsColumns = (
     },
     {
       id: 'base_cost_price',
+      accessorFn: (row) => getBaseUnit(row)?.cost_price ?? null,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Giá nhập' />
       ),
@@ -143,10 +114,18 @@ export const getProductsColumns = (
         )
       },
       meta: { label: 'Giá nhập' },
-      enableSorting: false,
+      sortingFn: (rowA, rowB, columnId) => {
+        const left = rowA.getValue(columnId) as number | null
+        const right = rowB.getValue(columnId) as number | null
+        if (left === null && right === null) return 0
+        if (left === null) return 1
+        if (right === null) return -1
+        return left - right
+      },
     },
     {
       id: 'base_sell_price',
+      accessorFn: (row) => getBaseUnit(row)?.sell_price ?? null,
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Giá bán' />
       ),
@@ -159,7 +138,14 @@ export const getProductsColumns = (
         )
       },
       meta: { label: 'Giá bán' },
-      enableSorting: false,
+      sortingFn: (rowA, rowB, columnId) => {
+        const left = rowA.getValue(columnId) as number | null
+        const right = rowB.getValue(columnId) as number | null
+        if (left === null && right === null) return 0
+        if (left === null) return 1
+        if (right === null) return -1
+        return left - right
+      },
     },
     {
       accessorKey: 'min_stock',
@@ -171,6 +157,30 @@ export const getProductsColumns = (
         return <span className='text-sm'>{minStock ?? '—'}</span>
       },
       meta: { label: 'Tồn tối thiểu' },
+    },
+    {
+      accessorKey: 'status',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Trạng thái' />
+      ),
+      cell: ({ row }) => {
+        const status = row.getValue('status') as Product['status']
+        return (
+          <div className='flex space-x-2'>
+            <Badge
+              variant='outline'
+              className={cn('text-sm font-medium', productStatusColors[status])}
+            >
+              {productStatusLabels[status]}
+            </Badge>
+          </div>
+        )
+      },
+      meta: { label: 'Trạng thái' },
+      enableSorting: false,
+      filterFn: (row, id, value) => {
+        return value.includes(row.getValue(id))
+      },
     },
     {
       id: 'actions',

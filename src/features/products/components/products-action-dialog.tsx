@@ -46,6 +46,9 @@ import { formatCurrency, normalizeNumber } from '@/features/purchase-orders/data
 import {
   type ProductForm,
   type Product,
+  unitNamePresets,
+  productStatusLabels,
+  productTypeLabels,
   productFormSchema,
 } from '../data/schema'
 
@@ -54,18 +57,6 @@ type ProductsActionDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
-
-const unitNamePresets = [
-  'Viên',
-  'Vỉ',
-  'Hộp',
-  'Chai',
-  'Gói',
-  'Lọ',
-  'Tuýp',
-  'Ống',
-  'Thùng',
-] as const
 
 const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
@@ -119,7 +110,7 @@ export function ProductsActionDialog({
       ? {
         product_name: currentRow.product_name,
         product_type: currentRow.product_type,
-        status: currentRow.status === '1_DRAFT' ? '2_ACTIVE' : currentRow.status,
+        status: currentRow.status,
         category_id: currentRow.category_id ?? 'none',
         min_stock: currentRow.min_stock ?? null,
         active_ingredient: currentRow.active_ingredient ?? '',
@@ -133,7 +124,7 @@ export function ProductsActionDialog({
       : {
         product_name: '',
         product_type: '1_OTC',
-        status: '2_ACTIVE',
+        status: '1_DRAFT',
         category_id: 'none',
         min_stock: null,
         active_ingredient: '',
@@ -617,6 +608,38 @@ export function ProductsActionDialog({
                       </div>
                       <FormField
                         control={form.control}
+                        name='product_type'
+                        render={({ field }) => (
+                          <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
+                            <FormLabel className='col-span-2 pt-2 text-end'>Loại</FormLabel>
+                            <FormControl>
+                              <div className='col-span-4 flex flex-wrap gap-2'>
+                                {Object.entries(productTypeLabels).map(
+                                  ([value, label]) => (
+                                  <button
+                                    key={value}
+                                    type='button'
+                                    onClick={() => field.onChange(value)}
+                                    className={cn(
+                                      'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
+                                      field.value === value
+                                        ? 'border-primary bg-primary text-primary-foreground'
+                                        : 'border-input bg-background text-foreground hover:bg-muted'
+                                    )}
+                                    aria-pressed={field.value === value}
+                                  >
+                                    {label}
+                                  </button>
+                                  )
+                                )}
+                              </div>
+                            </FormControl>
+                            <FormMessage className='col-span-4 col-start-3' />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
                         name='active_ingredient'
                         render={({ field }) => (
                           <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
@@ -717,25 +740,24 @@ export function ProductsActionDialog({
                               <FormLabel className='col-span-2 pt-2 text-end'>Tình trạng</FormLabel>
                               <FormControl>
                                 <div className='col-span-4 flex flex-wrap gap-2'>
-                                  {[
-                                    { value: '2_ACTIVE', label: 'Đang bán' },
-                                    { value: '3_INACTIVE', label: 'Ngừng bán' },
-                                  ].map((option) => (
+                                  {Object.entries(productStatusLabels)
+                                    .filter(([value]) => value !== '4_ARCHIVED')
+                                    .map(([value, label]) => (
                                     <button
-                                      key={option.value}
+                                      key={value}
                                       type='button'
-                                      onClick={() => field.onChange(option.value)}
+                                      onClick={() => field.onChange(value)}
                                       className={cn(
                                         'rounded-full border px-3 py-1 text-sm font-medium transition-colors',
-                                        field.value === option.value
+                                        field.value === value
                                           ? 'border-primary bg-primary text-primary-foreground'
                                           : 'border-input bg-background text-foreground hover:bg-muted'
                                       )}
-                                      aria-pressed={field.value === option.value}
+                                      aria-pressed={field.value === value}
                                     >
-                                      {option.label}
+                                      {label}
                                     </button>
-                                  ))}
+                                    ))}
                                 </div>
                               </FormControl>
                               <FormMessage className='col-span-4 col-start-3' />
