@@ -4,6 +4,7 @@ import { type InventoryBatch } from '@/services/supabase/database/repo/inventory
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { QuantityStepper } from '@/components/quantity-stepper'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -120,12 +121,12 @@ export function PurchaseOrdersItems({
             <TableHeader>
               <TableRow>
                 <TableHead className='w-[5%]'>No</TableHead>
-                <TableHead className='w-[30%]'>Tên sản phẩm</TableHead>
-                <TableHead className='w-[12%]'>Đơn vị</TableHead>
-                <TableHead className='w-[15%] text-end'>Đơn giá</TableHead>
-                <TableHead className='w-[12%] text-end'>Số lượng</TableHead>
-                <TableHead className='w-[18%] text-end'>Thành tiền</TableHead>
-                <TableHead className='w-[8%] text-end' />
+                <TableHead className='w-[25%]'>Tên sản phẩm</TableHead>
+                <TableHead className='w-[10%]'>Đơn vị</TableHead>
+                <TableHead className='w-[14%] text-end'>Đơn giá</TableHead>
+                <TableHead className='w-[18%] text-center'>Số lượng</TableHead>
+                <TableHead className='w-[16%] text-end'>Thành tiền</TableHead>
+                <TableHead className='w-[6%] text-end' />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -230,19 +231,11 @@ export function PurchaseOrdersItems({
                         />
                       </TableCell>
                       <TableCell className='align-middle'>
-                        <div className='flex items-center justify-center'>
-                          <Input
-                            value={item.quantity}
-                            onChange={(event) => {
-                              if (readOnly) return
-                              onUpdateItem(item.id, {
-                                quantity: Math.max(1, Number(event.target.value || 1)),
-                              })
-                            }}
-                            className='h-7 w-16 rounded-full text-center text-xs'
-                            disabled={readOnly}
-                          />
-                        </div>
+                        <QuantityStepper
+                          value={item.quantity}
+                          onChange={(qty) => onUpdateItem(item.id, { quantity: qty })}
+                          disabled={readOnly}
+                        />
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>
                         {formatCurrency(lineTotal)}đ
