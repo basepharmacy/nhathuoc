@@ -1,10 +1,8 @@
+import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { ConfigDrawer } from '@/components/config-drawer'
+import { toast } from 'sonner'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { useUser } from '@/client/provider'
 import { getCustomersQueryOptions } from '@/client/queries'
 import { CustomersDialogs } from './components/customers-dialogs'
@@ -16,31 +14,36 @@ export function Customers() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
 
-  const { data: customers = [], isLoading } = useQuery({
+  const { data: customers = [], isLoading, isPending, isError } = useQuery({
     ...getCustomersQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
+  const hasShownError = useRef(false)
+
+  useEffect(() => {
+    if (isError && !hasShownError.current) {
+      toast.error('Có lỗi khi lấy dữ liệu từ server, vui lòng thử lại')
+      hasShownError.current = true
+    }
+  }, [isError])
+
   return (
     <CustomersProvider>
       <Header fixed>
-        <Search />
-        <div className='ms-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
+        <div className='flex w-full items-center justify-between gap-4'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <h2 className='text-2xl font-bold tracking-tight'>Khách hàng</h2>
+            <p className='text-sm text-muted-foreground'>
+              Quản lý danh sách khách hàng tại đây.
+            </p>
+          </div>
+          <CustomersPrimaryButtons />
         </div>
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div className='flex flex-wrap items-end justify-between gap-2'>
-          <div>
-            <h2 className='text-2xl font-bold tracking-tight'>Khách hàng</h2>
-            <p className='text-muted-foreground'>Quản lý khách hàng tại đây.</p>
-          </div>
-          <CustomersPrimaryButtons />
-        </div>
-        <CustomersTable data={customers} isLoading={isLoading} />
+        <CustomersTable data={customers} isLoading={isLoading || isPending} />
       </Main>
 
       <CustomersDialogs />

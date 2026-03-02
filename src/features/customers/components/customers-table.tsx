@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import {
   type ColumnFiltersState,
-  type PaginationState,
   type SortingState,
   type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -20,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
+import { DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type Customer } from '../data/schema'
 import { customersColumns as columns } from './customers-columns'
 
@@ -34,10 +32,6 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -45,18 +39,15 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
     columns,
     state: {
       sorting,
-      pagination,
       columnFilters,
       columnVisibility,
       rowSelection,
     },
     enableRowSelection: true,
-    onPaginationChange: setPagination,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -129,7 +120,6 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
     </div>
   )
 }
