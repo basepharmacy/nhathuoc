@@ -17,6 +17,7 @@ export function SaleOrdersSearch({
 }: SaleOrdersSearchProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [isFocused, setIsFocused] = useState(false)
   const productsFiltered = useMemo(() => {
     const term = normalizeSearchValue(searchTerm.trim())
     if (!term) return []
@@ -48,6 +49,8 @@ export function SaleOrdersSearch({
       <Input
         value={searchTerm}
         onChange={(event) => setSearchTerm(event.target.value)}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         onKeyDown={(event) => {
           if (readOnly) return
           if (event.key === 'ArrowDown' && productsFiltered.length > 0) {
@@ -73,7 +76,7 @@ export function SaleOrdersSearch({
         className='h-10 rounded-full pl-10 text-sm'
         disabled={readOnly}
       />
-      {!readOnly && productsFiltered.length > 0 && (
+      {!readOnly && isFocused && productsFiltered.length > 0 && (
         <div className='absolute z-10 mt-2 w-full rounded-lg border bg-popover p-1 shadow-lg'>
           {productsFiltered.map((product, index) => (
             <button

@@ -14,9 +14,6 @@ import { inventoryBatchesRepo } from '@/client'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { ThemeSwitch } from '@/components/theme-switch'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
 import { type SaleOrderItem } from './data/types'
 import { SaleOrdersItems } from './components/sale-orders-items'
@@ -172,11 +169,6 @@ export function SaleOrders() {
             onAddProduct={order.addProduct}
             readOnly={order.isReadOnly}
           />
-          <div className='ms-auto flex items-center space-x-4'>
-            <ThemeSwitch />
-            <ConfigDrawer />
-            <ProfileDropdown />
-          </div>
         </div>
       </Header>
 

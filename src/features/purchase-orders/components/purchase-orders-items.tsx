@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
-import { format } from 'date-fns'
-import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { QuantityStepper } from '@/components/quantity-stepper'
-import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -22,32 +19,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-import { DatePicker } from '@/components/date-picker'
 import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
+import { BatchSelectDialog } from './batch-select-dialog'
 
 type PurchaseOrdersItemsProps = {
   items: OrderItem[]
   onUpdateItem: (itemId: string, next: Partial<OrderItem>) => void
   onRemoveItem: (itemId: string) => void
-  batchesByProductId: Record<string, InventoryBatch[]>
+  tenantId: string
+  locationId?: string | null
+  pendingBatchItemId: string | null
+  onPendingBatchHandled: () => void
   readOnly?: boolean
 }
 
 const renderUnitLabel = (unit: ProductUnit) => `${unit.unit_name}`
-const toDateInputValue = (value?: string | null) => {
-  if (!value) return ''
-  if (value.length >= 10) return value.slice(0, 10)
-  return value
-}
 const formatDateLabel = (value?: string | null) => {
   if (!value) return ''
   const date = new Date(value)
@@ -59,60 +47,26 @@ export function PurchaseOrdersItems({
   items,
   onUpdateItem,
   onRemoveItem,
-  batchesByProductId,
+  tenantId,
+  locationId,
+  pendingBatchItemId,
+  onPendingBatchHandled,
   readOnly = false,
 }: PurchaseOrdersItemsProps) {
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
-  const [batchCode, setBatchCode] = useState('')
-  const [expiryDate, setExpiryDate] = useState('')
+
+  useEffect(() => {
+    if (pendingBatchItemId) {
+      setActiveItemId(pendingBatchItemId)
+      onPendingBatchHandled()
+    }
+  }, [pendingBatchItemId, onPendingBatchHandled])
 
   const activeItem = useMemo(
     () => items.find((item) => item.id === activeItemId) ?? null,
     [activeItemId, items]
   )
 
-  const activeBatches = useMemo(() => {
-    if (!activeItem) return []
-    return batchesByProductId[activeItem.product.id] ?? []
-  }, [activeItem, batchesByProductId])
-
-  const matchedBatch = useMemo(() => {
-    const code = batchCode.trim()
-    if (!code) return null
-    return activeBatches.find((batch) => batch.batch_code === code) ?? null
-  }, [activeBatches, batchCode])
-
-  const expirySelected = useMemo(() => {
-    if (!expiryDate) return undefined
-    const parsed = new Date(expiryDate)
-    if (Number.isNaN(parsed.getTime())) return undefined
-    return parsed
-  }, [expiryDate])
-
-  const isExpiryLocked = Boolean(matchedBatch?.expiry_date)
-
-  useEffect(() => {
-    if (!activeItem) return
-    setBatchCode(activeItem.batchCode ?? '')
-    setExpiryDate(toDateInputValue(activeItem.expiryDate ?? ''))
-  }, [activeItem])
-
-  useEffect(() => {
-    if (!matchedBatch) return
-    if (matchedBatch.expiry_date) {
-      setExpiryDate(toDateInputValue(matchedBatch.expiry_date))
-    }
-  }, [matchedBatch])
-
-  const handleSaveBatch = () => {
-    if (readOnly) return
-    if (!activeItem) return
-    onUpdateItem(activeItem.id, {
-      batchCode: batchCode.trim(),
-      expiryDate: expiryDate.trim(),
-    })
-    setActiveItemId(null)
-  }
   return (
     <div className='flex h-full flex-col rounded-xl border bg-card shadow-sm'>
       <ScrollArea className='flex-1'>
@@ -263,88 +217,24 @@ export function PurchaseOrdersItems({
           </Table>
         </div>
       </ScrollArea>
-      <Dialog
+      <BatchSelectDialog
+        title={activeItem ? `Chọn lô - ${activeItem.product.product_name}` : 'Chọn lô sản phẩm'}
+        initialBatchCode={activeItem?.batchCode ?? ''}
+        initialExpiryDate={activeItem?.expiryDate ?? ''}
+        productId={activeItem?.product.id ?? ''}
+        tenantId={tenantId}
+        locationId={locationId}
         open={!!activeItemId && !readOnly}
         onOpenChange={(open) => {
-          if (!open) {
-            setActiveItemId(null)
-          }
+          if (!open) setActiveItemId(null)
         }}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Chọn lô sản phẩm</DialogTitle>
-          </DialogHeader>
-          <div className='space-y-4'>
-            <div className='space-y-2'>
-              <Label htmlFor='batch-code'>Lô</Label>
-              <Input
-                id='batch-code'
-                value={batchCode}
-                onChange={(event) => {
-                  if (readOnly) return
-                  setBatchCode(event.target.value)
-                }}
-                placeholder='Nhập hoặc chọn lô'
-                disabled={readOnly}
-              />
-              {activeBatches.length > 0 ? (
-                <div className='flex flex-wrap gap-2'>
-                  {activeBatches.map((batch) => (
-                    <Button
-                      key={batch.id}
-                      type='button'
-                      variant={batch.batch_code === batchCode.trim() ? 'default' : 'outline'}
-                      size='sm'
-                      className='h-7 px-3 text-xs'
-                      onClick={() => {
-                        if (readOnly) return
-                        setBatchCode(batch.batch_code)
-                        setExpiryDate(toDateInputValue(batch.expiry_date))
-                      }}
-                      disabled={readOnly}
-                    >
-                      {batch.batch_code}
-                    </Button>
-                  ))}
-                </div>
-              ) : (
-                <p className='text-xs text-muted-foreground'>Chưa có lô tồn kho.</p>
-              )}
-            </div>
-            <div className='space-y-2'>
-              <Label htmlFor='expiry-date'>Hạn sử dụng</Label>
-              <DatePicker
-                selected={expirySelected}
-                onSelect={(date) => {
-                  if (readOnly) return
-                  if (isExpiryLocked) return
-                  if (!date) {
-                    setExpiryDate('')
-                    return
-                  }
-                  setExpiryDate(format(date, 'yyyy-MM-dd'))
-                }}
-                placeholder='Chọn hạn sử dụng'
-                className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-                disabled={isExpiryLocked || readOnly}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              type='button'
-              variant='outline'
-              onClick={() => setActiveItemId(null)}
-            >
-              Hủy
-            </Button>
-            <Button type='button' onClick={handleSaveBatch} disabled={readOnly}>
-              Lưu
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        onSave={(batchCode, expiryDate) => {
+          if (!activeItemId) return
+          onUpdateItem(activeItemId, { batchCode, expiryDate })
+          setActiveItemId(null)
+        }}
+        readOnly={readOnly}
+      />
     </div>
   )
 }

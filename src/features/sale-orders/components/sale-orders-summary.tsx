@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button'
+import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { cn } from '@/lib/utils'
-import { formatCurrency, normalizeNumber } from '@/lib/utils'
+import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type PaymentMethod } from '../data/types'
 import type { Customer } from '@/services/supabase/database/repo/customersRepo'
 import type { SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
@@ -95,11 +95,10 @@ export function SaleOrdersSummary({
         </div>
         <div className='flex items-center justify-between text-muted-foreground'>
           <span>Chiết khấu</span>
-          <Input
-            value={formatCurrency(orderDiscount)}
-            onChange={(event) => onOrderDiscountChange(normalizeNumber(event.target.value))}
-            className='h-8 w-28 rounded-full text-right text-xs'
-            inputMode='numeric'
+          <DiscountInput
+            subtotal={totals.subtotal}
+            value={orderDiscount}
+            onChange={onOrderDiscountChange}
             disabled={isReadOnly}
           />
         </div>
