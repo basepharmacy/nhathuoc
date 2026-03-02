@@ -11,6 +11,7 @@ import {
   createPurchaseOrderRepository,
   createInventoryBatchRepository,
   createSaleOrderRepository,
+  createBankAccountRepository,
 } from '@/services/supabase'
 
 import { supabaseAuth, supabaseClient } from '@/services/supabase'
@@ -28,4 +29,5 @@ export const productsRepo = createProductRepository(supabaseClient)
 export const purchaseOrdersRepo = createPurchaseOrderRepository(supabaseClient)
 export const inventoryBatchesRepo = createInventoryBatchRepository(supabaseClient)
 export const saleOrdersRepo = createSaleOrderRepository(supabaseClient)
+export const bankAccountsRepo = createBankAccountRepository(supabaseClient)
 export const auth = supabaseAuth

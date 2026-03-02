@@ -5,12 +5,14 @@ import {
   locationsRepo,
   categoriesRepo,
   suppliersRepo,
+  supplierBankAccountsRepo,
   supplierPaymentsRepo,
   customersRepo,
   productsRepo,
   purchaseOrdersRepo,
   inventoryBatchesRepo,
   saleOrdersRepo,
+  bankAccountsRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
@@ -90,6 +92,19 @@ export const getSuppliersQueryOptions = (tenantId: string) =>
       const suppliers = await suppliersRepo.getAllSuppliersByTenantId(tenantId)
       return suppliers
     },
+  })
+
+export const getBankAccountsQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ['bank-accounts', tenantId],
+    queryFn: () => bankAccountsRepo.getBankAccountsByTenantId(tenantId),
+  })
+
+export const getSupplierBankAccountsQueryOptions = (supplierId: string) =>
+  queryOptions({
+    queryKey: ['supplier-bank-accounts', supplierId],
+    queryFn: () =>
+      supplierBankAccountsRepo.getSupplierBankAccountsBySupplierId(supplierId),
   })
 
 export const getSupplierDetailQueryOptions = (

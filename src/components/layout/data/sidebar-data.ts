@@ -7,11 +7,9 @@ import {
   Boxes,
   Building2,
   ClipboardList,
-  FileText,
   Folder,
   Users,
   LayoutDashboard,
-  LineChart,
   ShoppingCart,
   Truck,
   Warehouse,
@@ -109,29 +107,12 @@ const staticNavGroups = [
     ],
   },
   {
-    title: 'Báo cáo chi tiết',
+    title: 'Thiết lập',
     items: [
       {
-        title: 'Bán hàng',
+        title: 'Tài khoản thanh toán',
+        url: '/bank-accounts',
         icon: BarChart3,
-        items: [
-          {
-            title: 'Doanh thu - Lợi nhuận',
-            url: '/reports/sales',
-            icon: LineChart,
-          },
-        ],
-      },
-      {
-        title: 'Nhập hàng',
-        icon: FileText,
-        items: [
-          {
-            title: 'Nhập hàng',
-            url: '/reports/purchase',
-            icon: ClipboardList,
-          },
-        ],
       },
     ],
   },

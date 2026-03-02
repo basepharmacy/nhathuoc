@@ -134,7 +134,7 @@ const columns: ColumnDef<InventoryProductRow>[] = [
   },
   {
     accessorKey: 'locations',
-    header: 'Kho',
+    header: 'Cửa hàng',
     cell: ({ row }) => row.original.locations.join(', ') || '-',
   },
   {

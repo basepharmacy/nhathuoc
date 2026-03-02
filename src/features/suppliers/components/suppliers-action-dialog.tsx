@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef } from 'react'
-import { z } from 'zod'
+import { useEffect, useRef } from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { type VietQrBank } from '@/client/queries'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useUser } from '@/client/provider'
+import { supplierBankAccountsRepo, suppliersRepo } from '@/client'
+import { getSupplierBankAccountsQueryOptions } from '@/client/queries'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,90 +29,62 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
-import { CheckIcon, CaretSortIcon } from '@radix-ui/react-icons'
+import { BankCombobox } from '@/components/bank-combobox'
 import { Plus, Trash2 } from 'lucide-react'
-import { type SupplierBankAccount } from '@/services/supabase'
-import { type Supplier } from '../data/schema'
+import {
+  supplierFormSchema,
+  type SupplierForm,
+  type Supplier,
+} from '../data/schema'
 
-const formSchema = z.object({
-  name: z.string().min(1, 'Tên nhà cung cấp là bắt buộc.').max(255, 'Tên nhà cung cấp không được vượt quá 255 ký tự.'),
-  phone: z.string().max(12, 'Số điện thoại không được vượt quá 12 ký tự.').optional(),
-  representative: z.string().max(255, 'Tên người đại diện không được vượt quá 255 ký tự.').optional(),
-  address: z.string().max(255, 'Địa chỉ không được vượt quá 255 ký tự.').optional(),
-  description: z.string().max(1000, 'Mô tả không được vượt quá 1000 ký tự.').optional(),
-  is_active: z.boolean(),
-  bank_accounts: z
-    .array(
-      z.object({
-        bank_bin: z.string().min(1, 'Vui lòng chọn ngân hàng.'),
-        account_number: z
-          .string()
-          .min(1, 'Số tài khoản là bắt buộc.')
-          .max(32, 'Số tài khoản không được vượt quá 32 ký tự.'),
-        account_holder: z
-          .string()
-          .min(1, 'Tên chủ tài khoản là bắt buộc.')
-          .max(255, 'Tên chủ tài khoản không được vượt quá 255 ký tự.'),
-        is_default: z.boolean().optional(),
-      })
-    )
-    .optional(),
-})
+const normalizeOptionalText = (value?: string) =>
+  value && value.trim().length > 0 ? value.trim() : null
 
-type SupplierForm = z.infer<typeof formSchema>
+const normalizeBankAccounts = (
+  accounts?: SupplierForm['bank_accounts']
+) => {
+  const normalized = (accounts ?? []).map((account) => ({
+    bank_bin: account.bank_bin.trim(),
+    account_number: account.account_number.replace(/\s+/g, ''),
+    account_holder: account.account_holder.trim(),
+    is_default: Boolean(account.is_default),
+  }))
 
-type MutationOptions = {
-  onSuccess?: () => void
-}
+  if (!normalized.length) return []
 
-type SupplierActionMutation = {
-  mutate: (values: SupplierForm, options?: MutationOptions) => void
-  isPending: boolean
-  error: unknown
-  reset: () => void
+  let defaultIndex = normalized.findIndex((account) => account.is_default)
+  if (defaultIndex < 0) defaultIndex = 0
+
+  return normalized.map((account, index) => ({
+    ...account,
+    is_default: index === defaultIndex,
+  }))
 }
 
 type SuppliersActionDialogProps = {
   currentRow?: Supplier
   open: boolean
   onOpenChange: (open: boolean) => void
-  banks: VietQrBank[]
-  isBanksLoading: boolean
-  supplierBankAccounts: SupplierBankAccount[]
-  isBankAccountsLoading: boolean
-  createMutation: SupplierActionMutation
-  updateMutation: SupplierActionMutation
 }
 
 export function SuppliersActionDialog({
   currentRow,
   open,
   onOpenChange,
-  banks,
-  isBanksLoading,
-  supplierBankAccounts,
-  isBankAccountsLoading,
-  createMutation,
-  updateMutation,
 }: SuppliersActionDialogProps) {
   const isEdit = !!currentRow
+  const { user } = useUser()
+  const tenantId = user?.profile?.tenant_id ?? ''
+  const queryClient = useQueryClient()
+
+  const { data: supplierBankAccounts = [], isLoading: isBankAccountsLoading } =
+    useQuery({
+      ...getSupplierBankAccountsQueryOptions(currentRow?.id ?? ''),
+      enabled: isEdit && !!currentRow?.id,
+    })
 
   const form = useForm<SupplierForm>({
-    resolver: zodResolver(formSchema),
+    resolver: zodResolver(supplierFormSchema),
     defaultValues: isEdit
       ? {
         name: currentRow.name,
@@ -131,21 +105,6 @@ export function SuppliersActionDialog({
         bank_accounts: [],
       },
   })
-
-  const bankOptions = useMemo(() => {
-    const safeBanks = Array.isArray(banks) ? banks : []
-    return [...safeBanks].sort((left, right) =>
-      (left.shortName ?? left.name).localeCompare(
-        right.shortName ?? right.name,
-        'vi'
-      )
-    )
-  }, [banks])
-
-  const bankByBin = useMemo(
-    () => new Map(bankOptions.map((bank) => [bank.bin, bank])),
-    [bankOptions]
-  )
 
   const {
     fields: bankAccountFields,
@@ -222,6 +181,71 @@ export function SuppliersActionDialog({
     replaceBankAccounts(normalized)
   }
 
+  const invalidateQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+    queryClient.invalidateQueries({ queryKey: ['supplier-bank-accounts'] })
+  }
+
+  const createMutation = useMutation({
+    mutationFn: async (values: SupplierForm) => {
+      const supplier = await suppliersRepo.createSupplier({
+        tenant_id: tenantId,
+        name: values.name,
+        phone: normalizeOptionalText(values.phone),
+        representative: normalizeOptionalText(values.representative),
+        address: normalizeOptionalText(values.address),
+        description: normalizeOptionalText(values.description),
+        is_active: values.is_active,
+      })
+
+      const accounts = normalizeBankAccounts(values.bank_accounts)
+      await supplierBankAccountsRepo.replaceSupplierBankAccounts({
+        supplierId: supplier.id,
+        tenantId,
+        accounts,
+      })
+
+      return supplier
+    },
+    onSuccess: () => {
+      invalidateQueries()
+      if (!isOpenRef.current) return
+      form.reset()
+      onOpenChange(false)
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async (values: SupplierForm) => {
+      if (!currentRow) {
+        throw new Error('Không tìm thấy nhà cung cấp.')
+      }
+      const supplier = await suppliersRepo.updateSupplier(currentRow.id, {
+        name: values.name,
+        phone: normalizeOptionalText(values.phone),
+        representative: normalizeOptionalText(values.representative),
+        address: normalizeOptionalText(values.address),
+        description: normalizeOptionalText(values.description),
+        is_active: values.is_active,
+      })
+
+      const accounts = normalizeBankAccounts(values.bank_accounts)
+      await supplierBankAccountsRepo.replaceSupplierBankAccounts({
+        supplierId: currentRow.id,
+        tenantId,
+        accounts,
+      })
+
+      return supplier
+    },
+    onSuccess: () => {
+      invalidateQueries()
+      if (!isOpenRef.current) return
+      form.reset()
+      onOpenChange(false)
+    },
+  })
+
   useEffect(() => {
     isOpenRef.current = open
     if (open) {
@@ -231,17 +255,11 @@ export function SuppliersActionDialog({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  const handleSuccess = () => {
-    if (!isOpenRef.current) return
-    form.reset()
-    onOpenChange(false)
-  }
-
   const onSubmit = (values: SupplierForm) => {
     if (isEdit) {
-      updateMutation.mutate(values, { onSuccess: handleSuccess })
+      updateMutation.mutate(values)
     } else {
-      createMutation.mutate(values, { onSuccess: handleSuccess })
+      createMutation.mutate(values)
     }
   }
 
@@ -413,68 +431,10 @@ export function SuppliersActionDialog({
                                 render={({ field }) => (
                                   <FormItem>
                                     <FormControl>
-                                      <Popover>
-                                        <PopoverTrigger asChild>
-                                          <Button
-                                            variant='outline'
-                                            role='combobox'
-                                            className={cn(
-                                              'w-full justify-between',
-                                              !field.value && 'text-muted-foreground'
-                                            )}
-                                          >
-                                            {field.value
-                                              ? bankByBin.get(field.value)?.shortName ??
-                                                bankByBin.get(field.value)?.name ??
-                                                'Chọn ngân hàng'
-                                              : 'Chọn ngân hàng'}
-                                            <CaretSortIcon className='ms-2 h-4 w-4 shrink-0 opacity-50' />
-                                          </Button>
-                                        </PopoverTrigger>
-                                        <PopoverContent
-                                          className='w-[320px] p-0 max-h-[320px] overflow-hidden'
-                                          onWheel={(event) => event.stopPropagation()}
-                                          onTouchMove={(event) => event.stopPropagation()}
-                                        >
-                                          <Command>
-                                            <CommandInput placeholder='Tìm ngân hàng...' />
-                                            <CommandEmpty>Không tìm thấy ngân hàng.</CommandEmpty>
-                                            <CommandGroup>
-                                              <CommandList className='max-h-[240px] overflow-y-auto'>
-                                                {isBanksLoading ? (
-                                                  <CommandItem value='loading' disabled>
-                                                    Đang tải ngân hàng...
-                                                  </CommandItem>
-                                                ) : bankOptions.length ? (
-                                                  bankOptions.map((bank) => (
-                                                    <CommandItem
-                                                      key={bank.bin}
-                                                      value={`${bank.shortName ?? bank.name} ${bank.code}`}
-                                                      onSelect={() =>
-                                                        field.onChange(bank.bin)
-                                                      }
-                                                    >
-                                                      <CheckIcon
-                                                        className={cn(
-                                                          'size-4',
-                                                          bank.bin === field.value
-                                                            ? 'opacity-100'
-                                                            : 'opacity-0'
-                                                        )}
-                                                      />
-                                                      {bank.shortName ?? bank.name}
-                                                    </CommandItem>
-                                                  ))
-                                                ) : (
-                                                  <CommandItem value='empty' disabled>
-                                                    Không có dữ liệu ngân hàng.
-                                                  </CommandItem>
-                                                )}
-                                              </CommandList>
-                                            </CommandGroup>
-                                          </Command>
-                                        </PopoverContent>
-                                      </Popover>
+                                      <BankCombobox
+                                        value={field.value ?? ''}
+                                        onChange={field.onChange}
+                                      />
                                     </FormControl>
                                     <FormMessage />
                                   </FormItem>

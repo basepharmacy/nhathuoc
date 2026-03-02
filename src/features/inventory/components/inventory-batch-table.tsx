@@ -71,7 +71,7 @@ const columns: ColumnDef<InventoryBatchWithRelations>[] = [
   },
   {
     id: 'location_name',
-    header: 'Kho',
+    header: 'Cửa hàng',
     cell: ({ row }) => row.original.locations?.name ?? '-',
   },
   {
@@ -113,7 +113,7 @@ export function InventoryBatchTable({
       table={table}
       isLoading={isLoading}
       searchKey={'search'}
-      searchPlaceholder='Tìm sản phẩm hoặc mã lô...'
+      searchPlaceholder='Tìm sản phẩm...'
       filters={filters}
       emptyMessage='Chưa có dữ liệu tồn kho.'
     />

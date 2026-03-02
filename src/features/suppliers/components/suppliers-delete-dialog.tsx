@@ -1,39 +1,36 @@
 'use client'
 
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { suppliersRepo } from '@/client'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { type Supplier } from '../data/schema'
-
-type MutationOptions = {
-  onSuccess?: () => void
-}
-
-type SupplierDeleteMutation = {
-  mutate: (supplierId: string, options?: MutationOptions) => void
-  isPending: boolean
-}
 
 type SuppliersDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow: Supplier
-  deleteMutation: SupplierDeleteMutation
 }
 
 export function SuppliersDeleteDialog({
   open,
   onOpenChange,
   currentRow,
-  deleteMutation,
 }: SuppliersDeleteDialogProps) {
+  const queryClient = useQueryClient()
+
+  const deleteMutation = useMutation({
+    mutationFn: () => suppliersRepo.deleteSupplier(currentRow.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+      onOpenChange(false)
+    },
+  })
+
   return (
     <ConfirmDialog
       open={open}
       onOpenChange={onOpenChange}
-      handleConfirm={() =>
-        deleteMutation.mutate(currentRow.id, {
-          onSuccess: () => onOpenChange(false),
-        })
-      }
+      handleConfirm={() => deleteMutation.mutate()}
       disabled={deleteMutation.isPending}
       title='Xóa nhà cung cấp'
       desc={
