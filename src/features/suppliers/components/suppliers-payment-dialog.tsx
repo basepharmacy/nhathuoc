@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { z } from 'zod'
 import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import { useUser } from '@/client/provider'
@@ -37,11 +36,14 @@ import {
 import { BankCombobox, bankByBin } from '@/components/bank-combobox'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
+import { DatePicker } from '@/components/date-picker'
 import { Separator } from '@/components/ui/separator'
 import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import {
   supplierPaymentFormSchema,
+  addBankAccountSchema,
   type SupplierPaymentForm,
+  type AddBankAccountForm,
   type Supplier,
 } from '../data/schema'
 
@@ -65,14 +67,6 @@ function buildVietQrUrl(
   params.set('accountName', accountHolder)
   return `https://img.vietqr.io/image/${bankBin}-${accountNumber}-compact2.png?${params.toString()}`
 }
-
-const addBankAccountSchema = z.object({
-  bank_bin: z.string().min(1, 'Vui lòng chọn ngân hàng.'),
-  account_number: z.string().min(1, 'Số tài khoản là bắt buộc.').max(32),
-  account_holder: z.string().min(1, 'Tên chủ tài khoản là bắt buộc.').max(255),
-})
-
-type AddBankAccountForm = z.infer<typeof addBankAccountSchema>
 
 function AddBankAccountInline({
   supplierId,
@@ -357,13 +351,20 @@ export function SuppliersPaymentDialog({
                 name='payment_date'
                 render={({ field }) => (
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>Ngày thanh toán</FormLabel>
+                    <FormLabel className='col-span-2 text-end whitespace-nowrap'>Ngày thanh toán</FormLabel>
                     <FormControl>
-                      <Input
-                        type='date'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
+                      <DatePicker
+                        selected={field.value ? new Date(field.value + 'T00:00:00') : undefined}
+                        onSelect={(date) => {
+                          if (!date) { field.onChange(''); return }
+                          const y = date.getFullYear()
+                          const m = String(date.getMonth() + 1).padStart(2, '0')
+                          const d = String(date.getDate()).padStart(2, '0')
+                          field.onChange(`${y}-${m}-${d}`)
+                        }}
+                        placeholder='Chọn ngày thanh toán'
+                        className='col-span-4 w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+                        disablePastDates={false}
                       />
                     </FormControl>
                     <FormMessage className='col-span-4 col-start-3' />

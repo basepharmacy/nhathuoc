@@ -15,6 +15,9 @@ type DatePickerProps = {
   placeholder?: string
   className?: string
   disabled?: boolean
+  fromYear?: number
+  toYear?: number
+  disablePastDates?: boolean
 }
 
 export function DatePicker({
@@ -23,9 +26,13 @@ export function DatePicker({
   placeholder = 'Chọn ngày',
   className,
   disabled = false,
+  fromYear,
+  toYear,
+  disablePastDates = true,
 }: DatePickerProps) {
   const currentYear = new Date().getFullYear()
-  const maxYear = currentYear + 100
+  const resolvedFromYear = fromYear ?? (disablePastDates ? currentYear : currentYear - 10)
+  const resolvedToYear = toYear ?? currentYear + 100
   return (
     <Popover>
       <PopoverTrigger asChild>
@@ -51,18 +58,20 @@ export function DatePicker({
           mode='single'
           captionLayout='dropdown'
           locale={vi}
-          fromYear={currentYear}
-          toYear={maxYear}
+          fromYear={resolvedFromYear}
+          toYear={resolvedToYear}
           selected={selected}
           onSelect={onSelect}
           disabled={(date: Date) => {
             if (disabled) return true
-            const today = new Date()
-            today.setHours(0, 0, 0, 0)
             const target = new Date(date)
             target.setHours(0, 0, 0, 0)
-            if (target < today) return true
-            return target.getFullYear() > maxYear
+            if (disablePastDates) {
+              const today = new Date()
+              today.setHours(0, 0, 0, 0)
+              if (target < today) return true
+            }
+            return target.getFullYear() > resolvedToYear || target.getFullYear() < resolvedFromYear
           }}
         />
       </PopoverContent>

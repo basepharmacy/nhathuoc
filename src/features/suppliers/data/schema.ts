@@ -64,3 +64,11 @@ export const supplierPaymentFormSchema = z.object({
 })
 
 export type SupplierPaymentForm = z.infer<typeof supplierPaymentFormSchema>
+
+export const addBankAccountSchema = z.object({
+  bank_bin: z.string().min(1, 'Vui lòng chọn ngân hàng.'),
+  account_number: z.string().min(1, 'Số tài khoản là bắt buộc.').max(32),
+  account_holder: z.string().min(1, 'Tên chủ tài khoản là bắt buộc.').max(255),
+})
+
+export type AddBankAccountForm = z.infer<typeof addBankAccountSchema>
