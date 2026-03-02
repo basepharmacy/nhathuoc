@@ -46,12 +46,12 @@ export function SaleOrdersItems({
             <TableHeader>
               <TableRow>
                 <TableHead className='w-[5%]'>No</TableHead>
-                <TableHead className='w-[25%]'>Tên sản phẩm</TableHead>
-                <TableHead className='w-[10%]'>Đơn vị</TableHead>
-                <TableHead className='w-[14%] text-end'>Đơn giá</TableHead>
-                <TableHead className='w-[18%] text-center'>Số lượng</TableHead>
-                <TableHead className='w-[16%] text-end'>Thành tiền</TableHead>
-                <TableHead className='w-[6%] text-end' />
+                <TableHead className='w-[30%]'>Tên sản phẩm</TableHead>
+                <TableHead className='w-[15%] text-center'>Đơn vị</TableHead>
+                <TableHead className='w-[15%] text-center'>Đơn giá</TableHead>
+                <TableHead className='w-[15%] text-center'>Số lượng</TableHead>
+                <TableHead className='w-[15%] text-center'>Thành tiền</TableHead>
+                <TableHead className='w-[5%] text-center' />
               </TableRow>
             </TableHeader>
             <TableBody>

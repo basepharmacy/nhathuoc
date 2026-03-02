@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Trash2 } from 'lucide-react'
+import { SquarePen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { QuantityStepper } from '@/components/quantity-stepper'
@@ -75,12 +75,12 @@ export function PurchaseOrdersItems({
             <TableHeader>
               <TableRow>
                 <TableHead className='w-[5%]'>No</TableHead>
-                <TableHead className='w-[25%]'>Tên sản phẩm</TableHead>
-                <TableHead className='w-[10%]'>Đơn vị</TableHead>
-                <TableHead className='w-[14%] text-end'>Đơn giá</TableHead>
-                <TableHead className='w-[18%] text-center'>Số lượng</TableHead>
-                <TableHead className='w-[16%] text-end'>Thành tiền</TableHead>
-                <TableHead className='w-[6%] text-end' />
+                <TableHead className='w-[30%]'>Tên sản phẩm</TableHead>
+                <TableHead className='w-[15%] text-center'>Đơn vị</TableHead>
+                <TableHead className='w-[15%] text-center'>Đơn giá</TableHead>
+                <TableHead className='w-[15%] text-center'>Số lượng</TableHead>
+                <TableHead className='w-[15%] text-center'>Thành tiền</TableHead>
+                <TableHead className='w-[5%] text-end' />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -115,15 +115,15 @@ export function PurchaseOrdersItems({
                               <Button
                                 type='button'
                                 variant='ghost'
-                                size='sm'
-                                className='h-6 px-2 text-xs'
+                                size='icon'
+                                className='h-5 w-5'
                                 onClick={() => {
                                   if (readOnly) return
                                   setActiveItemId(item.id)
                                 }}
                                 disabled={readOnly}
                               >
-                                Đổi lô
+                                <SquarePen className='h-3 w-3' />
                               </Button>
                             </>
                           ) : (
