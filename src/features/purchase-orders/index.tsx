@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import {
   getLocationsQueryOptions,
   getPurchaseOrderDetailQueryOptions,
@@ -26,7 +27,8 @@ export function PurchaseOrders() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
-  const userLocationId = user?.location?.id ?? null
+  const { selectedLocationId: sidebarLocationId } = useLocationContext()
+  const userLocationId = sidebarLocationId ?? user?.location?.id ?? null
 
   // ── Queries ─────────────────────────────────────────────────
   const { data: orderDetail, isLoading: isOrderLoading } = useQuery({

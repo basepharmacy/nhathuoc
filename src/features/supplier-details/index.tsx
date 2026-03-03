@@ -62,8 +62,7 @@ function SupplierDetailContent() {
 		() => {
 			const totalAmount = orders.reduce((sum, order) => {
 				const orderTotal = order.total_amount ?? 0
-				const discount = order.discount ?? 0
-				return sum + Math.max(0, orderTotal - discount)
+				return sum + orderTotal
 			}, 0)
 			const totalPaid = payments.reduce((sum, payment) => sum + (payment.amount ?? 0), 0)
 			return {

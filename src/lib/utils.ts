@@ -82,6 +82,12 @@ export const formatDateTimeLabel = (value?: string | null) => {
 export const formatQuantity = (value?: number | null) =>
   new Intl.NumberFormat('vi-VN').format(value ?? 0)
 
+export function formatShortCurrency(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(0)}M`
+  if (value >= 1_000) return `${(value / 1_000).toFixed(0)}K`
+  return `${value}`
+}
+
 /**
  * Generates page numbers for pagination with ellipsis
  * @param currentPage - Current page number (1-based)

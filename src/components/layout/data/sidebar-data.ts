@@ -8,6 +8,7 @@ import {
   Building2,
   ClipboardList,
   Folder,
+  MapPin,
   Users,
   LayoutDashboard,
   ShoppingCart,
@@ -109,6 +110,11 @@ const staticNavGroups = [
   {
     title: 'Thiết lập',
     items: [
+      {
+        title: 'Quản lý cửa hàng',
+        url: '/locations',
+        icon: MapPin,
+      },
       {
         title: 'Tài khoản thanh toán',
         url: '/bank-accounts',

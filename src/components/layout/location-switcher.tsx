@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from '@/components/ui/sidebar'
+import { useLocationContext } from '@/context/location-provider'
 import type { Location } from '@/services/supabase/database/model'
 
 function getLocationIcon(type: Location['type']): React.ElementType {
@@ -33,21 +34,20 @@ type LocationSwitcherProps = {
 
 export function LocationSwitcher({ locations }: LocationSwitcherProps) {
   const { isMobile } = useSidebar()
-  const [activeLocation, setActiveLocation] = React.useState<Location | null>(
-    locations[0] ?? null
-  )
+  const { selectedLocation, setSelectedLocationId, setLocations } = useLocationContext()
 
+  // Sync locations from sidebar data into the context
   React.useEffect(() => {
-    if (locations.length > 0 && !activeLocation) {
-      setActiveLocation(locations[0])
+    if (locations.length > 0) {
+      setLocations(locations)
     }
-  }, [locations])
+  }, [locations, setLocations])
 
-  if (!activeLocation) {
+  if (!selectedLocation) {
     return null
   }
 
-  const ActiveIcon = getLocationIcon(activeLocation.type)
+  const ActiveIcon = getLocationIcon(selectedLocation.type)
 
   return (
     <SidebarMenu>
@@ -62,9 +62,9 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                 <ActiveIcon className='size-4' />
               </div>
               <div className='grid flex-1 text-start text-sm leading-tight'>
-                <span className='truncate font-semibold'>{activeLocation.name}</span>
+                <span className='truncate font-semibold'>{selectedLocation.name}</span>
                 <span className='truncate text-xs text-muted-foreground'>
-                  {activeLocation.address ?? '—'}
+                  {selectedLocation.address ?? '—'}
                 </span>
               </div>
               <ChevronsUpDown className='ms-auto' />
@@ -84,7 +84,7 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
               return (
                 <DropdownMenuItem
                   key={location.id}
-                  onClick={() => setActiveLocation(location)}
+                  onClick={() => setSelectedLocationId(location.id)}
                   className='gap-2 p-2'
                 >
                   <div className='flex size-6 items-center justify-center rounded-sm border'>
