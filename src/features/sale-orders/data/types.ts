@@ -9,7 +9,7 @@ export type SaleOrderItem = {
   quantity: number
   unitPrice: number
   discount: number
-  batchId: string | null
+  batchId: string
   batchCode: string
   expiryDate: string
 }

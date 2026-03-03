@@ -13,6 +13,7 @@ import {
   inventoryBatchesRepo,
   saleOrdersRepo,
   bankAccountsRepo,
+  stockAdjustmentsRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
@@ -21,6 +22,9 @@ import {
   type InventoryBatchesListQueryInput,
   type InventoryBatchesSummaryQueryInput,
 } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import {
+  type StockAdjustmentsListQueryInput,
+} from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 
 export type VietQrBank = {
   id: number | string
@@ -400,6 +404,30 @@ export const getInventoryBatchesSummaryQueryOptions = (
         return { totalProducts: 0, totalQuantity: 0, totalValue: 0 }
       }
       const result = await inventoryBatchesRepo.getInventoryBatchesSummary(params)
+      return result
+    },
+  })
+
+export const getStockAdjustmentsListQueryOptions = (
+  params: StockAdjustmentsListQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'stock-adjustments',
+      params.tenantId,
+      'list',
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        locationIds: params.locationIds ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
+      const result = await stockAdjustmentsRepo.getStockAdjustmentsList(params)
       return result
     },
   })

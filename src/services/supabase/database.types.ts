@@ -143,6 +143,7 @@ export type Database = {
       }
       inventory_batches: {
         Row: {
+          average_cost_price: number
           batch_code: string
           created_at: string | null
           expiry_date: string | null
@@ -154,6 +155,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          average_cost_price?: number
           batch_code?: string
           created_at?: string | null
           expiry_date?: string | null
@@ -165,6 +167,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          average_cost_price?: number
           batch_code?: string
           created_at?: string | null
           expiry_date?: string | null
@@ -690,7 +693,7 @@ export type Database = {
       }
       sale_order_items: {
         Row: {
-          batch_id: string | null
+          batch_id: string
           created_at: string | null
           discount: number
           id: number
@@ -702,7 +705,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
-          batch_id?: string | null
+          batch_id: string
           created_at?: string | null
           discount?: number
           id?: never
@@ -714,7 +717,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
-          batch_id?: string | null
+          batch_id?: string
           created_at?: string | null
           discount?: number
           id?: never
@@ -846,6 +849,7 @@ export type Database = {
       stock_adjustments: {
         Row: {
           batch_code: string
+          cost_price: number
           created_at: string | null
           expiry_date: string | null
           id: string
@@ -857,6 +861,7 @@ export type Database = {
         }
         Insert: {
           batch_code: string
+          cost_price?: number
           created_at?: string | null
           expiry_date?: string | null
           id?: string
@@ -868,6 +873,7 @@ export type Database = {
         }
         Update: {
           batch_code?: string
+          cost_price?: number
           created_at?: string | null
           expiry_date?: string | null
           id?: string
@@ -1116,6 +1122,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_sales_statistics: {
+        Args: { p_location_id?: string; p_period: string }
+        Returns: {
+          current_completed_orders: number
+          current_period_end: string
+          current_period_start: string
+          current_total_profit: number
+          current_total_revenue: number
+          period: string
+          previous_completed_orders: number
+          previous_period_end: string
+          previous_period_start: string
+          previous_total_profit: number
+          previous_total_revenue: number
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {

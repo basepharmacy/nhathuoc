@@ -87,6 +87,11 @@ const staticNavGroups = [
             url: '/inventory',
             icon: Warehouse,
           },
+          {
+            title: 'Điều chỉnh tồn kho',
+            url: '/inventory/adjustments',
+            icon: Warehouse,
+          },
         ],
       },
       {

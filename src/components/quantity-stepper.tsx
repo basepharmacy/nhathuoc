@@ -7,6 +7,7 @@ type QuantityStepperProps = {
   onChange: (qty: number) => void
   disabled?: boolean
   min?: number
+  onMinReached?: () => void
 }
 
 export function QuantityStepper({
@@ -14,6 +15,7 @@ export function QuantityStepper({
   onChange,
   disabled,
   min = 1,
+  onMinReached,
 }: QuantityStepperProps) {
   const [draft, setDraft] = useState<string | null>(null)
   const isDrafting = draft !== null
@@ -32,8 +34,14 @@ export function QuantityStepper({
         variant='outline'
         size='icon'
         className='h-7 w-7 rounded-full'
-        disabled={disabled || value <= min}
-        onClick={() => onChange(value - 1)}
+        disabled={disabled}
+        onClick={() => {
+          if (value <= min) {
+            onMinReached?.()
+          } else {
+            onChange(value - 1)
+          }
+        }}
       >
         <Minus className='h-3 w-3' />
       </Button>
