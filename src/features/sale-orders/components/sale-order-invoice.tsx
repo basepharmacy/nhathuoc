@@ -1,8 +1,6 @@
-import { useMemo } from 'react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { formatCurrency } from '@/lib/utils'
-import { bankByBin } from '@/components/bank-combobox'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { type SaleOrderItem } from '../data/types'
 import type { BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
@@ -39,11 +37,6 @@ export function SaleOrderInvoice({
   notes,
 }: SaleOrderInvoiceProps) {
   const now = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: vi })
-
-  const selectedBank = useMemo(() => {
-    if (!bankAccount) return null
-    return bankByBin.get(bankAccount.bank_bin) ?? null
-  }, [bankAccount])
 
   return (
     <div
