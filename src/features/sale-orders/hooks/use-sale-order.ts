@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryBatchesRepo, saleOrdersRepo } from '@/client'
@@ -47,6 +47,7 @@ export function useSaleOrder({
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
   const [paidAmount, setPaidAmount] = useState(0)
   const [cashReceived, setCashReceived] = useState(0)
+  const [bankAccountId, setBankAccountId] = useState('')
   const [notes, setNotes] = useState('')
   const [hasInitialized, setHasInitialized] = useState(false)
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
@@ -108,6 +109,11 @@ export function useSaleOrder({
     if (paymentMethod === 'CASH') return Math.min(totals.total, cashReceived)
     return Math.min(totals.total, paidAmount)
   }, [cashReceived, paidAmount, paymentMethod, totals.total])
+
+  useEffect(() => {
+    if (paymentMethod !== 'TRANSFER') return
+    setPaidAmount(totals.total)
+  }, [paymentMethod, totals.total])
 
   const debtAmount = useMemo(
     () => Math.max(0, totals.total - normalizedPaidAmount),
@@ -284,6 +290,16 @@ export function useSaleOrder({
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
+  const handlePaymentMethodChange = useCallback(
+    (value: PaymentMethod) => {
+      setPaymentMethod(value)
+      if (value === 'TRANSFER') {
+        setPaidAmount(totals.total)
+      }
+    },
+    [totals.total]
+  )
+
   // ── Initialize from existing order ──────────────────────────
   const initializeFromOrder = useCallback((params: {
     mappedItems: SaleOrderItem[]
@@ -337,11 +353,13 @@ export function useSaleOrder({
     orderDiscount,
     setOrderDiscount,
     paymentMethod,
-    setPaymentMethod,
+    setPaymentMethod: handlePaymentMethodChange,
     paidAmount,
     setPaidAmount,
     cashReceived,
     setCashReceived,
+    bankAccountId,
+    setBankAccountId,
     notes,
     setNotes,
     isAddCustomerOpen,

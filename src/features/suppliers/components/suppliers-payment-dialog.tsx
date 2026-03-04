@@ -38,6 +38,7 @@ import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
 import { Separator } from '@/components/ui/separator'
+import { buildVietQrUrl } from '@/lib/viet-qr'
 import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import {
   supplierPaymentFormSchema,
@@ -51,22 +52,6 @@ const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10)
-
-function buildVietQrUrl(
-  bankBin: string,
-  accountNumber: string,
-  accountHolder: string,
-  amount: string,
-  note?: string
-) {
-  const numericAmount = Number(amount)
-  const safeAmount = Number.isFinite(numericAmount) && numericAmount > 0 ? numericAmount : 0
-  const params = new URLSearchParams()
-  if (safeAmount > 0) params.set('amount', String(safeAmount))
-  if (note) params.set('addInfo', note)
-  params.set('accountName', accountHolder)
-  return `https://img.vietqr.io/image/${bankBin}-${accountNumber}-compact2.png?${params.toString()}`
-}
 
 function AddBankAccountInline({
   supplierId,
@@ -221,7 +206,7 @@ export function SuppliersPaymentDialog({
       selectedAccount.bank_bin,
       selectedAccount.account_number,
       selectedAccount.account_holder,
-      watchedAmount ?? '',
+      Number(watchedAmount),
       watchedNote
     )
   }, [selectedAccount, watchedAmount, watchedNote])

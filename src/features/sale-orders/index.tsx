@@ -1,11 +1,13 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { Printer } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import {
   getCustomersQueryOptions,
+  getBankAccountsQueryOptions,
   getInventoryBatchesQueryOptions,
   getLocationsQueryOptions,
   getProductsQueryOptions,
@@ -15,12 +17,15 @@ import { inventoryBatchesRepo } from '@/client'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { Button } from '@/components/ui/button'
+import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
 import { type SaleOrderItem } from './data/types'
 import { SaleOrdersItems } from './components/sale-orders-items'
 import { SaleOrdersMeta } from './components/sale-orders-meta'
 import { SaleOrdersSearch } from './components/sale-orders-search'
 import { SaleOrdersSummary } from './components/sale-orders-summary'
+import { SaleOrderInvoice } from './components/sale-order-invoice'
 import { useSaleOrder } from './hooks/use-sale-order'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
@@ -48,6 +53,11 @@ export function SaleOrders() {
 
   const { data: customers = [] } = useQuery({
     ...getCustomersQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+  const { data: bankAccounts = [] } = useQuery({
+    ...getBankAccountsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
@@ -86,6 +96,14 @@ export function SaleOrders() {
       navigate({ to: '/' })
     }
   }, [orderDetail, orderId, isOrderLoading, navigate])
+
+  useEffect(() => {
+    if (order.bankAccountId || bankAccounts.length === 0) return
+    const defaultAccount = bankAccounts.find((account) => account.is_default) ?? bankAccounts[0]
+    if (defaultAccount) {
+      order.setBankAccountId(defaultAccount.id)
+    }
+  }, [bankAccounts, order.bankAccountId, order.setBankAccountId])
 
   useEffect(() => {
     if (!orderDetail || order.hasInitialized || products.length === 0) return
@@ -159,6 +177,24 @@ export function SaleOrders() {
     return () => { isActive = false }
   }, [orderDetail, order.hasInitialized, products, tenantId, userLocationId, orderId])
 
+  // ── Print ──────────────────────────────────────────────────
+  const [printOpen, setPrintOpen] = useState(false)
+
+  const selectedBankAccount = useMemo(
+    () => bankAccounts.find((a) => a.id === order.bankAccountId) ?? null,
+    [bankAccounts, order.bankAccountId]
+  )
+
+  const selectedLocation = useMemo(
+    () => locations.find((l) => l.id === order.selectedLocationId) ?? null,
+    [locations, order.selectedLocationId]
+  )
+
+  const customerName = useMemo(() => {
+    if (!order.customerId) return undefined
+    return customers.find((c) => c.id === order.customerId)?.name ?? undefined
+  }, [customers, order.customerId])
+
   // ── Render ──────────────────────────────────────────────────
   const isLoadingEditData = Boolean(orderId) && (!orderDetail || !order.hasInitialized || isOrderLoading)
 
@@ -171,6 +207,16 @@ export function SaleOrders() {
             onAddProduct={order.addProduct}
             readOnly={order.isReadOnly}
           />
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='ml-auto shrink-0 gap-2'
+            onClick={() => setPrintOpen(true)}
+          >
+            <Printer className='size-4' />
+            In hoá đơn
+          </Button>
         </div>
       </Header>
 
@@ -210,12 +256,12 @@ export function SaleOrders() {
               onOrderDiscountChange={order.setOrderDiscount}
               paymentMethod={order.paymentMethod}
               onPaymentMethodChange={order.setPaymentMethod}
-              paidAmount={order.paidAmount}
-              onPaidAmountChange={order.setPaidAmount}
               cashReceived={order.cashReceived}
               onCashReceivedChange={order.setCashReceived}
               changeAmount={order.changeAmount}
-              debtAmount={order.debtAmount}
+              bankAccounts={bankAccounts}
+              bankAccountId={order.bankAccountId}
+              onBankAccountChange={order.setBankAccountId}
               notes={order.notes}
               onNotesChange={order.setNotes}
               orderStatus={order.orderStatus}
@@ -232,6 +278,29 @@ export function SaleOrders() {
         onOpenChange={order.setIsAddCustomerOpen}
         onCreated={(customer) => order.setCustomerId(customer.id)}
       />
+
+      <PrintPreviewDialog
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        title='Xem trước hoá đơn'
+        documentTitle={order.orderCode}
+      >
+        <SaleOrderInvoice
+          orderCode={order.orderCode}
+          storeName={selectedLocation?.name}
+          storeAddress={selectedLocation?.address ?? undefined}
+          storePhone={selectedLocation?.phone ?? undefined}
+          items={order.items}
+          totals={order.totals}
+          orderDiscount={order.orderDiscount}
+          customerName={customerName}
+          paymentMethod={order.paymentMethod}
+          cashReceived={order.cashReceived}
+          changeAmount={order.changeAmount}
+          bankAccount={selectedBankAccount}
+          notes={order.notes}
+        />
+      </PrintPreviewDialog>
     </>
   )
 }

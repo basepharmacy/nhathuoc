@@ -2,10 +2,19 @@ import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
+import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
 import type { Customer } from '@/services/supabase/database/repo/customersRepo'
+import type { BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
 import type { SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
 import { CustomerSwitcher } from './customer-switcher'
 
@@ -22,12 +31,12 @@ type SaleOrdersSummaryProps = {
   onOrderDiscountChange: (value: number) => void
   paymentMethod: PaymentMethod
   onPaymentMethodChange: (value: PaymentMethod) => void
-  paidAmount: number
-  onPaidAmountChange: (value: number) => void
   cashReceived: number
   onCashReceivedChange: (value: number) => void
   changeAmount: number
-  debtAmount: number
+  bankAccounts: BankAccount[]
+  bankAccountId: string
+  onBankAccountChange: (value: string) => void
   notes: string
   onNotesChange: (value: string) => void
   onSaveDraft: () => void
@@ -51,12 +60,12 @@ export function SaleOrdersSummary({
   onOrderDiscountChange,
   paymentMethod,
   onPaymentMethodChange,
-  paidAmount,
-  onPaidAmountChange,
   cashReceived,
   onCashReceivedChange,
   changeAmount,
-  debtAmount,
+  bankAccounts,
+  bankAccountId,
+  onBankAccountChange,
   notes,
   onNotesChange,
   onSaveDraft,
@@ -155,22 +164,34 @@ export function SaleOrdersSummary({
           </div>
         ) : (
           <div className='space-y-2 text-sm'>
-            <div className='flex items-center justify-between text-muted-foreground'>
-              <span>Số tiền thanh toán</span>
-              <Input
-                value={formatCurrency(paidAmount)}
-                onChange={(event) => onPaidAmountChange(normalizeNumber(event.target.value))}
-                className='h-8 w-28 rounded-full text-right text-xs'
-                inputMode='numeric'
-                disabled={isReadOnly}
-              />
+            <div className='space-y-1 text-muted-foreground'>
+              <span className='text-xs'>Tài khoản thanh toán</span>
+              <Select
+                value={bankAccountId}
+                onValueChange={onBankAccountChange}
+                disabled={isReadOnly || bankAccounts.length === 0}
+              >
+                <SelectTrigger className='h-9 rounded-full text-xs'>
+                  <SelectValue placeholder='Chọn tài khoản ngân hàng' />
+                </SelectTrigger>
+                <SelectContent>
+                  {bankAccounts.map((account) => {
+                    const bank = bankByBin.get(account.bank_bin)
+                    const bankName = bank?.shortName || bank?.name || account.bank_bin
+                    return (
+                      <SelectItem key={account.id} value={account.id}>
+                        {bankName} - {account.account_number}
+                      </SelectItem>
+                    )
+                  })}
+                </SelectContent>
+              </Select>
             </div>
-            <div className='flex items-center justify-between text-muted-foreground'>
-              <span>Còn lại</span>
-              <span className='font-semibold text-foreground'>
-                {formatCurrency(debtAmount)}đ
+            {bankAccounts.length === 0 ? (
+              <span className='text-xs text-muted-foreground'>
+                Chưa có tài khoản ngân hàng.
               </span>
-            </div>
+            ) : null}
           </div>
         )}
       </div>
