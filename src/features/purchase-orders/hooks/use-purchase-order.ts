@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { purchaseOrdersRepo } from '@/client'
@@ -61,15 +61,27 @@ export function usePurchaseOrder({
   const isReadOnly = orderStatus !== '1_DRAFT' && orderStatus !== '2_ORDERED'
   const isItemsReadOnly = orderStatus !== '1_DRAFT'
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
-      0
-    )
-    const total = Math.max(0, subtotal - orderDiscount)
-    const debt = Math.max(0, total - paidAmount)
-    return { subtotal, total, debt }
-  }, [items, orderDiscount, paidAmount])
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
+    [items]
+  )
+
+  const prevSubtotalRef = useRef(subtotal)
+  useEffect(() => {
+    if (prevSubtotalRef.current !== subtotal) {
+      setOrderDiscount(0)
+    }
+    prevSubtotalRef.current = subtotal
+  }, [subtotal])
+
+  const totals = useMemo(
+    () => {
+      const total = Math.max(0, subtotal - orderDiscount)
+      const debt = Math.max(0, total - paidAmount)
+      return { subtotal, total, debt }
+    },
+    [subtotal, orderDiscount, paidAmount]
+  )
 
   // ── Validation ──────────────────────────────────────────────
   const validateOrder = () => {
@@ -210,6 +222,12 @@ export function usePurchaseOrder({
     setPaymentStatus(params.paymentStatus)
     setNotes(params.notes)
     setSelectedLocationId(params.locationId)
+    // Sync subtotal ref so the discount reset effect doesn't fire on init
+    const initSubtotal = params.mappedItems.reduce(
+      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
+      0
+    )
+    prevSubtotalRef.current = initSubtotal
     setHasInitialized(true)
   }, [])
 
