@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -21,22 +21,40 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTableToolbar } from '@/components/data-table'
-import { roles } from '../data/data'
-import { type StaffUser } from '../data/schema'
-import { usersColumns as columns } from './users-columns'
+import { type Location } from '@/services/supabase'
+import { roles } from '../data/staff-data'
+import { type StaffUser } from '../data/staff-schema'
+import { staffColumns as columns } from './staff-columns'
 
 type DataTableProps = {
   data: StaffUser[]
+  locations?: Location[]
   isLoading?: boolean
   isError?: boolean
 }
 
-export function UsersTable({ data, isLoading, isError }: DataTableProps) {
+export function StaffTable({
+  data,
+  locations = [],
+  isLoading,
+  isError,
+}: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+
+  const locationOptions = useMemo(
+    () => [
+      { label: 'Toàn hệ thống', value: 'ALL' },
+      ...locations.map((location) => ({
+        label: location.name,
+        value: location.id,
+      })),
+    ],
+    [locations]
+  )
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -76,6 +94,11 @@ export function UsersTable({ data, isLoading, isError }: DataTableProps) {
             columnId: 'role',
             title: 'Vai trò',
             options: roles.map((role) => ({ ...role })),
+          },
+          {
+            columnId: 'location',
+            title: 'Chi nhánh',
+            options: locationOptions,
           },
         ]}
       />

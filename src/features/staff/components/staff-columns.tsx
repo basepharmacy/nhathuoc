@@ -1,11 +1,11 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { roles } from '../data/data'
-import { type StaffUser } from '../data/schema'
+import { roles } from '../data/staff-data'
+import { type StaffUser } from '../data/staff-schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
-export const usersColumns: ColumnDef<StaffUser>[] = [
+export const staffColumns: ColumnDef<StaffUser>[] = [
   {
     accessorKey: 'name',
     header: ({ column }) => (
@@ -51,6 +51,7 @@ export const usersColumns: ColumnDef<StaffUser>[] = [
   },
   {
     id: 'location',
+    accessorFn: (row) => row.location?.id ?? 'ALL',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Chi nhánh' />
     ),
@@ -60,6 +61,7 @@ export const usersColumns: ColumnDef<StaffUser>[] = [
       </LongText>
     ),
     meta: { label: 'Chi nhánh' },
+    filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
     accessorKey: 'address',

@@ -20,9 +20,9 @@ import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedUsersIndexRouteImport } from './routes/_authenticated/users/index'
 import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSuppliersIndexRouteImport } from './routes/_authenticated/suppliers/index'
+import { Route as AuthenticatedStaffsIndexRouteImport } from './routes/_authenticated/staffs/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSaleOrdersIndexRouteImport } from './routes/_authenticated/sale-orders/index'
 import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_authenticated/purchase-orders/index'
@@ -101,11 +101,6 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedUsersIndexRoute = AuthenticatedUsersIndexRouteImport.update({
-  id: '/users/',
-  path: '/users/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -115,6 +110,12 @@ const AuthenticatedSuppliersIndexRoute =
   AuthenticatedSuppliersIndexRouteImport.update({
     id: '/suppliers/',
     path: '/suppliers/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedStaffsIndexRoute =
+  AuthenticatedStaffsIndexRouteImport.update({
+    id: '/staffs/',
+    path: '/staffs/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedSettingsIndexRoute =
@@ -280,9 +281,9 @@ export interface FileRoutesByFullPath {
   '/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/staffs/': typeof AuthenticatedStaffsIndexRoute
   '/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/tasks/': typeof AuthenticatedTasksIndexRoute
-  '/users/': typeof AuthenticatedUsersIndexRoute
   '/inventory/adjustments/': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -316,9 +317,9 @@ export interface FileRoutesByTo {
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/sale-orders': typeof AuthenticatedSaleOrdersIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
+  '/staffs': typeof AuthenticatedStaffsIndexRoute
   '/suppliers': typeof AuthenticatedSuppliersIndexRoute
   '/tasks': typeof AuthenticatedTasksIndexRoute
-  '/users': typeof AuthenticatedUsersIndexRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
 export interface FileRoutesById {
@@ -355,9 +356,9 @@ export interface FileRoutesById {
   '/_authenticated/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/_authenticated/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
+  '/_authenticated/staffs/': typeof AuthenticatedStaffsIndexRoute
   '/_authenticated/suppliers/': typeof AuthenticatedSuppliersIndexRoute
   '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
-  '/_authenticated/users/': typeof AuthenticatedUsersIndexRoute
   '/_authenticated/inventory/adjustments/': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
 export interface FileRouteTypes {
@@ -394,9 +395,9 @@ export interface FileRouteTypes {
     | '/purchase-orders/'
     | '/sale-orders/'
     | '/settings/'
+    | '/staffs/'
     | '/suppliers/'
     | '/tasks/'
-    | '/users/'
     | '/inventory/adjustments/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -430,9 +431,9 @@ export interface FileRouteTypes {
     | '/purchase-orders'
     | '/sale-orders'
     | '/settings'
+    | '/staffs'
     | '/suppliers'
     | '/tasks'
-    | '/users'
     | '/inventory/adjustments'
   id:
     | '__root__'
@@ -468,9 +469,9 @@ export interface FileRouteTypes {
     | '/_authenticated/purchase-orders/'
     | '/_authenticated/sale-orders/'
     | '/_authenticated/settings/'
+    | '/_authenticated/staffs/'
     | '/_authenticated/suppliers/'
     | '/_authenticated/tasks/'
-    | '/_authenticated/users/'
     | '/_authenticated/inventory/adjustments/'
   fileRoutesById: FileRoutesById
 }
@@ -565,13 +566,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/users/': {
-      id: '/_authenticated/users/'
-      path: '/users'
-      fullPath: '/users/'
-      preLoaderRoute: typeof AuthenticatedUsersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/tasks/': {
       id: '/_authenticated/tasks/'
       path: '/tasks'
@@ -584,6 +578,13 @@ declare module '@tanstack/react-router' {
       path: '/suppliers'
       fullPath: '/suppliers/'
       preLoaderRoute: typeof AuthenticatedSuppliersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/staffs/': {
+      id: '/_authenticated/staffs/'
+      path: '/staffs'
+      fullPath: '/staffs/'
+      preLoaderRoute: typeof AuthenticatedStaffsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings/': {
@@ -785,9 +786,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseOrdersIndexRoute: typeof AuthenticatedPurchaseOrdersIndexRoute
   AuthenticatedSaleOrdersIndexRoute: typeof AuthenticatedSaleOrdersIndexRoute
+  AuthenticatedStaffsIndexRoute: typeof AuthenticatedStaffsIndexRoute
   AuthenticatedSuppliersIndexRoute: typeof AuthenticatedSuppliersIndexRoute
   AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
-  AuthenticatedUsersIndexRoute: typeof AuthenticatedUsersIndexRoute
   AuthenticatedInventoryAdjustmentsIndexRoute: typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
 
@@ -811,9 +812,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseOrdersIndexRoute: AuthenticatedPurchaseOrdersIndexRoute,
   AuthenticatedSaleOrdersIndexRoute: AuthenticatedSaleOrdersIndexRoute,
+  AuthenticatedStaffsIndexRoute: AuthenticatedStaffsIndexRoute,
   AuthenticatedSuppliersIndexRoute: AuthenticatedSuppliersIndexRoute,
   AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
-  AuthenticatedUsersIndexRoute: AuthenticatedUsersIndexRoute,
   AuthenticatedInventoryAdjustmentsIndexRoute:
     AuthenticatedInventoryAdjustmentsIndexRoute,
 }

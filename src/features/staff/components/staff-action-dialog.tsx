@@ -30,8 +30,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 import { SelectDropdown } from '@/components/select-dropdown'
-import { roles } from '../data/data'
-import { type StaffRole, type StaffUser } from '../data/schema'
+import { roles } from '../data/staff-data'
+import { type StaffRole, type StaffUser } from '../data/staff-schema'
 
 const formSchema = z.object({
   name: z
@@ -62,7 +62,7 @@ const formSchema = z.object({
 
 type StaffForm = z.infer<typeof formSchema>
 
-type UserActionDialogProps = {
+type StaffActionDialogProps = {
   currentRow?: StaffUser
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -71,11 +71,11 @@ type UserActionDialogProps = {
 const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
 
-export function UsersActionDialog({
+export function StaffActionDialog({
   currentRow,
   open,
   onOpenChange,
-}: UserActionDialogProps) {
+}: StaffActionDialogProps) {
   const isEdit = !!currentRow
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''

@@ -10,15 +10,15 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type StaffUser } from '../data/schema'
-import { useUsers } from './users-provider'
+import { type StaffUser } from '../data/staff-schema'
+import { useStaff } from './staff-provider'
 
 type DataTableRowActionsProps = {
   row: Row<StaffUser>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
-  const { setOpen, setCurrentRow } = useUsers()
+  const { setOpen, setCurrentRow } = useStaff()
   return (
     <>
       <DropdownMenu modal={false}>

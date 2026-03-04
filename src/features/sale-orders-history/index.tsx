@@ -16,12 +16,8 @@ import {
   getCustomersQueryOptions,
   getSaleOrdersHistoryQueryOptions,
 } from '@/client/queries'
-import { ConfigDrawer } from '@/components/config-drawer'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { ProfileDropdown } from '@/components/profile-dropdown'
-import { Search } from '@/components/search'
-import { ThemeSwitch } from '@/components/theme-switch'
 import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
 import { getSaleOrdersHistoryColumns } from './components/sale-orders-history-columns.tsx'
 import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.tsx'
@@ -230,19 +226,17 @@ export function SaleOrdersHistory() {
   return (
     <>
       <Header fixed>
-        <Search />
-        <div className='ms-auto flex items-center space-x-4'>
-          <ThemeSwitch />
-          <ConfigDrawer />
-          <ProfileDropdown />
+        <div className='flex w-full items-center justify-between gap-4'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <h2 className='text-2xl font-bold tracking-tight'>Lịch sử bán hàng</h2>
+            <p className='text-sm text-muted-foreground'>
+              Quản lý lịch sử bán hàng tại đây.
+            </p>
+          </div>
         </div>
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        <div>
-          <h2 className='text-2xl font-bold tracking-tight'>Lịch sử bán hàng</h2>
-          <p className='text-muted-foreground'>Quản lý lịch sử bán hàng tại đây.</p>
-        </div>
         <SaleOrdersHistoryTable
           table={table}
           isLoading={isLoading}

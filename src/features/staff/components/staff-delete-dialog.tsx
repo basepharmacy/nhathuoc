@@ -5,19 +5,19 @@ import { AlertTriangle } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { userAccountsRepo } from '@/client'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { type StaffUser } from '../data/schema'
+import { type StaffUser } from '../data/staff-schema'
 
-type UserDeleteDialogProps = {
+type StaffDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentRow: StaffUser
 }
 
-export function UsersDeleteDialog({
+export function StaffDeleteDialog({
   open,
   onOpenChange,
   currentRow,
-}: UserDeleteDialogProps) {
+}: StaffDeleteDialogProps) {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const queryClient = useQueryClient()

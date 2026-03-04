@@ -1,12 +1,12 @@
-import { UsersActionDialog } from './users-action-dialog'
-import { UsersDeleteDialog } from './users-delete-dialog'
-import { useUsers } from './users-provider'
+import { StaffActionDialog } from './staff-action-dialog'
+import { StaffDeleteDialog } from './staff-delete-dialog'
+import { useStaff } from './staff-provider'
 
-export function UsersDialogs() {
-  const { open, setOpen, currentRow, setCurrentRow } = useUsers()
+export function StaffDialogs() {
+  const { open, setOpen, currentRow, setCurrentRow } = useStaff()
   return (
     <>
-      <UsersActionDialog
+      <StaffActionDialog
         key='user-add'
         open={open === 'add'}
         onOpenChange={() => setOpen('add')}
@@ -14,7 +14,7 @@ export function UsersDialogs() {
 
       {currentRow && (
         <>
-          <UsersActionDialog
+          <StaffActionDialog
             key={`user-edit-${currentRow.id}`}
             open={open === 'edit'}
             onOpenChange={() => {
@@ -26,7 +26,7 @@ export function UsersDialogs() {
             currentRow={currentRow}
           />
 
-          <UsersDeleteDialog
+          <StaffDeleteDialog
             key={`user-delete-${currentRow.id}`}
             open={open === 'delete'}
             onOpenChange={() => {

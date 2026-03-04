@@ -122,7 +122,7 @@ const staticNavGroups = [
       },
       {
         title: 'Quản lý nhân viên',
-        url: '/users',
+        url: '/staffs',
         icon: Users,
       },
       {
