@@ -121,6 +121,11 @@ const staticNavGroups = [
         icon: MapPin,
       },
       {
+        title: 'Quản lý nhân viên',
+        url: '/users',
+        icon: Users,
+      },
+      {
         title: 'Tài khoản thanh toán',
         url: '/bank-accounts',
         icon: BarChart3,

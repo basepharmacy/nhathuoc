@@ -10,11 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { type User } from '../data/schema'
+import { type StaffUser } from '../data/schema'
 import { useUsers } from './users-provider'
 
 type DataTableRowActionsProps = {
-  row: Row<User>
+  row: Row<StaffUser>
 }
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
@@ -38,7 +38,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
               setOpen('edit')
             }}
           >
-            Edit
+            Chỉnh sửa
             <DropdownMenuShortcut>
               <UserPen size={16} />
             </DropdownMenuShortcut>
@@ -51,7 +51,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
             }}
             className='text-red-500!'
           >
-            Delete
+            Xóa
             <DropdownMenuShortcut>
               <Trash2 size={16} />
             </DropdownMenuShortcut>

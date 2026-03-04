@@ -1,18 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { AlertTriangle } from 'lucide-react'
-import { showSubmittedData } from '@/lib/show-submitted-data'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import { useUser } from '@/client/provider'
+import { userAccountsRepo } from '@/client'
 import { ConfirmDialog } from '@/components/confirm-dialog'
-import { type User } from '../data/schema'
+import { type StaffUser } from '../data/schema'
 
 type UserDeleteDialogProps = {
   open: boolean
   onOpenChange: (open: boolean) => void
-  currentRow: User
+  currentRow: StaffUser
 }
 
 export function UsersDeleteDialog({
@@ -20,13 +18,20 @@ export function UsersDeleteDialog({
   onOpenChange,
   currentRow,
 }: UserDeleteDialogProps) {
-  const [value, setValue] = useState('')
+  const { user } = useUser()
+  const tenantId = user?.profile?.tenant_id ?? ''
+  const queryClient = useQueryClient()
+
+  const deleteMutation = useMutation({
+    mutationFn: () => userAccountsRepo.deleteUser(currentRow.id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['staff-users', tenantId] })
+      onOpenChange(false)
+    },
+  })
 
   const handleDelete = () => {
-    if (value.trim() !== currentRow.username) return
-
-    onOpenChange(false)
-    showSubmittedData(currentRow, 'The following user has been deleted:')
+    deleteMutation.mutate()
   }
 
   return (
@@ -34,47 +39,24 @@ export function UsersDeleteDialog({
       open={open}
       onOpenChange={onOpenChange}
       handleConfirm={handleDelete}
-      disabled={value.trim() !== currentRow.username}
+      disabled={deleteMutation.isPending}
       title={
         <span className='text-destructive'>
           <AlertTriangle
             className='me-1 inline-block stroke-destructive'
             size={18}
           />{' '}
-          Delete User
+          Xóa nhân viên
         </span>
       }
       desc={
-        <div className='space-y-4'>
-          <p className='mb-2'>
-            Are you sure you want to delete{' '}
-            <span className='font-bold'>{currentRow.username}</span>?
-            <br />
-            This action will permanently remove the user with the role of{' '}
-            <span className='font-bold'>
-              {currentRow.role.toUpperCase()}
-            </span>{' '}
-            from the system. This cannot be undone.
-          </p>
-
-          <Label className='my-2'>
-            Username:
-            <Input
-              value={value}
-              onChange={(e) => setValue(e.target.value)}
-              placeholder='Enter username to confirm deletion.'
-            />
-          </Label>
-
-          <Alert variant='destructive'>
-            <AlertTitle>Warning!</AlertTitle>
-            <AlertDescription>
-              Please be careful, this operation can not be rolled back.
-            </AlertDescription>
-          </Alert>
-        </div>
+        <p>
+          Bạn có chắc chắn muốn xóa nhân viên{' '}
+          <span className='font-bold'>{currentRow.name}</span>? Hành động này
+          không thể hoàn tác.
+        </p>
       }
-      confirmText='Delete'
+      confirmText='Xóa'
       destructive
     />
   )

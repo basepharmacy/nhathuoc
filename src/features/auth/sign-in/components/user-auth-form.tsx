@@ -42,9 +42,12 @@ const mapAuthErrorToVietnamese = (error: unknown): string => {
 }
 
 const formSchema = z.object({
-  email: z.email({
-    error: (iss) => (iss.input === '' ? 'Hãy nhập email của bạn' : undefined),
-  }),
+  login: z
+    .string()
+    .min(1, 'Hãy nhập tài khoản đăng nhập'),
+  tenantCode: z
+    .string()
+    .min(1, 'Hãy nhập tenant code'),
   password: z
     .string()
     .min(1, 'Hãy nhập mật khẩu của bạn')
@@ -65,7 +68,8 @@ export function UserAuthForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: '',
+      login: '',
+      tenantCode: '',
       password: '',
     },
   })
@@ -74,15 +78,17 @@ export function UserAuthForm({
     setIsLoading(true)
 
     try {
+      const email = `${data.login.trim()}@${data.tenantCode.trim()}.nhathuoc.com`
+
       await supabaseAuth.signInWithPassword({
-        email: data.email,
+        email,
         password: data.password,
       })
 
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
 
-      toast.success(`Chào mừng bạn đăng nhập trở lại, ${data.email}!`)
+      toast.success(`Chào mừng bạn đăng nhập trở lại, ${email}!`)
     } catch (error) {
       toast.error(mapAuthErrorToVietnamese(error))
     } finally {
@@ -99,12 +105,25 @@ export function UserAuthForm({
       >
         <FormField
           control={form.control}
-          name='email'
+          name='tenantCode'
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Mã khách hàng</FormLabel>
               <FormControl>
-                <Input placeholder='name@example.com' {...field} />
+                <Input placeholder='Mã khách hàng' {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name='login'
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Tài khoản đăng nhập</FormLabel>
+              <FormControl>
+                <Input placeholder='Tài khoản đăng nhập' {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>

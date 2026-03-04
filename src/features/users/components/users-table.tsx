@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
+  type ColumnFiltersState,
   type SortingState,
   type VisibilityState,
   flexRender,
@@ -7,12 +8,10 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import { cn } from '@/lib/utils'
-import { type NavigateFn, useTableUrlState } from '@/hooks/use-table-url-state'
 import {
   Table,
   TableBody,
@@ -21,47 +20,23 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableToolbar } from '@/components/data-table'
+import { DataTableToolbar } from '@/components/data-table'
 import { roles } from '../data/data'
-import { type User } from '../data/schema'
-import { DataTableBulkActions } from './data-table-bulk-actions'
+import { type StaffUser } from '../data/schema'
 import { usersColumns as columns } from './users-columns'
 
 type DataTableProps = {
-  data: User[]
-  search: Record<string, unknown>
-  navigate: NavigateFn
+  data: StaffUser[]
+  isLoading?: boolean
+  isError?: boolean
 }
 
-export function UsersTable({ data, search, navigate }: DataTableProps) {
+export function UsersTable({ data, isLoading, isError }: DataTableProps) {
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
-
-  // Local state management for table (uncomment to use local-only state, not synced with URL)
-  // const [columnFilters, onColumnFiltersChange] = useState<ColumnFiltersState>([])
-  // const [pagination, onPaginationChange] = useState<PaginationState>({ pageIndex: 0, pageSize: 10 })
-
-  // Synced with URL states (keys/defaults mirror users route search schema)
-  const {
-    columnFilters,
-    onColumnFiltersChange,
-    pagination,
-    onPaginationChange,
-    ensurePageInRange,
-  } = useTableUrlState({
-    search,
-    navigate,
-    pagination: { defaultPage: 1, defaultPageSize: 10 },
-    globalFilter: { enabled: false },
-    columnFilters: [
-      // username per-column text filter
-      { columnId: 'username', searchKey: 'username', type: 'string' },
-      { columnId: 'status', searchKey: 'status', type: 'array' },
-      { columnId: 'role', searchKey: 'role', type: 'array' },
-    ],
-  })
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -69,28 +44,21 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     columns,
     state: {
       sorting,
-      pagination,
       rowSelection,
       columnFilters,
       columnVisibility,
     },
     enableRowSelection: true,
-    onPaginationChange,
-    onColumnFiltersChange,
+    onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
-    getPaginationRowModel: getPaginationRowModel(),
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
   })
-
-  useEffect(() => {
-    ensurePageInRange(table.getPageCount())
-  }, [table, ensurePageInRange])
 
   return (
     <div
@@ -101,22 +69,12 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
     >
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Filter users...'
-        searchKey='username'
+        searchPlaceholder='Tìm nhân viên...'
+        searchKey='name'
         filters={[
           {
-            columnId: 'status',
-            title: 'Status',
-            options: [
-              { label: 'Active', value: 'active' },
-              { label: 'Inactive', value: 'inactive' },
-              { label: 'Invited', value: 'invited' },
-              { label: 'Suspended', value: 'suspended' },
-            ],
-          },
-          {
             columnId: 'role',
-            title: 'Role',
+            title: 'Vai trò',
             options: roles.map((role) => ({ ...role })),
           },
         ]}
@@ -140,9 +98,9 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}
@@ -150,7 +108,19 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  Đang tải...
+                </TableCell>
+              </TableRow>
+            ) : isError ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className='h-24 text-center'>
+                  Không thể tải danh sách nhân viên.
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
@@ -187,8 +157,6 @@ export function UsersTable({ data, search, navigate }: DataTableProps) {
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} className='mt-auto' />
-      <DataTableBulkActions table={table} />
     </div>
   )
 }

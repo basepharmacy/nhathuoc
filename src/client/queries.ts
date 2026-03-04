@@ -47,6 +47,15 @@ export const getProfilesQueryOptions = (userId: string) =>
     },
   })
 
+export const getStaffUsersQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ['staff-users', tenantId],
+    queryFn: async () => {
+      const profiles = await profilesRepo.getProfilesByTenantId(tenantId)
+      return profiles
+    },
+  })
+
 export const getTenantQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: ["tenants", tenantId],
