@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
+import { AlertTriangle } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { getInventoryBatchesQueryOptions } from '@/client/queries'
 import { Button } from '@/components/ui/button'
@@ -56,21 +57,31 @@ export function BatchSelectDialog({
     enabled: !!tenantId && !!productId && open,
   })
 
-  const batches = useMemo(() => {
+  const todayStart = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
+    return today
+  }, [])
+
+  const batches = useMemo(() => {
     return allBatches.filter((batch) => {
       if (!batch.expiry_date) return true
       const expiry = new Date(batch.expiry_date)
-      return expiry >= today
+      return expiry >= todayStart
     })
-  }, [allBatches])
+  }, [allBatches, todayStart])
 
-  const matchedBatch = useMemo(() => {
+  const selectedBatch = useMemo(() => {
     const code = batchCode.trim()
     if (!code) return null
-    return batches.find((batch) => batch.batch_code === code) ?? null
-  }, [batches, batchCode])
+    return allBatches.find((batch) => batch.batch_code === code) ?? null
+  }, [allBatches, batchCode])
+
+  const expiredBatch = useMemo(() => {
+    if (!selectedBatch?.expiry_date) return null
+    const expiry = new Date(selectedBatch.expiry_date)
+    return expiry < todayStart ? selectedBatch : null
+  }, [selectedBatch, todayStart])
 
   const expirySelected = useMemo(() => {
     if (!expiryDate) return undefined
@@ -79,7 +90,7 @@ export function BatchSelectDialog({
     return parsed
   }, [expiryDate])
 
-  const isExpiryLocked = Boolean(matchedBatch?.expiry_date)
+  const isExpiryLocked = Boolean(selectedBatch?.expiry_date)
 
   useEffect(() => {
     if (!open) return
@@ -88,11 +99,11 @@ export function BatchSelectDialog({
   }, [open, initialBatchCode, initialExpiryDate])
 
   useEffect(() => {
-    if (!matchedBatch) return
-    if (matchedBatch.expiry_date) {
-      setExpiryDate(toDateInputValue(matchedBatch.expiry_date))
+    if (!selectedBatch) return
+    if (selectedBatch.expiry_date) {
+      setExpiryDate(toDateInputValue(selectedBatch.expiry_date))
     }
-  }, [matchedBatch])
+  }, [selectedBatch])
 
   const handleSave = () => {
     if (readOnly) return
@@ -118,6 +129,12 @@ export function BatchSelectDialog({
               placeholder='Nhập hoặc chọn lô'
               disabled={readOnly}
             />
+            {expiredBatch ? (
+              <div className='flex items-center gap-2 rounded-md bg-orange-50 px-2 py-1 text-xs text-orange-700 dark:bg-orange-500/10 dark:text-orange-300'>
+                <AlertTriangle className='size-3.5 text-orange-500 dark:text-orange-300' />
+                <span>Lô này đã hết hạn.</span>
+              </div>
+            ) : null}
             {batches.length > 0 ? (
               <div className='flex flex-wrap gap-2'>
                 {batches.map((batch) => (

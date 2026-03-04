@@ -217,7 +217,6 @@ export const createInventoryBatchRepository = (
         .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id')
         .eq('tenant_id', params.tenantId)
         .in('product_id', params.productIds)
-        .gt('quantity', 0)
 
       if (params.locationId) {
         query = query.eq('location_id', params.locationId)
