@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { Printer } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import {
@@ -12,11 +13,14 @@ import {
 } from '@/client/queries'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { Button } from '@/components/ui/button'
+import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import type { OrderItem } from './data/types'
 import { PurchaseOrdersItems } from './components/purchase-orders-items'
 import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
 import { PurchaseOrdersSearch } from './components/purchase-orders-search'
 import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
+import { PurchaseOrderInvoice } from './components/purchase-order-invoice'
 import { usePurchaseOrder } from './hooks/use-purchase-order'
 
 const route = getRouteApi('/_authenticated/purchase-orders/')
@@ -108,6 +112,19 @@ export function PurchaseOrders() {
     if (newItemId) setPendingBatchItemId(newItemId)
   }
 
+  // ── Print ──────────────────────────────────────────────────
+  const [printOpen, setPrintOpen] = useState(false)
+
+  const selectedLocation = useMemo(
+    () => locations.find((l) => l.id === order.selectedLocationId) ?? null,
+    [locations, order.selectedLocationId]
+  )
+
+  const supplierName = useMemo(() => {
+    if (!order.supplierId) return undefined
+    return suppliers.find((s) => s.id === order.supplierId)?.name ?? undefined
+  }, [suppliers, order.supplierId])
+
   // ── Render ──────────────────────────────────────────────────
   const isLoadingEditData =
     Boolean(orderId) && (!orderDetail || !order.hasInitialized || isOrderLoading)
@@ -121,6 +138,16 @@ export function PurchaseOrders() {
             onAddProduct={handleAddProduct}
             readOnly={order.isItemsReadOnly}
           />
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='ml-auto shrink-0 gap-2'
+            onClick={() => setPrintOpen(true)}
+          >
+            <Printer className='size-4' />
+            In phiếu nhập
+          </Button>
         </div>
       </Header>
 
@@ -174,6 +201,26 @@ export function PurchaseOrders() {
           </div>
         )}
       </Main>
+
+      <PrintPreviewDialog
+        open={printOpen}
+        onOpenChange={setPrintOpen}
+        title='Xem trước phiếu nhập'
+        documentTitle={order.orderCode}
+      >
+        <PurchaseOrderInvoice
+          orderCode={order.orderCode}
+          storeName={selectedLocation?.name}
+          storeAddress={selectedLocation?.address ?? undefined}
+          storePhone={selectedLocation?.phone ?? undefined}
+          supplierName={supplierName}
+          items={order.items}
+          totals={order.totals}
+          orderDiscount={order.orderDiscount}
+          paidAmount={order.paidAmount}
+          notes={order.notes}
+        />
+      </PrintPreviewDialog>
     </>
   )
 }
