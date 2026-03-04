@@ -4,6 +4,7 @@ import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
 import {
   getInventoryBatchesListQueryOptions,
+  getInventoryProductsListQueryOptions,
   getInventoryBatchesSummaryQueryOptions,
   getLocationsQueryOptions,
 } from '@/client/queries'
@@ -35,9 +36,22 @@ export function Inventory() {
   })
 
   // List query (driven by table's queryParams)
-  const { data: listResult, isLoading, isError: isListError } = useQuery({
+  const {
+    data: batchListResult,
+    isLoading: isBatchLoading,
+    isError: isBatchError,
+  } = useQuery({
     ...getInventoryBatchesListQueryOptions(listQueryParams),
-    enabled: !!tenantId,
+    enabled: !!tenantId && viewMode === 'batch',
+  })
+
+  const {
+    data: productListResult,
+    isLoading: isProductLoading,
+    isError: isProductError,
+  } = useQuery({
+    ...getInventoryProductsListQueryOptions(listQueryParams),
+    enabled: !!tenantId && viewMode === 'product',
   })
 
   // Summary query
@@ -46,9 +60,13 @@ export function Inventory() {
     enabled: !!tenantId,
   })
 
-  const batches = listResult?.data ?? []
-  const total = listResult?.total ?? 0
-  const pageCount = Math.max(1, Math.ceil(total / listQueryParams.pageSize))
+  const batchRows = batchListResult?.data ?? []
+  const batchTotal = batchListResult?.total ?? 0
+  const batchPageCount = Math.max(1, Math.ceil(batchTotal / listQueryParams.pageSize))
+
+  const productRows = productListResult?.data ?? []
+  const productTotal = productListResult?.total ?? 0
+  const productPageCount = Math.max(1, Math.ceil(productTotal / listQueryParams.pageSize))
   const summary = summaryResult ?? {
     totalProducts: 0,
     totalQuantity: 0,
@@ -59,20 +77,14 @@ export function Inventory() {
   const hasShownError = useRef(false)
 
   useEffect(() => {
-    if ((isLocationsError || isListError || isSummaryError) && !hasShownError.current) {
+    if (
+      (isLocationsError || isBatchError || isProductError || isSummaryError) &&
+      !hasShownError.current
+    ) {
       toast.error('Có lỗi khi lấy dữ liệu từ server, vui lòng thử lại')
       hasShownError.current = true
     }
-  }, [isLocationsError, isListError, isSummaryError])
-
-  const sharedTableProps = {
-    batches,
-    tableState,
-    pageCount,
-    total,
-    isLoading,
-    filters,
-  }
+  }, [isLocationsError, isBatchError, isProductError, isSummaryError])
 
   return (
     <>
@@ -99,10 +111,24 @@ export function Inventory() {
           </div>
 
           <TabsContent value='product'>
-            <InventoryProductTable {...sharedTableProps} />
+            <InventoryProductTable
+              rows={productRows}
+              tableState={tableState}
+              pageCount={productPageCount}
+              total={productTotal}
+              isLoading={isProductLoading}
+              filters={filters}
+            />
           </TabsContent>
           <TabsContent value='batch'>
-            <InventoryBatchTable {...sharedTableProps} />
+            <InventoryBatchTable
+              batches={batchRows}
+              tableState={tableState}
+              pageCount={batchPageCount}
+              total={batchTotal}
+              isLoading={isBatchLoading}
+              filters={filters}
+            />
           </TabsContent>
         </Tabs>
       </Main>

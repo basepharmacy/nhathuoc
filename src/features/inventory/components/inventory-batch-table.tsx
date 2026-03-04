@@ -7,7 +7,12 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { formatDateLabel, formatDateTimeLabel, formatQuantity } from '@/lib/utils'
+import {
+  formatCurrency,
+  formatDateLabel,
+  formatDateTimeLabel,
+  formatQuantity,
+} from '@/lib/utils'
 import { type InventoryBatchWithRelations } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import {
   InventoryTable,
@@ -67,6 +72,35 @@ const columns: ColumnDef<InventoryBatchWithRelations>[] = [
     accessorKey: 'quantity',
     header: 'Tồn kho',
     cell: ({ row }) => formatQuantity(row.original.quantity),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    accessorKey: 'cumulative_quantity',
+    header: 'Tổng nhập',
+    cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    accessorKey: 'average_cost_price',
+    header: 'Giá nhập TB',
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {formatCurrency(row.original.average_cost_price, { fallback: '0' })}đ
+      </span>
+    ),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    id: 'batch_total_value',
+    header: 'Giá trị tồn kho',
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {formatCurrency(
+          (row.original.quantity ?? 0) * (row.original.average_cost_price ?? 0),
+          { fallback: '0' }
+        )}đ
+      </span>
+    ),
     meta: { className: 'text-end', thClassName: 'text-end' },
   },
   {

@@ -32,6 +32,31 @@ export type InventoryBatchesSummary = {
   totalValue: number
 }
 
+export type InventoryProductsListQueryInput = {
+  tenantId: string
+  pageIndex: number
+  pageSize: number
+  search?: string
+  locationIds?: string[]
+}
+
+export type InventoryProductsListItem = {
+  productId: string
+  productName: string
+  totalQuantity: number
+  totalCumulativeQuantity: number
+  averageCostPrice: number
+  totalValue: number
+  batchCount: number
+  locations: string[]
+  earliestExpiry: string | null
+}
+
+export type InventoryProductsListQueryResult = {
+  data: InventoryProductsListItem[]
+  total: number
+}
+
 export const createInventoryBatchRepository = (
   client: BasePharmacySupabaseClient
 ) => {
@@ -39,56 +64,24 @@ export const createInventoryBatchRepository = (
     async getInventoryBatchesSummary(
       params: InventoryBatchesSummaryQueryInput
     ): Promise<InventoryBatchesSummary> {
-      const searchValue = params.search?.trim()
+      const locationId = params.locationIds?.length === 1
+        ? params.locationIds[0]
+        : undefined
 
-      let query = client
-        .from('inventory_batches')
-        .select(
-          'product_id, quantity, batch_code, products(product_name, product_units(cost_price, is_base_unit))'
-        )
-        .eq('tenant_id', params.tenantId)
-
-      if (params.locationIds?.length) {
-        query = query.in('location_id', params.locationIds)
-      }
-
-      if (searchValue) {
-        query = query.ilike('batch_code', `%${searchValue}%`)
-      }
-
-      const { data, error } = await query
+      const { data, error } = await client.rpc('get_inventory_statistics', {
+        p_location_id: locationId,
+      })
 
       if (error) {
         throw error
       }
 
-      const items = (data ?? []) as Array<{
-        product_id: string
-        quantity: number | null
-        products?: {
-          product_units?: Array<{ cost_price: number | null; is_base_unit: boolean | null }>
-        } | null
-      }>
-
-      const productIds = new Set<string>()
-      let totalQuantity = 0
-      let totalValue = 0
-
-      items.forEach((row) => {
-        productIds.add(row.product_id)
-        const quantity = row.quantity ?? 0
-        totalQuantity += quantity
-
-        const units = row.products?.product_units ?? []
-        const baseUnit = units.find((unit) => unit.is_base_unit) ?? units[0]
-        const costPrice = baseUnit?.cost_price ?? 0
-        totalValue += quantity * costPrice
-      })
+      const stats = data?.[0]
 
       return {
-        totalProducts: productIds.size,
-        totalQuantity,
-        totalValue,
+        totalProducts: stats?.total_products ?? 0,
+        totalQuantity: stats?.total_quantity ?? 0,
+        totalValue: stats?.total_value ?? 0,
       }
     },
     async getInventoryBatchesList(
@@ -101,7 +94,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('inventory_batches')
         .select(
-          `id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name), locations(id, name)`,
+          `id, batch_code, expiry_date, quantity, cumulative_quantity, average_cost_price, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name), locations(id, name)`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -128,10 +121,92 @@ export const createInventoryBatchRepository = (
         total: count ?? 0,
       }
     },
+    async getInventoryProductsList(
+      params: InventoryProductsListQueryInput
+    ): Promise<InventoryProductsListQueryResult> {
+      const start = params.pageIndex * params.pageSize
+      const end = start + params.pageSize - 1
+      const searchValue = params.search?.trim()
+
+      let query = client
+        .from('products')
+        .select(
+          `id, product_name, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name))`,
+          { count: 'exact' }
+        )
+        .eq('tenant_id', params.tenantId)
+        .gt('inventory_batches.quantity', 0)
+
+      if (params.locationIds?.length) {
+        query = query.in('inventory_batches.location_id', params.locationIds)
+      }
+
+      if (searchValue) {
+        query = query.ilike('product_name', `%${searchValue}%`)
+      }
+
+      const { data, error, count } = await query
+        .order('product_name', { ascending: true })
+        .range(start, end)
+
+      if (error) {
+        throw error
+      }
+
+      const mapped = (data ?? []).map((product) => {
+        const batches = product.inventory_batches ?? []
+        let totalQuantity = 0
+        let totalCumulativeQuantity = 0
+        let totalValue = 0
+        let earliestExpiry: string | null = null
+        const locations = new Set<string>()
+
+        batches.forEach((batch) => {
+          const quantity = batch.quantity ?? 0
+          const cumulativeQuantity = batch.cumulative_quantity ?? 0
+          const averageCostPrice = batch.average_cost_price ?? 0
+          totalQuantity += quantity
+          totalCumulativeQuantity += cumulativeQuantity
+          totalValue += quantity * averageCostPrice
+
+          const locationName = batch.locations?.name
+          if (locationName) {
+            locations.add(locationName)
+          }
+
+          if (batch.expiry_date) {
+            if (!earliestExpiry || new Date(batch.expiry_date) < new Date(earliestExpiry)) {
+              earliestExpiry = batch.expiry_date
+            }
+          }
+        })
+
+        const averageCostPrice = totalQuantity > 0 ? totalValue / totalQuantity : 0
+
+        return {
+          productId: product.id,
+          productName: product.product_name ?? 'Không rõ',
+          totalQuantity,
+          totalCumulativeQuantity,
+          averageCostPrice,
+          totalValue: averageCostPrice * totalQuantity,
+          batchCount: batches.length,
+          locations: Array.from(locations),
+          earliestExpiry,
+        }
+      })
+
+      return {
+        data: mapped,
+        total: count ?? 0,
+      }
+    },
     async getInventoryBatchesByProductIds(params: {
       tenantId: string
       productIds: string[]
       locationId?: string | null
+      pageIndex?: number
+      pageSize?: number
     }): Promise<InventoryBatch[]> {
       if (params.productIds.length === 0) {
         return []
@@ -142,9 +217,16 @@ export const createInventoryBatchRepository = (
         .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id')
         .eq('tenant_id', params.tenantId)
         .in('product_id', params.productIds)
+        .gt('quantity', 0)
 
       if (params.locationId) {
         query = query.eq('location_id', params.locationId)
+      }
+
+      if (params.pageIndex !== undefined && params.pageSize !== undefined) {
+        const start = params.pageIndex * params.pageSize
+        const end = start + params.pageSize - 1
+        query = query.range(start, end)
       }
 
       const { data, error } = await query

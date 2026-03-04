@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -8,82 +7,15 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { formatDateLabel, formatQuantity } from '@/lib/utils'
-import { type InventoryBatchWithRelations } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
+import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import {
   InventoryTable,
   type FilterOption,
 } from './inventory-tables'
 
-export type InventoryProductRow = {
-  productId: string
-  productName: string
-  totalQuantity: number
-  batchCount: number
-  locations: string[]
-  earliestExpiry: string | null
-}
-
-function buildProductRows(
-  batches: InventoryBatchWithRelations[]
-): InventoryProductRow[] {
-  const grouped = new Map<
-    string,
-    {
-      row: InventoryProductRow
-      locations: Set<string>
-    }
-  >()
-
-  batches.forEach((batch) => {
-    const productId = batch.product_id
-    const productName = batch.products?.product_name ?? 'Không rõ'
-    const quantity = batch.quantity ?? 0
-    const locationName = batch.locations?.name ?? ''
-    const expiryDate = batch.expiry_date
-
-    const existing = grouped.get(productId)
-    if (!existing) {
-      const locations = new Set<string>()
-      if (locationName) {
-        locations.add(locationName)
-      }
-      grouped.set(productId, {
-        row: {
-          productId,
-          productName,
-          totalQuantity: quantity,
-          batchCount: 1,
-          locations: [],
-          earliestExpiry: expiryDate ?? null,
-        },
-        locations,
-      })
-      return
-    }
-
-    existing.row.totalQuantity += quantity
-    existing.row.batchCount += 1
-    if (locationName) {
-      existing.locations.add(locationName)
-    }
-
-    if (expiryDate) {
-      const current = existing.row.earliestExpiry
-      if (!current || new Date(expiryDate) < new Date(current)) {
-        existing.row.earliestExpiry = expiryDate
-      }
-    }
-  })
-
-  return Array.from(grouped.values()).map(({ row, locations }) => ({
-    ...row,
-    locations: Array.from(locations),
-  }))
-}
-
 type Props = {
-  batches: InventoryBatchWithRelations[]
+  rows: InventoryProductsListItem[]
   tableState: {
     pagination: PaginationState
     columnFilters: ColumnFiltersState
@@ -98,7 +30,7 @@ type Props = {
   filters: FilterOption[]
 }
 
-const columns: ColumnDef<InventoryProductRow>[] = [
+const columns: ColumnDef<InventoryProductsListItem>[] = [
   {
     id: 'search',
     accessorFn: (row) => row.productName,
@@ -127,6 +59,35 @@ const columns: ColumnDef<InventoryProductRow>[] = [
     meta: { className: 'text-end', thClassName: 'text-end' },
   },
   {
+    accessorKey: 'totalCumulativeQuantity',
+    header: 'Tổng nhập',
+    cell: ({ row }) => formatQuantity(row.original.totalCumulativeQuantity),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    accessorKey: 'averageCostPrice',
+    header: 'Giá nhập TB',
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {formatCurrency(row.original.averageCostPrice, { fallback: '0' })}đ
+      </span>
+    ),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    accessorKey: 'totalValue',
+    header: 'Giá trị tồn kho',
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {formatCurrency(
+          row.original.averageCostPrice * row.original.totalQuantity,
+          { fallback: '0' }
+        )}đ
+      </span>
+    ),
+    meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
     accessorKey: 'batchCount',
     header: 'Số lô',
     cell: ({ row }) => row.original.batchCount,
@@ -145,18 +106,16 @@ const columns: ColumnDef<InventoryProductRow>[] = [
 ]
 
 export function InventoryProductTable({
-  batches,
+  rows,
   tableState,
   pageCount,
   total,
   isLoading,
   filters,
 }: Props) {
-  const productRows = useMemo(() => buildProductRows(batches), [batches])
-
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
-    data: productRows,
+    data: rows,
     columns,
     state: {
       pagination: tableState.pagination,

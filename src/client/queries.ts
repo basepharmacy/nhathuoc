@@ -21,6 +21,7 @@ import { type SaleOrdersHistoryQueryInput } from '@/services/supabase/database/r
 import {
   type InventoryBatchesListQueryInput,
   type InventoryBatchesSummaryQueryInput,
+  type InventoryProductsListQueryInput,
 } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import {
   type StockAdjustmentsListQueryInput,
@@ -382,6 +383,30 @@ export const getInventoryBatchesListQueryOptions = (
         return { data: [], total: 0 }
       }
       const result = await inventoryBatchesRepo.getInventoryBatchesList(params)
+      return result
+    },
+  })
+
+export const getInventoryProductsListQueryOptions = (
+  params: InventoryProductsListQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'inventory-products',
+      params.tenantId,
+      'list',
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        locationIds: params.locationIds ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
+      const result = await inventoryBatchesRepo.getInventoryProductsList(params)
       return result
     },
   })
