@@ -15,6 +15,10 @@ import type { InventoryBatch } from '../repo/inventoryBatchesRepo'
 export type Profile = Tables<'profiles'>
 export type ProfileInsert = TablesInsert<'profiles'>
 export type ProfileUpdate = TablesUpdate<'profiles'>
+export type ProfileWithRelations = Profile & {
+	tenant?: Tenant | null
+	location?: Location | null
+}
 
 export type { Tenant, Location }
 export type { Supplier }

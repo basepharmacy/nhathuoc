@@ -43,11 +43,9 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
     }
   }, [locations, setLocations])
 
-  if (!selectedLocation) {
-    return null
-  }
-
-  const ActiveIcon = getLocationIcon(selectedLocation.type)
+  const ActiveIcon = selectedLocation
+    ? getLocationIcon(selectedLocation.type)
+    : Building2
 
   return (
     <SidebarMenu>
@@ -62,9 +60,11 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                 <ActiveIcon className='size-4' />
               </div>
               <div className='grid flex-1 text-start text-sm leading-tight'>
-                <span className='truncate font-semibold'>{selectedLocation.name}</span>
+                <span className='truncate font-semibold'>
+                  {selectedLocation?.name ?? 'Toàn hệ thống'}
+                </span>
                 <span className='truncate text-xs text-muted-foreground'>
-                  {selectedLocation.address ?? '—'}
+                  {selectedLocation?.address ?? 'Tất cả chi nhánh'}
                 </span>
               </div>
               <ChevronsUpDown className='ms-auto' />
@@ -76,6 +76,24 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
             side={isMobile ? 'bottom' : 'right'}
             sideOffset={4}
           >
+            <DropdownMenuLabel className='text-xs text-muted-foreground'>
+              Toàn hệ thống
+            </DropdownMenuLabel>
+            <DropdownMenuItem
+              onClick={() => setSelectedLocationId(null)}
+              className='gap-2 p-2'
+            >
+              <div className='flex size-6 items-center justify-center rounded-sm border'>
+                <Building2 className='size-4 shrink-0' />
+              </div>
+              <div className='grid flex-1 text-sm leading-tight'>
+                <span className='truncate font-medium'>Toàn hệ thống</span>
+                <span className='truncate text-xs text-muted-foreground'>
+                  Tất cả chi nhánh
+                </span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuLabel className='text-xs text-muted-foreground'>
               Chi nhánh
             </DropdownMenuLabel>
@@ -99,7 +117,6 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                 </DropdownMenuItem>
               )
             })}
-            {locations.length > 1 && <DropdownMenuSeparator />}
           </DropdownMenuContent>
         </DropdownMenu>
       </SidebarMenuItem>

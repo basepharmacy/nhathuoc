@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { useUser } from '@/client/provider'
 import type { Location } from '@/services/supabase/database/model'
 
 type LocationContextType = {
@@ -23,8 +24,10 @@ type LocationProviderProps = {
 }
 
 export function LocationProvider({ children }: LocationProviderProps) {
+  const { user } = useUser()
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(null)
   const [locations, setLocationsState] = useState<Location[]>([])
+  const [hasUserSelected, setHasUserSelected] = useState(false)
 
   const selectedLocation = locations.find((l) => l.id === selectedLocationId) ?? null
 
@@ -32,18 +35,47 @@ export function LocationProvider({ children }: LocationProviderProps) {
     setLocationsState(locs)
   }, [])
 
-  // Auto-select first location when locations are loaded and nothing is selected
+  const handleSetSelectedLocationId = useCallback((id: string | null) => {
+    setHasUserSelected(true)
+    setSelectedLocationId(id)
+  }, [])
+
+  // Auto-select location based on role when locations are loaded and nothing is selected
   useEffect(() => {
-    if (locations.length > 0 && !selectedLocationId) {
-      setSelectedLocationId(locations[0].id)
+    if (locations.length === 0 || selectedLocationId || hasUserSelected) {
+      return
     }
-  }, [locations, selectedLocationId])
+
+    const role = user?.role?.toUpperCase() ?? null
+
+    if (role === 'OWNER') {
+      setHasUserSelected(true)
+      setSelectedLocationId(null)
+      return
+    }
+
+    if (role === 'STAFF') {
+      const staffLocationId = user?.profile?.location_id ?? null
+      if (staffLocationId) {
+        setSelectedLocationId(staffLocationId)
+        return
+      }
+    }
+
+    setSelectedLocationId(locations[0].id)
+  }, [
+    locations,
+    selectedLocationId,
+    hasUserSelected,
+    user?.role,
+    user?.profile?.location_id,
+  ])
 
   return (
     <LocationContext.Provider
       value={{
         selectedLocationId,
-        setSelectedLocationId,
+        setSelectedLocationId: handleSetSelectedLocationId,
         selectedLocation,
         setLocations,
         locations,

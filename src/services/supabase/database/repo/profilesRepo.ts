@@ -1,12 +1,12 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Profile } from '../model'
+import type { ProfileWithRelations } from '../model'
 
 export const createProfileRepository = (client: BasePharmacySupabaseClient) => ({
-  async getProfileByUserId(userId: string): Promise<Profile | null> {
+  async getProfileByUserId(userId: string): Promise<ProfileWithRelations | null> {
     console.log("Fetching profile for userId:", userId)
     const { data, error } = await client
       .from('profiles')
-      .select('*')
+      .select('*, tenant:tenants(*), location:locations(*)')
       .eq('id', userId)
       .single()
 
@@ -18,6 +18,6 @@ export const createProfileRepository = (client: BasePharmacySupabaseClient) => (
       throw error
     }
 
-    return data as Profile
+    return data as ProfileWithRelations
   },
 })
