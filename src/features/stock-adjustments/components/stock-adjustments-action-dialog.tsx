@@ -186,6 +186,9 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
       queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId] })
+      queryClient.invalidateQueries({
+        queryKey: ['dashboard-report', 'low-stock-products'],
+      })
       if (!isOpenRef.current) return
       form.reset()
       onOpenChange(false)

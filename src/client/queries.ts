@@ -14,6 +14,7 @@ import {
   saleOrdersRepo,
   bankAccountsRepo,
   stockAdjustmentsRepo,
+  dashboardReportRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
@@ -26,6 +27,7 @@ import {
 import {
   type StockAdjustmentsListQueryInput,
 } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { type SalesPeriod } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 export type VietQrBank = {
   id: number | string
@@ -454,5 +456,54 @@ export const getStockAdjustmentsListQueryOptions = (
       }
       const result = await stockAdjustmentsRepo.getStockAdjustmentsList(params)
       return result
+    },
+  })
+
+export const getSalesStatisticsQueryOptions = (params: {
+  period: SalesPeriod
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'sales-statistics', params.period, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getSalesStatistics({
+        period: params.period,
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getLowStockProductsQueryOptions = (params: {
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'low-stock-products', params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getLowStockProducts({
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getExpiredInventoryBatchesQueryOptions = (params: {
+  tenantId: string
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: [
+      'dashboard-report',
+      'expired-batches',
+      params.tenantId,
+      params.locationId ?? 'all',
+      params.limit ?? 0,
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return []
+      }
+      return dashboardReportRepo.getExpiredInventoryBatches({
+        tenantId: params.tenantId,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
+      })
     },
   })

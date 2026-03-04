@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { purchaseOrdersRepo } from '@/client'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
@@ -33,6 +33,7 @@ export function usePurchaseOrder({
   orderDetail,
   navigate,
 }: UsePurchaseOrderParams) {
+  const queryClient = useQueryClient()
   const isEdit = Boolean(orderId)
 
   // ── Form state ──────────────────────────────────────────────
@@ -165,7 +166,12 @@ export function usePurchaseOrder({
         items: buildOrderItems(),
       })
     },
-    onSuccess: () => {
+    onSuccess: (_data, status) => {
+      if (status === '4_STORED') {
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-report', 'low-stock-products'],
+        })
+      }
       toast.success('Đã cập nhật đơn nhập hàng.')
       navigate({ to: '/purchase-orders/history' })
     },

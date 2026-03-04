@@ -16,6 +16,7 @@ const periodCompareLabels: Record<TimePeriod, string> = {
   day: 'so với hôm qua',
   week: 'so với tuần trước',
   month: 'so với tháng trước',
+  quarter: 'so với quý trước',
   year: 'so với năm trước',
 }
 
@@ -23,6 +24,7 @@ const periodChartDescriptions: Record<TimePeriod, string> = {
   day: 'Doanh thu theo giờ hôm nay',
   week: 'Doanh thu theo ngày trong tuần',
   month: 'Doanh thu theo ngày trong tháng',
+  quarter: 'Doanh thu theo tháng trong quý',
   year: 'Doanh thu theo tháng trong năm',
 }
 
@@ -30,6 +32,7 @@ const periodTopProductDescriptions: Record<TimePeriod, string> = {
   day: '5 sản phẩm bán chạy nhất hôm nay',
   week: '5 sản phẩm bán chạy nhất tuần này',
   month: '5 sản phẩm bán chạy nhất tháng này',
+  quarter: '5 sản phẩm bán chạy nhất quý này',
   year: '5 sản phẩm bán chạy nhất năm nay',
 }
 
@@ -54,6 +57,12 @@ function getSalesKpi(period: TimePeriod): KpiItem[] {
       { title: 'Lợi nhuận', value: formatCurrency(38_200_000, { style: 'currency' }), change: 15.3, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '234', change: 8.2, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '89', change: 5.1, icon: Users, changeLabel },
+    ],
+    quarter: [
+      { title: 'Doanh thu', value: formatCurrency(382_900_000, { style: 'currency' }), change: 14.2, icon: DollarSign, changeLabel },
+      { title: 'Lợi nhuận', value: formatCurrency(118_500_000, { style: 'currency' }), change: 16.4, icon: TrendingUp, changeLabel },
+      { title: 'Đơn bán', value: '712', change: 9.7, icon: ShoppingCart, changeLabel },
+      { title: 'Khách hàng', value: '248', change: 6.5, icon: Users, changeLabel },
     ],
     year: [
       { title: 'Doanh thu', value: formatCurrency(1_520_000_000, { style: 'currency' }), change: 18.3, icon: DollarSign, changeLabel },
@@ -112,6 +121,15 @@ function getChartData(period: TimePeriod) {
         tooltipLabelFormatter: (label: string) => `Ngày ${label}`,
       }
     }
+    case 'quarter':
+      return {
+        data: [
+          { name: 'Th1', total: 124000000 },
+          { name: 'Th2', total: 131000000 },
+          { name: 'Th3', total: 127900000 },
+        ],
+        tooltipLabelFormatter: (label: string) => label,
+      }
     case 'year':
       return {
         data: [
@@ -151,6 +169,13 @@ function getTopProducts(period: TimePeriod) {
       { name: 'Cetirizin 10mg', quantity: 38, unitName: 'tuýp', revenue: 1_520_000 },
     ],
     month: topProductsMonth,
+    quarter: [
+      { name: 'Paracetamol 500mg', quantity: 1120, unitName: 'viên', revenue: 56_000_000 },
+      { name: 'Vitamin C 1000mg', quantity: 860, unitName: 'viên', revenue: 43_000_000 },
+      { name: 'Amoxicillin 500mg', quantity: 640, unitName: 'vỉ', revenue: 51_200_000 },
+      { name: 'Omeprazol 20mg', quantity: 510, unitName: 'viên', revenue: 30_600_000 },
+      { name: 'Cetirizin 10mg', quantity: 430, unitName: 'tuýp', revenue: 17_200_000 },
+    ],
     year: [
       { name: 'Paracetamol 500mg', quantity: 3_840, unitName: 'viên', revenue: 192_000_000 },
       { name: 'Vitamin C 1000mg', quantity: 3_300, unitName: 'viên', revenue: 165_000_000 },

@@ -9,21 +9,22 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
-import { SalesReport } from './components/sales-report'
-import { PurchaseReport } from './components/purchase-report'
-import { InventoryReport } from './components/inventory-report'
+import { ReportOverview } from './components/report-overview'
 
-export type TimePeriod = 'day' | 'week' | 'month' | 'year'
+export type TimePeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
+type DashboardTab = 'report' | 'summary' | 'advanced'
 
 const timePeriodLabels: Record<TimePeriod, string> = {
   day: 'Ngày',
   week: 'Tuần',
   month: 'Tháng',
+  quarter: 'Quý',
   year: 'Năm',
 }
 
 export function Dashboard() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
+  const [activeTab, setActiveTab] = useState<DashboardTab>('report')
 
   return (
     <>
@@ -34,42 +35,52 @@ export function Dashboard() {
       </Header>
 
       <Main>
-        <Tabs defaultValue='sales' className='space-y-4'>
-          <div className='flex items-center justify-between'>
-            <div className='w-full overflow-x-auto pb-2'>
+        <Tabs
+          value={activeTab}
+          onValueChange={(value) => setActiveTab(value as DashboardTab)}
+          className='space-y-4'
+        >
+          <div className='flex items-center justify-between gap-3'>
+            <div className='overflow-x-auto pb-2'>
               <TabsList>
-                <TabsTrigger value='sales'>Báo cáo bán hàng</TabsTrigger>
-                <TabsTrigger value='purchases'>Báo cáo nhập hàng</TabsTrigger>
-                <TabsTrigger value='inventory'>Báo cáo tồn kho</TabsTrigger>
+                <TabsTrigger value='report'>Báo cáo</TabsTrigger>
+                <TabsTrigger value='summary'>Tổng hợp</TabsTrigger>
+                <TabsTrigger value='advanced'>Báo cáo nâng cao</TabsTrigger>
               </TabsList>
             </div>
-            <Select
-              value={timePeriod}
-              onValueChange={(value) => setTimePeriod(value as TimePeriod)}
-            >
-              <SelectTrigger className='w-[160px] shrink-0'>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(timePeriodLabels).map(([value, label]) => (
-                  <SelectItem key={value} value={value}>
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {activeTab === 'report' && (
+              <Select
+                value={timePeriod}
+                onValueChange={(value) => setTimePeriod(value as TimePeriod)}
+              >
+                <SelectTrigger className='w-[160px] shrink-0'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(timePeriodLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
 
-          <TabsContent value='sales'>
-            <SalesReport timePeriod={timePeriod} />
+          <TabsContent value='report'>
+            <ReportOverview timePeriod={timePeriod} />
           </TabsContent>
 
-          <TabsContent value='purchases'>
-            <PurchaseReport />
+          <TabsContent value='summary'>
+            <div className='flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20'>
+              <p className='text-sm text-muted-foreground'>Ra mắt sớm</p>
+            </div>
           </TabsContent>
 
-          <TabsContent value='inventory'>
-            <InventoryReport />
+          <TabsContent value='advanced'>
+            <div className='flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20'>
+              <p className='text-sm text-muted-foreground'>Ra mắt sớm</p>
+            </div>
           </TabsContent>
         </Tabs>
       </Main>

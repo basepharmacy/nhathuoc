@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryBatchesRepo, saleOrdersRepo } from '@/client'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
@@ -38,6 +38,7 @@ export function useSaleOrder({
   orderDetail,
   navigate,
 }: UseSaleOrderParams) {
+  const queryClient = useQueryClient()
   const isEdit = Boolean(orderId)
 
   // ── Form state ──────────────────────────────────────────────
@@ -175,7 +176,15 @@ export function useSaleOrder({
         items: buildOrderItems(),
       })
     },
-    onSuccess: (order) => {
+    onSuccess: (order, status) => {
+      if (status === '2_COMPLETE') {
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-report', 'sales-statistics'],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-report', 'low-stock-products'],
+        })
+      }
       toast.success('Đã tạo đơn bán hàng.')
       navigate({ search: { orderId: order.id } })
     },
@@ -202,7 +211,15 @@ export function useSaleOrder({
         items: buildOrderItems(),
       })
     },
-    onSuccess: () => {
+    onSuccess: (_data, status) => {
+      if (status === '2_COMPLETE') {
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-report', 'sales-statistics'],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ['dashboard-report', 'low-stock-products'],
+        })
+      }
       toast.success('Đã cập nhật đơn bán hàng.')
       navigate({ to: '/' })
     },

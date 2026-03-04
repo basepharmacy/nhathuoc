@@ -1133,49 +1133,34 @@ export type Database = {
           total_value: number
         }[]
       }
-      get_sales_statistics:
-        | {
-            Args: {
-              p_current_period_end: string
-              p_current_period_start: string
-              p_location_id?: string
-              p_previous_period_end: string
-              p_previous_period_start: string
-            }
-            Returns: {
-              current_completed_orders: number
-              current_new_customers: number
-              current_period_end: string
-              current_period_start: string
-              current_total_profit: number
-              current_total_revenue: number
-              previous_completed_orders: number
-              previous_new_customers: number
-              previous_period_end: string
-              previous_period_start: string
-              previous_total_profit: number
-              previous_total_revenue: number
-              top_5_products_by_profit: Json
-              top_5_products_by_quantity: Json
-              top_5_products_by_revenue: Json
-            }[]
-          }
-        | {
-            Args: { p_location_id?: string; p_period: string }
-            Returns: {
-              current_completed_orders: number
-              current_period_end: string
-              current_period_start: string
-              current_total_profit: number
-              current_total_revenue: number
-              period: string
-              previous_completed_orders: number
-              previous_period_end: string
-              previous_period_start: string
-              previous_total_profit: number
-              previous_total_revenue: number
-            }[]
-          }
+      get_low_stock_products: {
+        Args: { p_location_id?: string }
+        Returns: Json
+      }
+      get_sales_statistics: {
+        Args: {
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+        }
+        Returns: {
+          current_completed_orders: number
+          current_new_customers: number
+          current_period_end: string
+          current_period_start: string
+          current_total_profit: number
+          current_total_revenue: number
+          previous_completed_orders: number
+          previous_new_customers: number
+          previous_period_end: string
+          previous_period_start: string
+          previous_total_profit: number
+          previous_total_revenue: number
+          top_5_products_by_profit: Json
+          top_5_products_by_quantity: Json
+          top_5_products_by_revenue: Json
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
