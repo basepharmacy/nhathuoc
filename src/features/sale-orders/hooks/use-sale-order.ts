@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { inventoryBatchesRepo, saleOrdersRepo } from '@/client'
@@ -91,14 +91,23 @@ export function useSaleOrder({
     return map
   }, [inventoryBatches, prefetchedBatchesByProductId])
 
-  const totals = useMemo(() => {
-    const subtotal = items.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
-      0
-    )
-    const total = Math.max(0, subtotal - orderDiscount)
-    return { subtotal, total }
-  }, [items, orderDiscount])
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
+    [items]
+  )
+
+  const prevSubtotalRef = useRef(subtotal)
+  useEffect(() => {
+    if (prevSubtotalRef.current !== subtotal) {
+      setOrderDiscount(0)
+    }
+    prevSubtotalRef.current = subtotal
+  }, [subtotal])
+
+  const totals = useMemo(
+    () => ({ subtotal, total: Math.max(0, subtotal - orderDiscount) }),
+    [subtotal, orderDiscount]
+  )
 
   const changeAmount = useMemo(() => {
     if (paymentMethod !== 'CASH') return 0
@@ -321,6 +330,12 @@ export function useSaleOrder({
     if (Object.keys(params.prefetchedBatches).length > 0) {
       setPrefetchedBatchesByProductId((prev) => ({ ...prev, ...params.prefetchedBatches }))
     }
+    // Sync subtotal ref so the discount reset effect doesn't fire on init
+    const initSubtotal = params.mappedItems.reduce(
+      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
+      0
+    )
+    prevSubtotalRef.current = initSubtotal
     setHasInitialized(true)
   }, [])
 

@@ -1,6 +1,12 @@
+import { useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import { QuantityStepper } from '@/components/quantity-stepper'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import {
@@ -14,6 +20,84 @@ import {
 import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type SaleOrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
+
+const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
+
+function UnitPriceInput({
+  originalPrice,
+  value,
+  onChange,
+  disabled,
+}: {
+  originalPrice: number
+  value: number
+  onChange: (value: number) => void
+  disabled?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+
+  const discountPercent =
+    originalPrice > 0
+      ? Math.round(((originalPrice - value) / originalPrice) * 10000) / 100
+      : 0
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <div className='flex items-center gap-1.5'>
+          {discountPercent > 0 && (
+            <span className='text-xs font-medium text-red-500 shrink-0'>
+              -{discountPercent}%
+            </span>
+          )}
+          <Input
+            value={formatCurrency(value)}
+            onChange={(e) => onChange(normalizeNumber(e.target.value))}
+            onClick={() => !disabled && setOpen(true)}
+            className='h-8 w-full rounded-full text-end text-xs'
+            inputMode='numeric'
+            disabled={disabled}
+          />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        className='w-auto p-2'
+        align='end'
+        onOpenAutoFocus={(e) => e.preventDefault()}
+      >
+        <div className='flex flex-wrap gap-1.5'>
+          <Button
+            type='button'
+            variant='outline'
+            size='sm'
+            className='h-7 rounded-full px-2.5 text-xs'
+            onClick={() => {
+              onChange(originalPrice)
+              setOpen(false)
+            }}
+          >
+            Giá gốc
+          </Button>
+          {DISCOUNT_PRESETS.map((p) => (
+            <Button
+              key={p}
+              type='button'
+              variant='outline'
+              size='sm'
+              className='h-7 rounded-full px-2.5 text-xs'
+              onClick={() => {
+                onChange(Math.round(originalPrice * (1 - p / 100)))
+                setOpen(false)
+              }}
+            >
+              -{p}%
+            </Button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  )
+}
 
 type SaleOrdersItemsProps = {
   items: SaleOrderItem[]
@@ -48,9 +132,9 @@ export function SaleOrdersItems({
                 <TableHead className='w-[5%]'>No</TableHead>
                 <TableHead className='w-[30%]'>Tên sản phẩm</TableHead>
                 <TableHead className='w-[15%] text-center'>Đơn vị</TableHead>
-                <TableHead className='w-[15%] text-center'>Đơn giá</TableHead>
+                <TableHead className='w-[18%] text-center'>Đơn giá</TableHead>
                 <TableHead className='w-[15%] text-center'>Số lượng</TableHead>
-                <TableHead className='w-[15%] text-center'>Thành tiền</TableHead>
+                <TableHead className='w-[12%] text-center'>Thành tiền</TableHead>
                 <TableHead className='w-[5%] text-center' />
               </TableRow>
             </TableHeader>
@@ -109,15 +193,13 @@ export function SaleOrdersItems({
                         </select>
                       </TableCell>
                       <TableCell className='align-middle'>
-                        <Input
-                          value={formatCurrency(item.unitPrice)}
-                          onChange={(event) => {
-                            if (readOnly) return
-                            onUpdateItem(item.id, {
-                              unitPrice: normalizeNumber(event.target.value),
-                            })
-                          }}
-                          className='h-8 w-full rounded-full text-end text-xs'
+                        <UnitPriceInput
+                          originalPrice={
+                            unitOptions.find((u) => u.id === item.productUnitId)?.sell_price ??
+                            item.unitPrice
+                          }
+                          value={item.unitPrice}
+                          onChange={(price) => onUpdateItem(item.id, { unitPrice: price })}
                           disabled={readOnly}
                         />
                       </TableCell>

@@ -1,7 +1,13 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 import {
   Select,
   SelectContent,
@@ -50,6 +56,19 @@ const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
   { label: 'Chuyển khoản', value: 'TRANSFER' },
 ]
 
+const DENOMINATIONS = [1000, 2000, 5000, 10_000, 20_000, 50_000, 100_000, 200_000, 500_000]
+
+function getCashPresets(total: number): number[] {
+  if (total <= 0) return []
+  const presets: number[] = [total]
+  for (const d of DENOMINATIONS) {
+    const rounded = Math.ceil(total / d) * d
+    if (rounded > total) presets.push(rounded)
+  }
+  const unique = [...new Set(presets)].sort((a, b) => a - b)
+  return unique.slice(0, 6)
+}
+
 export function SaleOrdersSummary({
   customers,
   customerId,
@@ -73,6 +92,7 @@ export function SaleOrdersSummary({
   isSubmitting,
   orderStatus,
 }: SaleOrdersSummaryProps) {
+  const [cashPopoverOpen, setCashPopoverOpen] = useState(false)
   const isDraft = orderStatus === '1_DRAFT'
   const isComplete = orderStatus === '2_COMPLETE'
   const isEditable = isDraft
@@ -147,13 +167,41 @@ export function SaleOrdersSummary({
           <div className='space-y-2 text-sm'>
             <div className='flex items-center justify-between text-muted-foreground'>
               <span>Khách đưa</span>
-              <Input
-                value={formatCurrency(cashReceived)}
-                onChange={(event) => onCashReceivedChange(normalizeNumber(event.target.value))}
-                className='h-8 w-28 rounded-full text-right text-xs'
-                inputMode='numeric'
-                disabled={isReadOnly}
-              />
+              <Popover open={cashPopoverOpen} onOpenChange={setCashPopoverOpen}>
+                <PopoverTrigger asChild>
+                  <Input
+                    value={formatCurrency(cashReceived)}
+                    onChange={(e) => onCashReceivedChange(normalizeNumber(e.target.value))}
+                    onClick={() => !isReadOnly && setCashPopoverOpen(true)}
+                    className='h-8 w-28 rounded-full text-right text-xs'
+                    inputMode='numeric'
+                    disabled={isReadOnly}
+                  />
+                </PopoverTrigger>
+                <PopoverContent
+                  align='end'
+                  className='w-auto p-2'
+                  onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                  <div className='flex flex-wrap gap-1.5'>
+                    {getCashPresets(totals.total).map((preset) => (
+                      <Button
+                        key={preset}
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='h-7 rounded-full px-2.5 text-xs'
+                        onClick={() => {
+                          onCashReceivedChange(preset)
+                          setCashPopoverOpen(false)
+                        }}
+                      >
+                        {formatCurrency(preset)}đ
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
             </div>
             <div className='flex items-center justify-between text-muted-foreground'>
               <span>Tiền thừa</span>
