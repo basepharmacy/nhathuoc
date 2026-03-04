@@ -1,3 +1,3 @@
-export function DataTableBulkActions<TData>() {
+export function DataTableBulkActions() {
   return null
 }
