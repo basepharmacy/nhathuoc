@@ -866,6 +866,7 @@ export type Database = {
           product_id: string
           quantity: number
           reason: string | null
+          reason_code: Database["public"]["Enums"]["reason_code"]
           tenant_id: string
         }
         Insert: {
@@ -878,6 +879,7 @@ export type Database = {
           product_id: string
           quantity: number
           reason?: string | null
+          reason_code?: Database["public"]["Enums"]["reason_code"]
           tenant_id: string
         }
         Update: {
@@ -890,6 +892,7 @@ export type Database = {
           product_id?: string
           quantity?: number
           reason?: string | null
+          reason_code?: Database["public"]["Enums"]["reason_code"]
           tenant_id?: string
         }
         Relationships: [
@@ -1181,6 +1184,12 @@ export type Database = {
         | "3_CHECKING"
         | "4_STORED"
         | "9_CANCELLED"
+      reason_code:
+        | "1_FIRST_STOCK"
+        | "2_DAMAGED"
+        | "3_EXPIRED"
+        | "4_LOST"
+        | "9_OTHER"
       sale_order_status: "1_DRAFT" | "2_COMPLETE" | "9_CANCELLED"
       staff_role: "OWNER" | "MANAGER" | "STAFF"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
@@ -1322,6 +1331,13 @@ export const Constants = {
         "3_CHECKING",
         "4_STORED",
         "9_CANCELLED",
+      ],
+      reason_code: [
+        "1_FIRST_STOCK",
+        "2_DAMAGED",
+        "3_EXPIRED",
+        "4_LOST",
+        "9_OTHER",
       ],
       sale_order_status: ["1_DRAFT", "2_COMPLETE", "9_CANCELLED"],
       staff_role: ["OWNER", "MANAGER", "STAFF"],
