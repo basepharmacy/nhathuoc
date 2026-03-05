@@ -218,6 +218,12 @@ export function useSaleOrder({
       })
     },
     onSuccess: (_data, status) => {
+      if (orderId) {
+        queryClient.invalidateQueries({
+          queryKey: ['sale-orders', tenantId, 'detail', orderId],
+        })
+      }
+
       if (status === '2_COMPLETE') {
         queryClient.invalidateQueries({
           queryKey: ['dashboard-report', 'sales-statistics'],
@@ -226,6 +232,12 @@ export function useSaleOrder({
           queryKey: ['dashboard-report', 'low-stock-products'],
         })
       }
+
+      if (status === '9_CANCELLED') {
+        toast.success('Huỷ đơn hàng thành công.')
+        return
+      }
+
       toast.success('Đã cập nhật đơn bán hàng.')
       navigate({ to: '/' })
     },
@@ -390,6 +402,11 @@ export function useSaleOrder({
   const submit = () =>
     isEdit ? updateMutation.mutate('2_COMPLETE') : createMutation.mutate('2_COMPLETE')
 
+  const cancelOrder = () => {
+    if (!isEdit) return
+    updateMutation.mutate('9_CANCELLED')
+  }
+
   return {
     // Data
     items,
@@ -431,6 +448,7 @@ export function useSaleOrder({
     resetItems,
     saveDraft,
     submit,
+    cancelOrder,
     initializeFromOrder,
     resetBatchCache,
     setInventoryBatches,

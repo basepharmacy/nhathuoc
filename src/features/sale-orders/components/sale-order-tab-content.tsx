@@ -195,6 +195,7 @@ export function SaleOrderTabContent({
   // ── Print ──────────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
   const [locationConfirmOpen, setLocationConfirmOpen] = useState(false)
+  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
 
   const handleLocationChange = (nextLocationId: string) => {
@@ -220,6 +221,11 @@ export function SaleOrderTabContent({
     if (!open) {
       setPendingLocationId(null)
     }
+  }
+
+  const handleConfirmCancelOrder = () => {
+    order.cancelOrder()
+    setCancelConfirmOpen(false)
   }
 
   const selectedBankAccount = useMemo(
@@ -310,6 +316,7 @@ export function SaleOrderTabContent({
               orderStatus={order.orderStatus}
               onSaveDraft={order.saveDraft}
               onSubmit={order.submit}
+              onCancelOrder={() => setCancelConfirmOpen(true)}
               isSubmitting={order.isSubmitting}
             />
           </div>
@@ -320,6 +327,18 @@ export function SaleOrderTabContent({
         open={order.isAddCustomerOpen}
         onOpenChange={order.setIsAddCustomerOpen}
         onCreated={(customer) => order.setCustomerId(customer.id)}
+      />
+
+      <ConfirmDialog
+        open={cancelConfirmOpen}
+        onOpenChange={setCancelConfirmOpen}
+        title='Huỷ đơn hàng'
+        desc='Bạn có chắc chắn muốn huỷ đơn hàng này không? Tồn kho của các sản phẩm sẽ được hoàn trả.'
+        cancelBtnText='Không'
+        confirmText='Huỷ đơn hàng'
+        destructive
+        isLoading={order.isSubmitting}
+        handleConfirm={handleConfirmCancelOrder}
       />
 
       <ConfirmDialog

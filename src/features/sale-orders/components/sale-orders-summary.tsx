@@ -47,6 +47,7 @@ type SaleOrdersSummaryProps = {
   onNotesChange: (value: string) => void
   onSaveDraft: () => void
   onSubmit: () => void
+  onCancelOrder?: () => void
   isSubmitting: boolean
   orderStatus: SaleOrder['status']
 }
@@ -89,6 +90,7 @@ export function SaleOrdersSummary({
   onNotesChange,
   onSaveDraft,
   onSubmit,
+  onCancelOrder,
   isSubmitting,
   orderStatus,
 }: SaleOrdersSummaryProps) {
@@ -102,6 +104,7 @@ export function SaleOrdersSummary({
   const saveDraftDisabled = !isDraft
   const customerDisabled = !isDraft
   const showSubmit = isEditable
+  const showCancelOrder = isComplete
 
   return (
     <div className='space-y-4 rounded-xl border bg-card p-4 shadow-sm h-full'>
@@ -267,6 +270,17 @@ export function SaleOrdersSummary({
             disabled={isSubmitting || isReadOnly}
           >
             {submitLabel}
+          </Button>
+        ) : null}
+        {showCancelOrder ? (
+          <Button
+            type='button'
+            variant='destructive'
+            className='h-9 flex-1 rounded-xl'
+            onClick={onCancelOrder}
+            disabled={isSubmitting}
+          >
+            Huỷ đơn hàng
           </Button>
         ) : null}
       </div>
