@@ -1,12 +1,13 @@
 import { Plus } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
-import { useStockAdjustments } from './stock-adjustments-provider'
 
 export function StockAdjustmentsPrimaryButtons() {
-  const { setOpen } = useStockAdjustments()
   return (
-    <Button className='space-x-1' onClick={() => setOpen('add')}>
-      <span>Thêm điều chỉnh</span> <Plus size={18} />
+    <Button className='space-x-1' asChild>
+      <Link to='/inventory/adjustments/new'>
+        <span>Thêm điều chỉnh</span> <Plus size={18} />
+      </Link>
     </Button>
   )
 }

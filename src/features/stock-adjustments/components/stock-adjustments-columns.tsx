@@ -65,12 +65,12 @@ export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] 
   },
   {
     accessorKey: 'reason_code',
-    header: 'Mã lý do',
+    header: 'Lý do',
     cell: ({ row }) => getReasonCodeLabel(row.original.reason_code),
   },
   {
     accessorKey: 'reason',
-    header: 'Lý do',
+    header: 'Ghi chú',
     cell: ({ row }) => (
       <span className='max-w-48 truncate'>
         {row.original.reason ?? '-'}

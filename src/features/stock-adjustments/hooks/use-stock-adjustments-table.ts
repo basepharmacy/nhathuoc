@@ -121,7 +121,7 @@ export function useStockAdjustmentsTable({
       },
       {
         columnId: 'reason_code',
-        title: 'Mã lý do',
+        title: 'Lý do',
         options: ALL_REASON_CODE_OPTIONS,
       },
       {
