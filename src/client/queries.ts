@@ -458,6 +458,8 @@ export const getStockAdjustmentsListQueryOptions = (
         pageSize: params.pageSize,
         search: params.search ?? '',
         locationIds: params.locationIds ?? [],
+        reasonCodes: params.reasonCodes ?? [],
+        adjustmentTypes: params.adjustmentTypes ?? [],
       },
     ],
     queryFn: async () => {

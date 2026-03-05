@@ -62,12 +62,12 @@ export function useSaleOrder({
 
   // ── Derived / computed ──────────────────────────────────────
   const generatedOrderCode = useMemo(() => {
-    const now = new Date()
-    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
-      now.getDate()
-    ).padStart(2, '0')}`
-    const random = Math.floor(100 + Math.random() * 900)
-    return `SO-${stamp}-${random}`
+    const timestamp = Date.now()
+    const encoded = timestamp.toString(36).toUpperCase() // Convert to base36 for shorter string
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0')
+    return `${encoded}-${random}`
   }, [])
 
   const orderCode = isEdit ? (orderDetail?.sale_order_code ?? '') : generatedOrderCode

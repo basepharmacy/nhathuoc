@@ -5,6 +5,7 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { type StockAdjustmentsListQueryInput } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { ALL_REASON_CODE_OPTIONS } from '../data/reason-code'
 
 type Location = { id: string; name: string }
 
@@ -32,6 +33,7 @@ export function useStockAdjustmentsTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     ['search']: false,
     ['location_id']: false,
+    ['adjustment_type']: false,
   })
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -54,13 +56,33 @@ export function useStockAdjustmentsTable({
       : []
   }, [columnFilters])
 
+  const reasonCodes = useMemo<NonNullable<StockAdjustmentsListQueryInput['reasonCodes']>>(() => {
+    const reasonCodeFilter = columnFilters.find(
+      (filter) => filter.id === 'reason_code'
+    )
+    return Array.isArray(reasonCodeFilter?.value)
+      ? (reasonCodeFilter.value as NonNullable<StockAdjustmentsListQueryInput['reasonCodes']>)
+      : []
+  }, [columnFilters])
+
+  const adjustmentTypes = useMemo<NonNullable<StockAdjustmentsListQueryInput['adjustmentTypes']>>(() => {
+    const adjustmentTypeFilter = columnFilters.find(
+      (filter) => filter.id === 'adjustment_type'
+    )
+    return Array.isArray(adjustmentTypeFilter?.value)
+      ? (adjustmentTypeFilter.value as NonNullable<StockAdjustmentsListQueryInput['adjustmentTypes']>)
+      : []
+  }, [columnFilters])
+
   const listQueryParams: StockAdjustmentsListQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
     locationIds,
-  }), [tenantId, pagination, searchValue, locationIds])
+    reasonCodes,
+    adjustmentTypes,
+  }), [tenantId, pagination, searchValue, locationIds, reasonCodes, adjustmentTypes])
 
   useEffect(() => {
     if (!selectedLocationId) return
@@ -96,6 +118,19 @@ export function useStockAdjustmentsTable({
         columnId: 'location_id',
         title: 'Cửa hàng',
         options: locationOptions,
+      },
+      {
+        columnId: 'reason_code',
+        title: 'Mã lý do',
+        options: ALL_REASON_CODE_OPTIONS,
+      },
+      {
+        columnId: 'adjustment_type',
+        title: 'Loại điều chỉnh',
+        options: [
+          { label: 'Điều chỉnh tăng', value: 'increase' },
+          { label: 'Điều chỉnh giảm', value: 'decrease' },
+        ],
       },
     ],
     [locationOptions]

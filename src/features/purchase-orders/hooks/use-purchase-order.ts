@@ -48,12 +48,12 @@ export function usePurchaseOrder({
 
   // ── Derived / computed ──────────────────────────────────────
   const generatedOrderCode = useMemo(() => {
-    const now = new Date()
-    const stamp = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(
-      now.getDate()
-    ).padStart(2, '0')}`
-    const random = Math.floor(100 + Math.random() * 900)
-    return `PN-${stamp}-${random}`
+    const timestamp = Date.now()
+    const encoded = timestamp.toString(36).toUpperCase() // Convert to base36 for shorter string
+    const random = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0')
+    return `${encoded}-${random}`
   }, [])
 
   const orderCode = isEdit ? (orderDetail?.purchase_order_code ?? '') : generatedOrderCode
@@ -90,6 +90,17 @@ export function usePurchaseOrder({
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (!supplierId) throw new Error('Vui lòng chọn nhà cung cấp.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
+
+    // Validate batch code and expiry date for all items
+    const itemsWithoutBatch = items.filter((item) => !item.batchCode.trim())
+    if (itemsWithoutBatch.length > 0) {
+      throw new Error('Tất cả sản phẩm phải được nhập lô hàng.')
+    }
+
+    const itemsWithoutExpiry = items.filter((item) => !item.expiryDate.trim())
+    if (itemsWithoutExpiry.length > 0) {
+      throw new Error('Tất cả sản phẩm phải được nhập hạn sử dụng.')
+    }
   }
 
   // ── Mutations ───────────────────────────────────────────────
@@ -186,6 +197,14 @@ export function usePurchaseOrder({
       toast.error('Bạn cần phải chọn cửa hàng.')
       return ''
     }
+
+    // Check if product already exists in items
+    const productExists = items.some((item) => item.product.id === product.id)
+    if (productExists) {
+      toast.error('Sản phẩm này đã có trong đơn hàng.')
+      return ''
+    }
+
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.cost_price ?? 0
     const newId = `${product.id}-${Date.now()}`

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { format } from 'date-fns'
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, Sparkles } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { getInventoryBatchesQueryOptions } from '@/client/queries'
 import { Button } from '@/components/ui/button'
@@ -92,6 +92,32 @@ export function BatchSelectDialog({
 
   const isExpiryLocked = Boolean(selectedBatch?.expiry_date)
 
+  const generateUniqueBatchCode = () => {
+    const existingLotNumbers = new Set<number>()
+
+    // Extract numeric part from existing LOTxxxxx codes
+    allBatches.forEach((batch) => {
+      const match = batch.batch_code.match(/^LOT(\d{5})$/)
+      if (match) {
+        existingLotNumbers.add(parseInt(match[1], 10))
+      }
+    })
+
+    // Find the smallest number not in the set
+    let num = 0
+    while (existingLotNumbers.has(num) && num < 100000) {
+      num++
+    }
+
+    return `LOT${num.toString().padStart(4, '0')}`
+  }
+
+  const handleGenerateBatchCode = () => {
+    if (readOnly) return
+    const newCode = generateUniqueBatchCode()
+    setBatchCode(newCode)
+  }
+
   useEffect(() => {
     if (!open) return
     setBatchCode(initialBatchCode)
@@ -119,16 +145,29 @@ export function BatchSelectDialog({
         <div className='space-y-4'>
           <div className='space-y-2'>
             <Label htmlFor='batch-code'>Lô</Label>
-            <Input
-              id='batch-code'
-              value={batchCode}
-              onChange={(event) => {
-                if (readOnly) return
-                setBatchCode(event.target.value)
-              }}
-              placeholder='Nhập hoặc chọn lô'
-              disabled={readOnly}
-            />
+            <div className='relative'>
+              <Input
+                id='batch-code'
+                value={batchCode}
+                onChange={(event) => {
+                  if (readOnly) return
+                  setBatchCode(event.target.value)
+                }}
+                placeholder='Nhập hoặc chọn lô'
+                disabled={readOnly}
+                className='pr-10'
+              />
+              <button
+                type='button'
+                onClick={handleGenerateBatchCode}
+                disabled={readOnly}
+                className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50'
+                title='Tự động generate mã lô'
+              >
+                <Sparkles className='size-4' />
+                <span>Tự động</span>
+              </button>
+            </div>
             {expiredBatch ? (
               <div className='flex items-center gap-2 rounded-md bg-orange-50 px-2 py-1 text-xs text-orange-700 dark:bg-orange-500/10 dark:text-orange-300'>
                 <AlertTriangle className='size-3.5 text-orange-500 dark:text-orange-300' />
@@ -177,6 +216,38 @@ export function BatchSelectDialog({
               className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
               disabled={isExpiryLocked || readOnly}
             />
+            <div className='flex gap-2'>
+              <span
+                className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
+                onClick={() => {
+                  if (readOnly || isExpiryLocked) return
+                  const date = new Date()
+                  date.setFullYear(date.getFullYear() + 1)
+                  setExpiryDate(format(date, 'yyyy-MM-dd'))
+                }}
+                style={{
+                  pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
+                  opacity: readOnly || isExpiryLocked ? 0.5 : 1,
+                }}
+              >
+                1 năm
+              </span>
+              <span
+                className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
+                onClick={() => {
+                  if (readOnly || isExpiryLocked) return
+                  const date = new Date()
+                  date.setFullYear(date.getFullYear() + 2)
+                  setExpiryDate(format(date, 'yyyy-MM-dd'))
+                }}
+                style={{
+                  pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
+                  opacity: readOnly || isExpiryLocked ? 0.5 : 1,
+                }}
+              >
+                2 năm
+              </span>
+            </div>
           </div>
         </div>
         <DialogFooter>

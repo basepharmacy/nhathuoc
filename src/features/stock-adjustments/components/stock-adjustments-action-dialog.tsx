@@ -56,6 +56,10 @@ import { Textarea } from '@/components/ui/textarea'
 import { QuantityStepper } from '@/components/quantity-stepper'
 import { DatePicker } from '@/components/date-picker'
 import type { ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
+import {
+  getReasonCodeOptionsByQuantity,
+  type StockAdjustmentReasonCode,
+} from '../data/reason-code'
 
 const formSchema = z.object({
   productId: z.string().min(1, 'Sản phẩm là bắt buộc.'),
@@ -68,6 +72,7 @@ const formSchema = z.object({
   costPrice: z
     .number()
     .min(0, 'Giá nhập không được âm.'),
+  reasonCode: z.enum(['1_FIRST_STOCK', '2_DAMAGED', '3_EXPIRED', '4_LOST', '9_OTHER']),
   reason: z.string().max(1000, 'Lý do không được vượt quá 1000 ký tự.').optional(),
   expiryDate: z.string().optional(),
 })
@@ -111,6 +116,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
       batchCode: '',
       quantity: 1,
       costPrice: 0,
+      reasonCode: '1_FIRST_STOCK',
       reason: '',
       expiryDate: '',
     },
@@ -180,6 +186,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
         batch_code: values.batchCode.trim(),
         quantity: values.quantity,
         cost_price: values.costPrice,
+        reason_code: values.reasonCode,
         reason: normalizeOptionalText(values.reason),
         expiry_date: normalizeOptionalText(values.expiryDate),
       }),
@@ -219,6 +226,11 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
   const quantity = form.watch('quantity')
   const productUnitId = form.watch('productUnitId')
   const isNegativeQty = quantity < 0
+  const reasonCode = form.watch('reasonCode') as StockAdjustmentReasonCode
+  const reasonCodeOptions = useMemo(
+    () => getReasonCodeOptionsByQuantity(quantity),
+    [quantity]
+  )
 
   // Determine if the entered batch code matches an existing batch
   const selectedBatch = useMemo(
@@ -226,8 +238,8 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
     [validBatches, batchCode]
   )
 
-  // If existing batch: can decrease up to batch quantity. If new batch: only increase (min=1)
-  const minQuantity = selectedBatch ? -selectedBatch.quantity : 1
+  // If existing batch: can decrease up to batch quantity. If new batch: no decrease limit (min=0)
+  const minQuantity = selectedBatch ? -selectedBatch.quantity : 0
 
   const [showMinPopover, setShowMinPopover] = useState(false)
   const minPopoverTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -261,6 +273,13 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
     }
   }, [isNegativeQty, form])
 
+  useEffect(() => {
+    const isCurrentReasonCodeAllowed = reasonCodeOptions.some((option) => option.value === reasonCode)
+    if (!isCurrentReasonCodeAllowed) {
+      form.setValue('reasonCode', reasonCodeOptions[0].value, { shouldValidate: true })
+    }
+  }, [reasonCode, reasonCodeOptions, form])
+
   return (
     <Dialog
       open={open}
@@ -274,6 +293,8 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
           <DialogTitle>Thêm điều chỉnh tồn kho</DialogTitle>
           <DialogDescription>
             Số lượng dương (+) để tăng, âm (-) để giảm tồn kho.
+            <br />
+            Bạn chỉ có thể giảm tồn kho khi đã chọn lô hiện có, và không được vượt quá số lượng trong lô đó.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -421,7 +442,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Số lượng</FormLabel>
-                      <Popover open={showMinPopover} onOpenChange={setShowMinPopover}>
+                      <Popover open={showMinPopover && quantity <= minQuantity && minQuantity < 0} onOpenChange={setShowMinPopover}>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <div>
@@ -543,13 +564,38 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
             {/* Reason */}
             <FormField
               control={form.control}
-              name='reason'
+              name='reasonCode'
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Lý do</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Chọn lý do...' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {reasonCodeOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name='reason'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Ghi chú</FormLabel>
                   <FormControl>
                     <Textarea
-                      placeholder='Lý do điều chỉnh...'
+                      placeholder='Ghi chú điều chỉnh...'
                       className='resize-none'
                       rows={2}
                       {...field}

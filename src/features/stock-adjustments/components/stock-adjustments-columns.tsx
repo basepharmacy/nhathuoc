@@ -2,6 +2,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { formatCurrency, formatDateTimeLabel, formatQuantity } from '@/lib/utils'
 import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import { Badge } from '@/components/ui/badge'
+import { getReasonCodeLabel } from '../data/reason-code'
 import { DataTableRowActions } from './data-table-row-actions'
 
 export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] = [
@@ -15,6 +16,13 @@ export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] 
   {
     id: 'location_id',
     accessorFn: (row) => row.location_id ?? '',
+    header: () => null,
+    cell: () => null,
+    enableHiding: true,
+  },
+  {
+    id: 'adjustment_type',
+    accessorFn: (row) => (row.quantity > 0 ? 'increase' : 'decrease'),
     header: () => null,
     cell: () => null,
     enableHiding: true,
@@ -54,6 +62,11 @@ export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] 
       </span>
     ),
     meta: { className: 'text-end', thClassName: 'text-end' },
+  },
+  {
+    accessorKey: 'reason_code',
+    header: 'Mã lý do',
+    cell: ({ row }) => getReasonCodeLabel(row.original.reason_code),
   },
   {
     accessorKey: 'reason',
