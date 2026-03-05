@@ -169,14 +169,16 @@ export function SaleOrdersSummary({
               <span>Khách đưa</span>
               <Popover open={cashPopoverOpen} onOpenChange={setCashPopoverOpen}>
                 <PopoverTrigger asChild>
-                  <Input
-                    value={formatCurrency(cashReceived)}
-                    onChange={(e) => onCashReceivedChange(normalizeNumber(e.target.value))}
-                    onClick={() => !isReadOnly && setCashPopoverOpen(true)}
-                    className='h-8 w-28 rounded-full text-right text-xs'
-                    inputMode='numeric'
-                    disabled={isReadOnly}
-                  />
+                  <div>
+                    <Input
+                      value={formatCurrency(cashReceived)}
+                      onChange={(e) => onCashReceivedChange(normalizeNumber(e.target.value))}
+                      onClick={() => !isReadOnly && setCashPopoverOpen(true)}
+                      className='h-8 w-28 rounded-full text-right text-xs'
+                      inputMode='numeric'
+                      disabled={isReadOnly}
+                    />
+                  </div>
                 </PopoverTrigger>
                 <PopoverContent
                   align='end'

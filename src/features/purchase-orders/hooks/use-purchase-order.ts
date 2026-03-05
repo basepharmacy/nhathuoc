@@ -87,6 +87,7 @@ export function usePurchaseOrder({
   // ── Validation ──────────────────────────────────────────────
   const validateOrder = () => {
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
+    if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (!supplierId) throw new Error('Vui lòng chọn nhà cung cấp.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
   }
@@ -181,6 +182,10 @@ export function usePurchaseOrder({
   // ── Item actions ────────────────────────────────────────────
   const addProduct = (product: ProductWithUnits): string => {
     if (isItemsReadOnly) return ''
+    if (!selectedLocationId) {
+      toast.error('Bạn cần phải chọn cửa hàng.')
+      return ''
+    }
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.cost_price ?? 0
     const newId = `${product.id}-${Date.now()}`
@@ -210,6 +215,11 @@ export function usePurchaseOrder({
     if (isItemsReadOnly) return
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
+
+  const resetItems = useCallback(() => {
+    if (isItemsReadOnly) return
+    setItems([])
+  }, [isItemsReadOnly])
 
   // ── Initialize from existing order ──────────────────────────
   const initializeFromOrder = useCallback((params: {
@@ -278,6 +288,7 @@ export function usePurchaseOrder({
     addProduct,
     updateItem,
     removeItem,
+    resetItems,
     saveDraft,
     submit,
     initializeFromOrder,

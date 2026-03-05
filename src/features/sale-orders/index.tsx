@@ -18,6 +18,7 @@ import { type InventoryBatch } from '@/services/supabase/database/repo/inventory
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
 import { type SaleOrderItem } from './data/types'
@@ -38,7 +39,7 @@ export function SaleOrders() {
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
-  const userLocationId = sidebarLocationId ?? user?.location?.id ?? null
+  const userLocationId = sidebarLocationId ?? null
 
   // ── Queries ─────────────────────────────────────────────────
   const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
@@ -88,6 +89,11 @@ export function SaleOrders() {
   useEffect(() => {
     order.resetBatchCache()
   }, [order.selectedLocationId])
+
+  useEffect(() => {
+    if (order.selectedLocationId || locations.length === 0) return
+    order.setSelectedLocationId(sidebarLocationId ?? locations[0].id)
+  }, [order.selectedLocationId, locations, sidebarLocationId, order.setSelectedLocationId])
 
   useEffect(() => {
     if (!orderId || isOrderLoading) return
@@ -164,6 +170,7 @@ export function SaleOrders() {
 
       order.initializeFromOrder({
         mappedItems,
+        status: orderDetail.status,
         customerId: orderDetail.customer_id ?? '',
         discount: orderDetail.discount ?? 0,
         paidAmount: orderDetail.customer_paid_amount ?? 0,
@@ -179,6 +186,33 @@ export function SaleOrders() {
 
   // ── Print ──────────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
+  const [locationConfirmOpen, setLocationConfirmOpen] = useState(false)
+  const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
+
+  const handleLocationChange = (nextLocationId: string) => {
+    if (nextLocationId === (order.selectedLocationId ?? '')) return
+    if (order.items.length === 0) {
+      order.setSelectedLocationId(nextLocationId)
+      return
+    }
+    setPendingLocationId(nextLocationId)
+    setLocationConfirmOpen(true)
+  }
+
+  const handleConfirmLocationChange = () => {
+    if (!pendingLocationId) return
+    order.setSelectedLocationId(pendingLocationId)
+    order.resetItems()
+    setPendingLocationId(null)
+    setLocationConfirmOpen(false)
+  }
+
+  const handleLocationDialogChange = (open: boolean) => {
+    setLocationConfirmOpen(open)
+    if (!open) {
+      setPendingLocationId(null)
+    }
+  }
 
   const selectedBankAccount = useMemo(
     () => bankAccounts.find((a) => a.id === order.bankAccountId) ?? null,
@@ -231,7 +265,7 @@ export function SaleOrders() {
               <SaleOrdersMeta
                 locations={locations}
                 locationId={order.selectedLocationId ?? ''}
-                onLocationChange={(value) => order.setSelectedLocationId(value)}
+                onLocationChange={handleLocationChange}
                 locationDisabled={order.isReadOnly}
                 orderCode={order.orderCode}
                 status={order.orderStatus}
@@ -277,6 +311,16 @@ export function SaleOrders() {
         open={order.isAddCustomerOpen}
         onOpenChange={order.setIsAddCustomerOpen}
         onCreated={(customer) => order.setCustomerId(customer.id)}
+      />
+
+      <ConfirmDialog
+        open={locationConfirmOpen}
+        onOpenChange={handleLocationDialogChange}
+        title='Đổi cửa hàng'
+        desc='Đổi cửa hàng sẽ xóa toàn bộ sản phẩm đã thêm trong đơn. Bạn có chắc chắn muốn tiếp tục?'
+        cancelBtnText='Hủy'
+        confirmText='Xác nhận'
+        handleConfirm={handleConfirmLocationChange}
       />
 
       <PrintPreviewDialog

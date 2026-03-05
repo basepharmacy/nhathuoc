@@ -14,6 +14,7 @@ import {
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import type { OrderItem } from './data/types'
 import { PurchaseOrdersItems } from './components/purchase-orders-items'
@@ -32,7 +33,7 @@ export function PurchaseOrders() {
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
-  const userLocationId = sidebarLocationId ?? user?.location?.id ?? null
+  const userLocationId = sidebarLocationId ?? null
 
   // ── Queries ─────────────────────────────────────────────────
   const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
@@ -72,6 +73,11 @@ export function PurchaseOrders() {
       navigate({ to: '/purchase-orders/history' })
     }
   }, [orderDetail, orderId, isOrderLoading, navigate])
+
+  useEffect(() => {
+    if (order.selectedLocationId || locations.length === 0) return
+    order.setSelectedLocationId(sidebarLocationId ?? locations[0].id)
+  }, [order.selectedLocationId, locations, sidebarLocationId, order.setSelectedLocationId])
 
   useEffect(() => {
     if (!orderDetail || order.hasInitialized || products.length === 0) return
@@ -114,6 +120,34 @@ export function PurchaseOrders() {
 
   // ── Print ──────────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
+  const [locationConfirmOpen, setLocationConfirmOpen] = useState(false)
+  const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
+
+  const handleLocationChange = (nextLocationId: string) => {
+    if (nextLocationId === (order.selectedLocationId ?? '')) return
+    if (order.items.length === 0) {
+      order.setSelectedLocationId(nextLocationId)
+      return
+    }
+    setPendingLocationId(nextLocationId)
+    setLocationConfirmOpen(true)
+  }
+
+  const handleConfirmLocationChange = () => {
+    if (!pendingLocationId) return
+    order.setSelectedLocationId(pendingLocationId)
+    order.resetItems()
+    setPendingBatchItemId(null)
+    setPendingLocationId(null)
+    setLocationConfirmOpen(false)
+  }
+
+  const handleLocationDialogChange = (open: boolean) => {
+    setLocationConfirmOpen(open)
+    if (!open) {
+      setPendingLocationId(null)
+    }
+  }
 
   const selectedLocation = useMemo(
     () => locations.find((l) => l.id === order.selectedLocationId) ?? null,
@@ -162,7 +196,7 @@ export function PurchaseOrders() {
               <PurchaseOrdersMeta
                 locations={locations}
                 locationId={order.selectedLocationId ?? ''}
-                onLocationChange={(value) => order.setSelectedLocationId(value)}
+                onLocationChange={handleLocationChange}
                 locationDisabled={order.isReadOnly}
                 orderCode={order.orderCode}
                 status={order.orderStatus}
@@ -221,6 +255,16 @@ export function PurchaseOrders() {
           notes={order.notes}
         />
       </PrintPreviewDialog>
+
+      <ConfirmDialog
+        open={locationConfirmOpen}
+        onOpenChange={handleLocationDialogChange}
+        title='Đổi cửa hàng'
+        desc='Đổi cửa hàng sẽ xóa toàn bộ sản phẩm đã thêm trong đơn. Bạn có chắc chắn muốn tiếp tục?'
+        cancelBtnText='Hủy'
+        confirmText='Xác nhận'
+        handleConfirm={handleConfirmLocationChange}
+      />
     </>
   )
 }

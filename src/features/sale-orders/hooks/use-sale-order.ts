@@ -123,6 +123,7 @@ export function useSaleOrder({
   useEffect(() => {
     if (paymentMethod !== 'TRANSFER') return
     setPaidAmount(totals.total)
+    setCashReceived(0)
   }, [paymentMethod, totals.total])
 
   const debtAmount = useMemo(
@@ -133,6 +134,7 @@ export function useSaleOrder({
   // ── Validation ──────────────────────────────────────────────
   const validateOrder = () => {
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
+    if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
   }
 
@@ -229,6 +231,10 @@ export function useSaleOrder({
   // ── Item actions ────────────────────────────────────────────
   const addProduct = async (product: ProductWithUnits) => {
     if (isReadOnly || !tenantId) return
+    if (!selectedLocationId) {
+      toast.error('Bạn cần phải chọn cửa hàng.')
+      return
+    }
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.sell_price ?? 0
 
@@ -316,11 +322,17 @@ export function useSaleOrder({
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
+  const resetItems = useCallback(() => {
+    if (isReadOnly) return
+    setItems([])
+  }, [isReadOnly])
+
   const handlePaymentMethodChange = useCallback(
     (value: PaymentMethod) => {
       setPaymentMethod(value)
       if (value === 'TRANSFER') {
         setPaidAmount(totals.total)
+        setCashReceived(0)
       }
     },
     [totals.total]
@@ -329,6 +341,7 @@ export function useSaleOrder({
   // ── Initialize from existing order ──────────────────────────
   const initializeFromOrder = useCallback((params: {
     mappedItems: SaleOrderItem[]
+    status: SaleOrder['status']
     customerId: string
     discount: number
     paidAmount: number
@@ -343,7 +356,13 @@ export function useSaleOrder({
     setCashReceived(params.paidAmount)
     setNotes(params.notes)
     setSelectedLocationId(params.locationId)
-    setPaymentMethod('TRANSFER')
+    setPaymentMethod(
+      params.status === '2_COMPLETE'
+        ? params.paidAmount > 0
+          ? 'CASH'
+          : 'TRANSFER'
+        : 'CASH'
+    )
     if (Object.keys(params.prefetchedBatches).length > 0) {
       setPrefetchedBatchesByProductId((prev) => ({ ...prev, ...params.prefetchedBatches }))
     }
@@ -405,6 +424,7 @@ export function useSaleOrder({
     updateItem,
     handleQuantityChange,
     removeItem,
+    resetItems,
     saveDraft,
     submit,
     initializeFromOrder,
