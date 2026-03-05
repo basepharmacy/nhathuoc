@@ -11,13 +11,24 @@ type Location = { id: string; name: string }
 export type UseStockAdjustmentsTableInput = {
   tenantId: string
   locations: Location[]
+  selectedLocationId?: string | null
 }
 
 export function useStockAdjustmentsTable({
   tenantId,
   locations,
+  selectedLocationId,
 }: UseStockAdjustmentsTableInput) {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+    selectedLocationId
+      ? [
+        {
+          id: 'location_id',
+          value: [selectedLocationId],
+        },
+      ]
+      : []
+  )
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     ['search']: false,
     ['location_id']: false,
@@ -50,6 +61,21 @@ export function useStockAdjustmentsTable({
     search: searchValue,
     locationIds,
   }), [tenantId, pagination, searchValue, locationIds])
+
+  useEffect(() => {
+    if (!selectedLocationId) return
+    setColumnFilters((prev) => {
+      const hasLocationFilter = prev.some((filter) => filter.id === 'location_id')
+      if (hasLocationFilter) return prev
+      return [
+        ...prev,
+        {
+          id: 'location_id',
+          value: [selectedLocationId],
+        },
+      ]
+    })
+  }, [selectedLocationId])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))

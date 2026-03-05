@@ -21,6 +21,7 @@ export type PurchaseOrdersHistoryTableInput = {
   columns: ColumnDef<PurchaseOrderWithRelations, unknown>[]
   suppliers: Supplier[]
   locations: Location[]
+  selectedLocationId?: string | null
 }
 
 export function usePurchaseOrdersHistoryTable({
@@ -28,10 +29,20 @@ export function usePurchaseOrdersHistoryTable({
   columns,
   suppliers,
   locations,
+  selectedLocationId,
 }: PurchaseOrdersHistoryTableInput) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+    selectedLocationId
+      ? [
+        {
+          id: 'location_name',
+          value: [selectedLocationId],
+        },
+      ]
+      : []
+  )
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -93,6 +104,21 @@ export function usePurchaseOrdersHistoryTable({
   }), [tenantId, pagination, searchValue, supplierIds, locationIds, statusFilters, paymentStatusFilters, sorting])
 
   useEffect(() => {
+    if (!selectedLocationId) return
+    setColumnFilters((prev) => {
+      const hasLocationFilter = prev.some((filter) => filter.id === 'location_name')
+      if (hasLocationFilter) return prev
+      return [
+        ...prev,
+        {
+          id: 'location_name',
+          value: [selectedLocationId],
+        },
+      ]
+    })
+  }, [selectedLocationId])
+
+  useEffect(() => {
     setPagination((prev) => ({
       ...prev,
       pageIndex: 0,
@@ -146,7 +172,7 @@ export function usePurchaseOrdersHistoryTable({
       },
       {
         columnId: 'location_name',
-        title: 'Chi nhánh',
+        title: 'Cửa hàng',
         options: locationOptions,
       },
       {
@@ -156,7 +182,7 @@ export function usePurchaseOrdersHistoryTable({
       },
       {
         columnId: 'payment_status',
-        title: 'Trạng thái thanh toán',
+        title: 'Thanh toán',
         options: paymentOptions,
       },
     ],

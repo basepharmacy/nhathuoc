@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import {
   getInventoryBatchesListQueryOptions,
   getInventoryProductsListQueryOptions,
@@ -20,6 +21,7 @@ type InventoryViewMode = 'product' | 'batch'
 
 export function Inventory() {
   const { user } = useUser()
+  const { selectedLocationId: sidebarLocationId } = useLocationContext()
   const tenantId = user?.profile?.tenant_id ?? ''
   const [viewMode, setViewMode] = useState<InventoryViewMode>('product')
 
@@ -33,6 +35,7 @@ export function Inventory() {
   const { tableState, filters, listQueryParams } = useInventoryTable({
     tenantId,
     locations,
+    defaultLocationId: sidebarLocationId,
   })
 
   // List query (driven by table's queryParams)

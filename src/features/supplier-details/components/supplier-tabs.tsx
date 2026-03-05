@@ -178,7 +178,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       },
       {
         columnId: 'payment_status',
-        title: 'Trạng thái thanh toán',
+        title: 'Thanh toán',
         options: [
           { label: 'Chưa thanh toán', value: '1_UNPAID' },
           { label: 'Thanh toán một phần', value: '2_PARTIALLY_PAID' },

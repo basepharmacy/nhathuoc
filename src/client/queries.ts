@@ -287,6 +287,7 @@ export const getSaleOrdersHistoryQueryOptions = (
         pageSize: params.pageSize,
         search: params.search ?? '',
         customerIds: params.customerIds ?? [],
+        locationIds: params.locationIds ?? [],
         statuses: params.statuses ?? [],
         sorting: params.sorting ?? [],
       },

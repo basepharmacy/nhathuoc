@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import {
   getPurchaseOrdersHistoryQueryOptions,
   getLocationsQueryOptions,
@@ -20,6 +21,7 @@ import { useDeletePurchaseOrder } from './hooks/use-delete-purchase-order'
 export function PurchaseOrdersHistory() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const { selectedLocationId } = useLocationContext()
   const navigate = useNavigate()
 
   // Data queries
@@ -57,6 +59,7 @@ export function PurchaseOrdersHistory() {
     columns,
     suppliers,
     locations,
+    selectedLocationId,
   })
 
   // History query (driven by table's queryParams)

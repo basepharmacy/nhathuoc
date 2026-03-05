@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import {
   getLocationsQueryOptions,
   getStockAdjustmentsListQueryOptions,
@@ -17,6 +18,7 @@ import { useStockAdjustmentsTable } from './hooks/use-stock-adjustments-table'
 export function StockAdjustments() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const { selectedLocationId } = useLocationContext()
 
   const { data: locations = [], isError: isLocationsError } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -26,6 +28,7 @@ export function StockAdjustments() {
   const { tableState, filters, listQueryParams } = useStockAdjustmentsTable({
     tenantId,
     locations,
+    selectedLocationId,
   })
 
   const { data: listResult, isLoading, isError: isListError } = useQuery({

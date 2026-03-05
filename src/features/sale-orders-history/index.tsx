@@ -14,10 +14,12 @@ import { useUser } from '@/client/provider'
 import { saleOrdersRepo } from '@/client'
 import {
   getCustomersQueryOptions,
+  getLocationsQueryOptions,
   getSaleOrdersHistoryQueryOptions,
 } from '@/client/queries'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { useLocationContext } from '@/context/location-provider'
 import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
 import { getSaleOrdersHistoryColumns } from './components/sale-orders-history-columns.tsx'
 import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.tsx'
@@ -25,12 +27,22 @@ import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.t
 export function SaleOrdersHistory() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const { selectedLocationId } = useLocationContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+    selectedLocationId
+      ? [
+        {
+          id: 'location_name',
+          value: [selectedLocationId],
+        },
+      ]
+      : []
+  )
   const [sorting, setSorting] = useState<SortingState>([])
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -99,6 +111,11 @@ export function SaleOrdersHistory() {
     enabled: !!tenantId,
   })
 
+  const { data: locations = [] } = useQuery({
+    ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
   const customerOptions = useMemo(
     () =>
       customers.map((customer) => ({
@@ -106,6 +123,15 @@ export function SaleOrdersHistory() {
         value: customer.id,
       })),
     [customers]
+  )
+
+  const locationOptions = useMemo(
+    () =>
+      locations.map((location) => ({
+        label: location.name,
+        value: location.id,
+      })),
+    [locations]
   )
 
   const statusOptions = useMemo(
@@ -140,6 +166,30 @@ export function SaleOrdersHistory() {
       : []
   }, [columnFilters])
 
+  const locationIds = useMemo(() => {
+    const locationFilter = columnFilters.find(
+      (filter) => filter.id === 'location_name'
+    )
+    return Array.isArray(locationFilter?.value)
+      ? (locationFilter?.value as string[])
+      : []
+  }, [columnFilters])
+
+  useEffect(() => {
+    if (!selectedLocationId) return
+    setColumnFilters((prev) => {
+      const hasLocationFilter = prev.some((filter) => filter.id === 'location_name')
+      if (hasLocationFilter) return prev
+      return [
+        ...prev,
+        {
+          id: 'location_name',
+          value: [selectedLocationId],
+        },
+      ]
+    })
+  }, [selectedLocationId])
+
   const { data: historyResult, isLoading } = useQuery({
     ...getSaleOrdersHistoryQueryOptions({
       tenantId,
@@ -147,6 +197,7 @@ export function SaleOrdersHistory() {
       pageSize: pagination.pageSize,
       search: searchValue,
       customerIds,
+      locationIds,
       statuses: statusFilters,
       sorting,
     }),
@@ -204,12 +255,17 @@ export function SaleOrdersHistory() {
         options: customerOptions,
       },
       {
+        columnId: 'location_name',
+        title: 'Cửa hàng',
+        options: locationOptions,
+      },
+      {
         columnId: 'status',
         title: 'Trạng thái',
         options: statusOptions,
       },
     ],
-    [customerOptions, statusOptions]
+    [customerOptions, locationOptions, statusOptions]
   )
 
   const deleteState = useMemo(() => {

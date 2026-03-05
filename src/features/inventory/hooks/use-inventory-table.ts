@@ -11,11 +11,13 @@ type Location = { id: string; name: string }
 export type UseInventoryTableInput = {
   tenantId: string
   locations: Location[]
+  defaultLocationId?: string | null
 }
 
 export function useInventoryTable({
   tenantId,
   locations,
+  defaultLocationId,
 }: UseInventoryTableInput) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
@@ -55,6 +57,23 @@ export function useInventoryTable({
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
   }, [columnFilters])
+
+  useEffect(() => {
+    if (!defaultLocationId) return
+    if (locations.length > 0 && !locations.some((location) => location.id === defaultLocationId)) {
+      return
+    }
+
+    const hasLocationFilter = columnFilters.some(
+      (filter) => filter.id === 'location_id'
+    )
+    if (hasLocationFilter) return
+
+    setColumnFilters((prev) => [
+      ...prev,
+      { id: 'location_id', value: [defaultLocationId] },
+    ])
+  }, [columnFilters, defaultLocationId, locations])
 
   // Filter options
   const locationOptions = useMemo(

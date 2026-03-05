@@ -21,6 +21,7 @@ export type SaleOrdersHistoryQueryInput = {
   pageSize: number
   search?: string
   customerIds?: string[]
+  locationIds?: string[]
   statuses?: Array<SaleOrder['status']>
   sorting?: Array<{ id: string; desc: boolean }>
 }
@@ -53,6 +54,10 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       if (params.customerIds?.length) {
         query = query.in('customer_id', params.customerIds)
+      }
+
+      if (params.locationIds?.length) {
+        query = query.in('location_id', params.locationIds)
       }
 
       if (params.statuses?.length) {
