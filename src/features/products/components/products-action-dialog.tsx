@@ -1,12 +1,12 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { useUser } from '@/client/provider'
-import { productsRepo } from '@/client'
+import { productsRepo, productMastersRepo } from '@/client'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -40,7 +40,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ChevronDown, Plus, Trash2 } from 'lucide-react'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import {
+  Popover,
+  PopoverContent,
+  PopoverAnchor,
+} from '@/components/ui/popover'
+import { ChevronDown, Loader2, Plus, Trash2 } from 'lucide-react'
 import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import {
   type ProductForm,
@@ -49,7 +61,8 @@ import {
   productTypeLabels,
   productFormSchema,
 } from '../data/schema'
-import { type ProductWithUnits, Category } from '@/services/supabase'
+import { type ProductWithUnits, type Category } from '@/services/supabase'
+import type { ProductMasterWithUnits } from '@/services/supabase/database/repo/productMastersRepo'
 
 type ProductsActionDialogProps = {
   currentRow?: ProductWithUnits
@@ -150,6 +163,87 @@ export function ProductsActionDialog({
     )
   }, [currentRow, isEdit])
   const [detailsOpen, setDetailsOpen] = useState(defaultDetailsOpen)
+
+  // Product master search state
+  const [masterSearchOpen, setMasterSearchOpen] = useState(false)
+  const [masterResults, setMasterResults] = useState<ProductMasterWithUnits[]>([])
+  const [masterSearching, setMasterSearching] = useState(false)
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const searchProductMasters = useCallback(
+    (query: string) => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current)
+      if (query.trim().length < 2) {
+        setMasterResults([])
+        setMasterSearchOpen(false)
+        return
+      }
+      setMasterSearching(true)
+      searchTimerRef.current = setTimeout(async () => {
+        try {
+          const results = await productMastersRepo.searchByName(query, 10)
+          setMasterResults(results)
+          setMasterSearchOpen(results.length > 0)
+        } catch {
+          setMasterResults([])
+        } finally {
+          setMasterSearching(false)
+        }
+      }, 300)
+    },
+    []
+  )
+
+  const fillFromMaster = useCallback(
+    (master: ProductMasterWithUnits) => {
+      form.setValue('product_name', master.product_name, { shouldDirty: true })
+      form.setValue('product_type', master.product_type, { shouldDirty: true })
+      if (master.active_ingredient)
+        form.setValue('active_ingredient', master.active_ingredient, { shouldDirty: true })
+      if (master.regis_number)
+        form.setValue('regis_number', master.regis_number, { shouldDirty: true })
+      if (master.jan_code)
+        form.setValue('jan_code', master.jan_code, { shouldDirty: true })
+      if (master.made_company_name)
+        form.setValue('made_company_name', master.made_company_name, { shouldDirty: true })
+      if (master.sale_company_name)
+        form.setValue('sale_company_name', master.sale_company_name, { shouldDirty: true })
+      if (master.description)
+        form.setValue('description', master.description, { shouldDirty: true })
+
+      // Fill units from product_master_units
+      const masterUnits = master.product_master_units ?? []
+      if (masterUnits.length > 0) {
+        const sorted = [...masterUnits].sort(
+          (a, b) => Number(b.is_base_unit) - Number(a.is_base_unit)
+        )
+        const units = sorted.map((u) => ({
+          unit_name: u.unit_name,
+          conversion_factor: u.is_base_unit ? 1 : Number(u.conversion_factor ?? 1),
+          cost_price: 0,
+          sell_price: 0,
+          is_base_unit: u.is_base_unit,
+        }))
+        form.setValue('units', units, { shouldDirty: true })
+      }
+
+      // Open details section if master has detail fields
+      if (
+        master.active_ingredient ||
+        master.regis_number ||
+        master.made_company_name ||
+        master.sale_company_name ||
+        master.description
+      ) {
+        setDetailsOpen(true)
+      }
+
+      setMasterSearchOpen(false)
+      setMasterResults([])
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [form]
+  )
 
   useEffect(() => {
     if (!isEdit || !currentRow?.id || !open) return
@@ -293,6 +387,8 @@ export function ProductsActionDialog({
       createMutation.reset()
       updateMutation.reset()
       setDetailsOpen(defaultDetailsOpen)
+      setMasterSearchOpen(false)
+      setMasterResults([])
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -354,28 +450,69 @@ export function ProductsActionDialog({
                 <div className='space-y-4'>
                   <FormField
                     control={form.control}
-                    name='category_id'
+                    name='product_name'
                     render={({ field }) => (
                       <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                        <FormLabel className='col-span-2 text-end'>Danh mục</FormLabel>
-                        <FormControl>
-                          <Select
-                            onValueChange={field.onChange}
-                            value={field.value ?? 'none'}
+                        <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
+                        <Popover
+                          open={masterSearchOpen && !isEdit}
+                          onOpenChange={setMasterSearchOpen}
+                        >
+                          <PopoverAnchor asChild>
+                            <FormControl>
+                              <div className='col-span-4 relative'>
+                                <Input
+                                  placeholder='Tên sản phẩm...'
+                                  autoComplete='off'
+                                  {...field}
+                                  onChange={(e) => {
+                                    field.onChange(e)
+                                    if (!isEdit) {
+                                      searchProductMasters(e.target.value)
+                                    }
+                                  }}
+                                />
+                                {masterSearching && (
+                                  <Loader2 className='absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground' />
+                                )}
+                              </div>
+                            </FormControl>
+                          </PopoverAnchor>
+                          <PopoverContent
+                            className='p-0'
+                            style={{ width: 'var(--radix-popover-trigger-width)' }}
+                            onOpenAutoFocus={(e) => e.preventDefault()}
+                            onWheel={(e) => e.stopPropagation()}
+                            onTouchMove={(e) => e.stopPropagation()}
                           >
-                            <SelectTrigger className='col-span-4 w-full'>
-                              <SelectValue placeholder='Chọn danh mục' />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value='none'></SelectItem>
-                              {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormControl>
+                            <Command>
+                              <CommandList className='max-h-[200px] overflow-y-auto'>
+                                <CommandEmpty>Không tìm thấy sản phẩm mẫu.</CommandEmpty>
+                                <CommandGroup>
+                                  {masterResults.map((master) => (
+                                    <CommandItem
+                                      key={master.id}
+                                      value={master.product_name}
+                                      onSelect={() => fillFromMaster(master)}
+                                      className='cursor-pointer'
+                                    >
+                                      <div className='flex flex-col'>
+                                        <span className='font-medium'>{master.product_name}</span>
+                                        {(master.active_ingredient || master.made_company_name) && (
+                                          <span className='text-xs text-muted-foreground'>
+                                            {[master.active_ingredient, master.made_company_name]
+                                              .filter(Boolean)
+                                              .join(' • ')}
+                                          </span>
+                                        )}
+                                      </div>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                         <FormMessage className='col-span-4 col-start-3' />
                       </FormItem>
                     )}
@@ -400,17 +537,27 @@ export function ProductsActionDialog({
                   />
                   <FormField
                     control={form.control}
-                    name='product_name'
+                    name='category_id'
                     render={({ field }) => (
                       <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                        <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
+                        <FormLabel className='col-span-2 text-end'>Danh mục</FormLabel>
                         <FormControl>
-                          <Input
-                            placeholder='Tên sản phẩm...'
-                            className='col-span-4'
-                            autoComplete='off'
-                            {...field}
-                          />
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value ?? 'none'}
+                          >
+                            <SelectTrigger className='col-span-4 w-full'>
+                              <SelectValue placeholder='Chọn danh mục' />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value='none'></SelectItem>
+                              {categories.map((category) => (
+                                <SelectItem key={category.id} value={category.id}>
+                                  {category.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </FormControl>
                         <FormMessage className='col-span-4 col-start-3' />
                       </FormItem>
