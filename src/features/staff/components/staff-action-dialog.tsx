@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react'
 import { z } from 'zod'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
@@ -28,7 +28,9 @@ import {
 } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { PasswordInput } from '@/components/password-input'
+import { Separator } from '@/components/ui/separator'
 import { SelectDropdown } from '@/components/select-dropdown'
 import { roles } from '../data/staff-data'
 import { type StaffRole, type StaffUser } from '../data/staff-schema'
@@ -54,7 +56,7 @@ const formSchema = z.object({
     .string()
     .max(1000, 'Mô tả không được vượt quá 1000 ký tự.')
     .optional(),
-  role: z.enum(['OWNER', 'STAFF']),
+  role: z.enum(['OWNER', 'MANAGER', 'STAFF']),
   location_id: z.string().optional().nullable(),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
@@ -89,10 +91,7 @@ export function StaffActionDialog({
   })
 
   const resolvedRole: StaffRole =
-    currentRow?.role ??
-    (currentRow?.id && currentRow.id === user?.id
-      ? ((user?.role as StaffRole | undefined) ?? 'STAFF')
-      : 'STAFF')
+    currentRow?.role ?? 'STAFF'
 
   const form = useForm<StaffForm>({
     resolver: zodResolver(formSchema),
@@ -102,7 +101,6 @@ export function StaffActionDialog({
         login: '',
         phone: currentRow?.phone ?? '',
         address: currentRow?.address ?? '',
-        description: currentRow?.description ?? '',
         role: resolvedRole,
         location_id: currentRow?.location_id ?? null,
         password: '',
@@ -113,7 +111,6 @@ export function StaffActionDialog({
         login: '',
         phone: '',
         address: '',
-        description: '',
         role: 'STAFF',
         location_id: null,
         password: '',
@@ -121,7 +118,7 @@ export function StaffActionDialog({
       },
   })
 
-  const roleValue = form.watch('role')
+  const roleValue = useWatch({ control: form.control, name: 'role' })
 
   const locationOptions = useMemo(
     () =>
@@ -146,8 +143,8 @@ export function StaffActionDialog({
         name: values.name,
         phone: values.phone.trim(),
         address: normalizeOptionalText(values.address) ?? undefined,
-        description: normalizeOptionalText(values.description) ?? undefined,
         role: values.role,
+        login_id: (values.login ?? '').trim(),
         location_id:
           values.role === 'OWNER'
             ? undefined
@@ -168,7 +165,6 @@ export function StaffActionDialog({
         name: values.name,
         phone: values.phone.trim(),
         address: normalizeOptionalText(values.address),
-        description: normalizeOptionalText(values.description),
         location_id:
           resolvedRole === 'OWNER'
             ? null
@@ -188,7 +184,8 @@ export function StaffActionDialog({
       createMutation.reset()
       updateMutation.reset()
     }
-  }, [open, createMutation, updateMutation])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
 
   const onSubmit = (values: StaffForm) => {
     if (!isEdit) {
@@ -212,7 +209,7 @@ export function StaffActionDialog({
         return
       }
 
-      if (values.role === 'STAFF' && !values.location_id) {
+      if (values.role !== 'OWNER' && !values.location_id) {
         form.setError('location_id', {
           message: 'Vui lòng chọn chi nhánh.',
         })
@@ -244,11 +241,13 @@ export function StaffActionDialog({
     <Dialog
       open={open}
       onOpenChange={(state) => {
-        form.reset()
+        if (!state) {
+          form.reset()
+        }
         onOpenChange(state)
       }}
     >
-      <DialogContent className='sm:max-w-lg'>
+      <DialogContent className={isEdit ? 'sm:max-w-lg' : 'sm:max-w-4xl'}>
         <DialogHeader className='text-start'>
           <DialogTitle>
             {isEdit ? 'Chỉnh sửa nhân viên' : 'Thêm nhân viên mới'}
@@ -266,150 +265,88 @@ export function StaffActionDialog({
             onSubmit={form.handleSubmit(onSubmit)}
             className='space-y-4'
           >
-            <FormField
-              control={form.control}
-              name='name'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Tên nhân viên...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
+            <div className={isEdit ? 'space-y-4' : 'grid md:grid-cols-[2fr_auto_3fr] gap-6'}>
+              {!isEdit && (
+                <div className='space-y-4'>
+                  <h4 className='text-sm font-medium'>Thông tin đăng nhập</h4>
+                  <FormField
+                    control={form.control}
+                    name='login'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Tài khoản</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder='Tài khoản đăng nhập...'
+                            className='col-span-4'
+                            autoComplete='off'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='password'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Mật khẩu</FormLabel>
+                        <FormControl>
+                          <PasswordInput
+                            placeholder='Mật khẩu đăng nhập'
+                            className='col-span-4'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='confirmPassword'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Xác nhận</FormLabel>
+                        <FormControl>
+                          <PasswordInput
+                            placeholder='Nhập lại mật khẩu'
+                            className='col-span-4'
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               )}
-            />
-            {!isEdit && (
-              <FormField
-                control={form.control}
-                name='login'
-                render={({ field }) => (
-                  <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                    <FormLabel className='col-span-2 text-end'>Tài khoản</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder='Tài khoản đăng nhập...'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage className='col-span-4 col-start-3' />
-                  </FormItem>
+              {!isEdit && <Separator orientation='vertical' className='hidden md:block' />}
+              <div className='space-y-4'>
+                {!isEdit && <h4 className='text-sm font-medium'>Thông tin cá nhân</h4>}
+                {isEdit && currentRow?.login_id && (
+                  <div className='grid grid-cols-6 items-center gap-x-4 gap-y-1'>
+                    <span className='col-span-2 text-sm font-medium'>Tài khoản</span>
+                    <Input
+                      value={currentRow.login_id}
+                      className='col-span-4'
+                      disabled
+                    />
+                  </div>
                 )}
-              />
-            )}
-            <FormField
-              control={form.control}
-              name='phone'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Số điện thoại</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Số điện thoại...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='role'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Vai trò</FormLabel>
-                  <SelectDropdown
-                    defaultValue={field.value}
-                    onValueChange={field.onChange}
-                    placeholder='Chọn vai trò'
-                    className='col-span-4'
-                    items={roles.map(({ label, value }) => ({
-                      label,
-                      value,
-                    }))}
-                    disabled={isEdit}
-                  />
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='location_id'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Chi nhánh</FormLabel>
-                  <SelectDropdown
-                    defaultValue={field.value ?? ''}
-                    onValueChange={field.onChange}
-                    placeholder='Chọn chi nhánh'
-                    className='col-span-4'
-                    items={locationOptions}
-                    disabled={roleValue === 'OWNER'}
-                    isControlled
-                  />
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='address'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Địa chỉ</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Địa chỉ...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name='description'
-              render={({ field }) => (
-                <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                  <FormLabel className='col-span-2 text-end'>Ghi chú</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder='Ghi chú...'
-                      className='col-span-4'
-                      autoComplete='off'
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage className='col-span-4 col-start-3' />
-                </FormItem>
-              )}
-            />
-            {!isEdit && (
-              <>
                 <FormField
                   control={form.control}
-                  name='password'
+                  name='name'
                   render={({ field }) => (
                     <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                      <FormLabel className='col-span-2 text-end'>Mật khẩu</FormLabel>
+                      <FormLabel className='col-span-2 text-end'>Tên</FormLabel>
                       <FormControl>
-                        <PasswordInput
-                          placeholder='Mật khẩu đăng nhập'
+                        <Input
+                          placeholder='Tên nhân viên...'
                           className='col-span-4'
+                          autoComplete='off'
                           {...field}
                         />
                       </FormControl>
@@ -419,14 +356,15 @@ export function StaffActionDialog({
                 />
                 <FormField
                   control={form.control}
-                  name='confirmPassword'
+                  name='phone'
                   render={({ field }) => (
                     <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                      <FormLabel className='col-span-2 text-end'>Xác nhận</FormLabel>
+                      <FormLabel className='col-span-2 text-end'>Số điện thoại</FormLabel>
                       <FormControl>
-                        <PasswordInput
-                          placeholder='Nhập lại mật khẩu'
+                        <Input
+                          placeholder='Số điện thoại...'
                           className='col-span-4'
+                          autoComplete='off'
                           {...field}
                         />
                       </FormControl>
@@ -434,8 +372,76 @@ export function StaffActionDialog({
                     </FormItem>
                   )}
                 />
-              </>
-            )}
+                <FormField
+                  control={form.control}
+                  name='address'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>Địa chỉ</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder='Địa chỉ...'
+                          className='col-span-4'
+                          autoComplete='off'
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='role'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-start space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>Vai trò</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          className='col-span-4 grid gap-2'
+                          disabled={isEdit}
+                        >
+                          {roles.map(({ label, value }) => (
+                            <FormItem
+                              key={value}
+                              className='flex items-center space-y-0 gap-2'
+                            >
+                              <FormControl>
+                                <RadioGroupItem value={value} />
+                              </FormControl>
+                              <FormLabel className='font-normal'>
+                                {label}
+                              </FormLabel>
+                            </FormItem>
+                          ))}
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name='location_id'
+                  render={({ field }) => (
+                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                      <FormLabel className='col-span-2 text-end'>Chi nhánh</FormLabel>
+                      <SelectDropdown
+                        value={field.value ?? ''}
+                        onValueChange={field.onChange}
+                        placeholder='Chọn chi nhánh'
+                        className='col-span-4'
+                        items={locationOptions}
+                        disabled={roleValue === 'OWNER'}
+                      />
+                      <FormMessage className='col-span-4 col-start-3' />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
             {errorMessage && (
               <Alert variant='destructive'>
                 <AlertDescription>{errorMessage}</AlertDescription>

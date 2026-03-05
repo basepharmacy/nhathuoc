@@ -1,4 +1,3 @@
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -8,7 +7,6 @@ import { StaffDialogs } from './components/staff-dialogs'
 import { StaffPrimaryButtons } from './components/staff-primary-buttons'
 import { StaffProvider } from './components/staff-provider'
 import { StaffTable } from './components/staff-table'
-import type { StaffUser } from './data/staff-schema'
 
 export function Staff() {
   const { user } = useUser()
@@ -23,13 +21,6 @@ export function Staff() {
     ...getLocationsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
-
-  const staffUsers = useMemo<StaffUser[]>(() => {
-    return profiles.map((profile) => ({
-      ...profile,
-      role: profile.id === user?.id ? (user?.role as StaffUser['role']) : 'STAFF',
-    }))
-  }, [profiles, user?.id, user?.role])
 
   return (
     <StaffProvider>
@@ -47,7 +38,7 @@ export function Staff() {
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <StaffTable
-          data={staffUsers}
+          data={profiles}
           locations={locations}
           isLoading={isLoading}
           isError={isError}

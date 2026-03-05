@@ -9,7 +9,11 @@ export function StaffDialogs() {
       <StaffActionDialog
         key='user-add'
         open={open === 'add'}
-        onOpenChange={() => setOpen('add')}
+        onOpenChange={(state) => {
+          if (!state) {
+            setOpen(null)
+          }
+        }}
       />
 
       {currentRow && (
@@ -17,11 +21,13 @@ export function StaffDialogs() {
           <StaffActionDialog
             key={`user-edit-${currentRow.id}`}
             open={open === 'edit'}
-            onOpenChange={() => {
-              setOpen('edit')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
+            onOpenChange={(state) => {
+              if (!state) {
+                setOpen(null)
+                setTimeout(() => {
+                  setCurrentRow(null)
+                }, 500)
+              }
             }}
             currentRow={currentRow}
           />
@@ -29,11 +35,13 @@ export function StaffDialogs() {
           <StaffDeleteDialog
             key={`user-delete-${currentRow.id}`}
             open={open === 'delete'}
-            onOpenChange={() => {
-              setOpen('delete')
-              setTimeout(() => {
-                setCurrentRow(null)
-              }, 500)
+            onOpenChange={(state) => {
+              if (!state) {
+                setOpen(null)
+                setTimeout(() => {
+                  setCurrentRow(null)
+                }, 500)
+              }
             }}
             currentRow={currentRow}
           />

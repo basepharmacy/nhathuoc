@@ -7,6 +7,16 @@ import { DataTableRowActions } from './data-table-row-actions'
 
 export const staffColumns: ColumnDef<StaffUser>[] = [
   {
+    accessorKey: 'login_id',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title='Tài khoản' />
+    ),
+    cell: ({ row }) => (
+      <span>{row.getValue('login_id') ?? '—'}</span>
+    ),
+    meta: { label: 'Tài khoản' },
+  },
+  {
     accessorKey: 'name',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Tên nhân viên' />

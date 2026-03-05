@@ -496,8 +496,10 @@ export type Database = {
           description: string | null
           id: string
           location_id: string | null
+          login_id: string | null
           name: string
           phone: string | null
+          role: Database["public"]["Enums"]["staff_role"]
           tenant_id: string
           updated_at: string | null
         }
@@ -507,8 +509,10 @@ export type Database = {
           description?: string | null
           id?: string
           location_id?: string | null
+          login_id?: string | null
           name: string
           phone?: string | null
+          role?: Database["public"]["Enums"]["staff_role"]
           tenant_id: string
           updated_at?: string | null
         }
@@ -518,8 +522,10 @@ export type Database = {
           description?: string | null
           id?: string
           location_id?: string | null
+          login_id?: string | null
           name?: string
           phone?: string | null
+          role?: Database["public"]["Enums"]["staff_role"]
           tenant_id?: string
           updated_at?: string | null
         }
@@ -1176,6 +1182,7 @@ export type Database = {
         | "4_STORED"
         | "9_CANCELLED"
       sale_order_status: "1_DRAFT" | "2_COMPLETE" | "9_CANCELLED"
+      staff_role: "OWNER" | "MANAGER" | "STAFF"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
     }
     CompositeTypes: {
@@ -1317,6 +1324,7 @@ export const Constants = {
         "9_CANCELLED",
       ],
       sale_order_status: ["1_DRAFT", "2_COMPLETE", "9_CANCELLED"],
+      staff_role: ["OWNER", "MANAGER", "STAFF"],
       tenant_status: ["1_ACTIVE", "2_LICENSE_EXPIRED", "3_CANCELLED"],
     },
   },

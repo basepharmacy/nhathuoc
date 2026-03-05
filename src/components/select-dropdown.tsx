@@ -11,7 +11,8 @@ import {
 
 type SelectDropdownProps = {
   onValueChange?: (value: string) => void
-  defaultValue: string | undefined
+  defaultValue?: string
+  value?: string
   placeholder?: string
   isPending?: boolean
   items: { label: string; value: string }[] | undefined
@@ -22,6 +23,7 @@ type SelectDropdownProps = {
 
 export function SelectDropdown({
   defaultValue,
+  value,
   onValueChange,
   isPending,
   items,
@@ -30,8 +32,9 @@ export function SelectDropdown({
   className = '',
   isControlled = false,
 }: SelectDropdownProps) {
-  const defaultState = isControlled
-    ? { value: defaultValue, onValueChange }
+  const shouldControl = isControlled || value !== undefined
+  const defaultState = shouldControl
+    ? { value: value ?? defaultValue ?? '', onValueChange }
     : { defaultValue, onValueChange }
   return (
     <Select {...defaultState}>

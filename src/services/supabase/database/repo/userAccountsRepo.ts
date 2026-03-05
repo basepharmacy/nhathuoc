@@ -1,4 +1,5 @@
 import type { BasePharmacySupabaseClient } from '../../client'
+import type { Enums } from '../../database.types'
 
 export type CreateUserRequest = {
   email: string
@@ -8,7 +9,8 @@ export type CreateUserRequest = {
   address?: string
   location_id?: string
   description?: string
-  role: 'OWNER' | 'STAFF'
+  role: Enums<'staff_role'>
+  login_id?: string
 }
 
 export const createUserAccountsRepository = (
