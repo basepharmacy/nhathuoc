@@ -28,6 +28,7 @@ type UseSaleOrderParams = {
     location_id: string | null
   }
   navigate: (opts: { search?: { orderId: string }; to?: string }) => void
+  onComplete?: (createdOrderId: string) => void
 }
 
 export function useSaleOrder({
@@ -37,6 +38,7 @@ export function useSaleOrder({
   userLocationId,
   orderDetail,
   navigate,
+  onComplete,
 }: UseSaleOrderParams) {
   const queryClient = useQueryClient()
   const isEdit = Boolean(orderId)
@@ -188,7 +190,9 @@ export function useSaleOrder({
         })
       }
       toast.success('Đã tạo đơn bán hàng.')
-      navigate({ search: { orderId: order.id } })
+      if (status === '2_COMPLETE' && onComplete) {
+        onComplete(order.id)
+      }
     },
     onError: handleMutationError,
   })
