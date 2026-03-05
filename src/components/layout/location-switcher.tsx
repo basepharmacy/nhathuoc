@@ -15,6 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar'
 import { useLocationContext } from '@/context/location-provider'
+import { usePermissions } from '@/hooks/use-permissions'
 import type { Location } from '@/services/supabase/database/model'
 
 function getLocationIcon(type: Location['type']): React.ElementType {
@@ -35,6 +36,7 @@ type LocationSwitcherProps = {
 export function LocationSwitcher({ locations }: LocationSwitcherProps) {
   const { isMobile } = useSidebar()
   const { selectedLocation, setSelectedLocationId, setLocations } = useLocationContext()
+  const { locationScope } = usePermissions()
 
   // Sync locations from sidebar data into the context
   React.useEffect(() => {
@@ -46,6 +48,29 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
   const ActiveIcon = selectedLocation
     ? getLocationIcon(selectedLocation.type)
     : Building2
+
+  // STAFF: chỉ hiển thị location của mình, không cho chuyển
+  if (locationScope === 'own') {
+    return (
+      <SidebarMenu>
+        <SidebarMenuItem>
+          <SidebarMenuButton size='lg' className='cursor-default'>
+            <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
+              <ActiveIcon className='size-4' />
+            </div>
+            <div className='grid flex-1 text-start text-sm leading-tight'>
+              <span className='truncate font-semibold'>
+                {selectedLocation?.name ?? 'Chưa gán chi nhánh'}
+              </span>
+              <span className='truncate text-xs text-muted-foreground'>
+                {selectedLocation?.address ?? '—'}
+              </span>
+            </div>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      </SidebarMenu>
+    )
+  }
 
   return (
     <SidebarMenu>

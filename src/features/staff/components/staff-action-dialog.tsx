@@ -209,7 +209,7 @@ export function StaffActionDialog({
         return
       }
 
-      if (values.role !== 'OWNER' && !values.location_id) {
+      if (values.role === 'STAFF' && !values.location_id) {
         form.setError('location_id', {
           message: 'Vui lòng chọn chi nhánh.',
         })

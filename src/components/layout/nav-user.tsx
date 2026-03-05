@@ -31,15 +31,22 @@ import { ChangePasswordDialog } from '@/components/change-password-dialog'
 type NavUserProps = {
   user: {
     name: string
-    email: string
+    role: string
     avatar: string
   }
+}
+
+const ROLE_LABELS: Record<string, string> = {
+  OWNER: 'Chủ hệ thống',
+  MANAGER: 'Quản lý',
+  STAFF: 'Nhân viên',
 }
 
 export function NavUser({ user }: NavUserProps) {
   const { isMobile } = useSidebar()
   const [signOutOpen, setSignOutOpen] = useDialogState()
   const [changePasswordOpen, setChangePasswordOpen] = useDialogState()
+  const roleLabel = ROLE_LABELS[user.role] ?? user.role
 
   return (
     <>
@@ -57,7 +64,7 @@ export function NavUser({ user }: NavUserProps) {
                 </Avatar>
                 <div className='grid flex-1 text-start text-sm leading-tight'>
                   <span className='truncate font-semibold'>{user.name}</span>
-                  <span className='truncate text-xs'>{user.email}</span>
+                  <span className='truncate text-xs'>{roleLabel}</span>
                 </div>
                 <ChevronsUpDown className='ms-auto size-4' />
               </SidebarMenuButton>
@@ -76,7 +83,7 @@ export function NavUser({ user }: NavUserProps) {
                   </Avatar>
                   <div className='grid flex-1 text-start text-sm leading-tight'>
                     <span className='truncate font-semibold'>{user.name}</span>
-                    <span className='truncate text-xs'>{user.email}</span>
+                    <span className='truncate text-xs'>{roleLabel}</span>
                   </div>
                 </div>
               </DropdownMenuLabel>

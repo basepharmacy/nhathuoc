@@ -1,9 +1,10 @@
 import { type LinkProps } from '@tanstack/react-router'
 import type { Location } from '@/services/supabase/database/model'
+import type { Feature } from '@/lib/permissions'
 
 type User = {
   name: string
-  email: string
+  role: string
   avatar: string
 }
 
@@ -11,6 +12,7 @@ type BaseNavItem = {
   title: string
   badge?: string
   icon?: React.ElementType
+  feature?: Feature
 }
 
 type NavLink = BaseNavItem & {

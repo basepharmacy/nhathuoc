@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { z } from 'zod'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { supabaseAuth } from '@/services/supabase'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import {
   Form,
   FormControl,
@@ -57,12 +58,15 @@ interface UserAuthFormProps extends React.HTMLAttributes<HTMLFormElement> {
   redirectTo?: string
 }
 
+const REMEMBER_TENANT_CODE_KEY = 'auth.remember.tenant_code'
+
 export function UserAuthForm({
   className,
   redirectTo,
   ...props
 }: UserAuthFormProps) {
   const [isLoading, setIsLoading] = useState(false)
+  const [rememberTenantCode, setRememberTenantCode] = useState(false)
   const navigate = useNavigate()
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -74,11 +78,28 @@ export function UserAuthForm({
     },
   })
 
+  useEffect(() => {
+    const savedTenantCode = window.localStorage.getItem(REMEMBER_TENANT_CODE_KEY)
+
+    if (!savedTenantCode) return
+
+    form.setValue('tenantCode', savedTenantCode)
+    setRememberTenantCode(true)
+  }, [form])
+
   async function onSubmit(data: z.infer<typeof formSchema>) {
     setIsLoading(true)
 
     try {
-      const email = `${data.login.trim()}@${data.tenantCode.trim()}.nhathuoc.com`
+      const tenantCode = data.tenantCode.trim()
+
+      if (rememberTenantCode) {
+        window.localStorage.setItem(REMEMBER_TENANT_CODE_KEY, tenantCode)
+      } else {
+        window.localStorage.removeItem(REMEMBER_TENANT_CODE_KEY)
+      }
+
+      const email = `${data.login.trim()}@${tenantCode}.nhathuoc.com`
 
       await supabaseAuth.signInWithPassword({
         email,
@@ -116,6 +137,19 @@ export function UserAuthForm({
             </FormItem>
           )}
         />
+        <div className='flex items-center gap-2'>
+          <Checkbox
+            id='remember-tenant-code'
+            checked={rememberTenantCode}
+            onCheckedChange={(checked) => setRememberTenantCode(checked === true)}
+          />
+          <label
+            htmlFor='remember-tenant-code'
+            className='text-sm text-muted-foreground'
+          >
+            Lưu mã khách hàng cho lần sau
+          </label>
+        </div>
         <FormField
           control={form.control}
           name='login'

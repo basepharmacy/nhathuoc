@@ -15,10 +15,11 @@ import {
   Truck,
   Warehouse,
 } from 'lucide-react'
-import { type SidebarData } from '../types'
+import { type NavGroup, type SidebarData } from '../types'
 import { useUser } from '@/client/provider'
+import { canView, type Feature, type StaffRole } from '@/lib/permissions'
 
-const staticNavGroups = [
+const staticNavGroups: NavGroup[] = [
   {
     title: 'Truy cập nhanh',
     items: [
@@ -26,21 +27,25 @@ const staticNavGroups = [
         title: 'Tổng hợp',
         url: '/',
         icon: LayoutDashboard,
+        feature: 'dashboard',
       },
       {
         title: 'Bán hàng',
         url: '/sale-orders',
         icon: ShoppingCart,
+        feature: 'sales',
       },
       {
         title: 'Tồn kho',
         url: '/inventory',
         icon: Warehouse,
+        feature: 'products',
       },
       {
         title: 'Nhập hàng',
         url: '/purchase-orders',
         icon: ClipboardList,
+        feature: 'purchase',
       },
     ],
   },
@@ -50,6 +55,7 @@ const staticNavGroups = [
       {
         title: 'Bán hàng',
         icon: Truck,
+        feature: 'sales',
         items: [
           {
             title: 'Đơn bán hàng',
@@ -71,6 +77,7 @@ const staticNavGroups = [
       {
         title: 'Sản phẩm',
         icon: Boxes,
+        feature: 'products',
         items: [
           {
             title: 'Quản lý danh mục',
@@ -97,6 +104,7 @@ const staticNavGroups = [
       {
         title: 'Nhập hàng',
         icon: Truck,
+        feature: 'purchase',
         items: [
           {
             title: 'Nhà cung cấp',
@@ -119,24 +127,41 @@ const staticNavGroups = [
         title: 'Quản lý cửa hàng',
         url: '/locations',
         icon: MapPin,
+        feature: 'settings',
       },
       {
         title: 'Quản lý nhân viên',
         url: '/staffs',
         icon: Users,
+        feature: 'settings',
       },
       {
         title: 'Tài khoản thanh toán',
         url: '/bank-accounts',
         icon: BarChart3,
+        feature: 'settings',
       },
     ],
   },
 ]
 
+function filterNavByRole(navGroups: NavGroup[], role: StaffRole): NavGroup[] {
+  return navGroups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => {
+        const feature = item.feature as Feature | undefined
+        if (!feature) return true
+        return canView(role, feature)
+      }),
+    }))
+    .filter((group) => group.items.length > 0)
+}
+
 export function useSidebarData(): SidebarData {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const role = (user?.profile?.role as StaffRole) ?? 'STAFF'
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -147,12 +172,12 @@ export function useSidebarData(): SidebarData {
     () => ({
       user: {
         name: user?.profile?.name || 'Người dùng',
-        email: user?.email || 'user@example.com',
+        role,
         avatar: '/avatars/shadcn.jpg',
       },
       locations,
-      navGroups: staticNavGroups,
+      navGroups: filterNavByRole(staticNavGroups, role),
     }),
-    [user, locations]
+    [user, locations, role]
   )
 }
