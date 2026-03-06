@@ -199,6 +199,10 @@ export function PurchaseOrders() {
                 onLocationChange={handleLocationChange}
                 locationDisabled={order.isReadOnly}
                 orderCode={order.orderCode}
+                onOrderCodeChange={order.setOrderCode}
+                issuedAt={order.issuedAt}
+                onIssuedAtChange={order.setIssuedAt}
+                isEdit={order.isEdit}
                 status={order.orderStatus}
               />
 

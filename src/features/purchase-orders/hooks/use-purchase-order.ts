@@ -56,7 +56,21 @@ export function usePurchaseOrder({
     return `${encoded}-${random}`
   }, [])
 
-  const orderCode = isEdit ? (orderDetail?.purchase_order_code ?? '') : generatedOrderCode
+  const [orderCode, setOrderCode] = useState('')
+  const [issuedAt, setIssuedAt] = useState(new Date().toISOString())
+
+  // Initialize orderCode once
+  useEffect(() => {
+    if (isEdit) {
+      if (orderDetail?.purchase_order_code) {
+        setOrderCode(orderDetail.purchase_order_code)
+      }
+    } else if (!orderCode) {
+      setOrderCode(generatedOrderCode)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEdit, orderDetail?.purchase_order_code, generatedOrderCode])
+
   const orderStatus: PurchaseOrder['status'] = orderDetail?.status ?? '1_DRAFT'
   const isOrdered = orderStatus === '2_ORDERED'
   const isReadOnly = orderStatus !== '1_DRAFT' && orderStatus !== '2_ORDERED'
@@ -138,7 +152,7 @@ export function usePurchaseOrder({
           tenant_id: tenantId,
           user_id: userId,
           location_id: selectedLocationId,
-          issued_at: new Date().toISOString(),
+          issued_at: issuedAt,
           status,
           payment_status: normalizePaymentStatus(normalizedPaid),
           paid_amount: normalizedPaid,
@@ -289,6 +303,9 @@ export function usePurchaseOrder({
     hasInitialized,
 
     // Form state + setters
+    setOrderCode,
+    issuedAt,
+    setIssuedAt,
     supplierId,
     setSupplierId,
     selectedLocationId,
