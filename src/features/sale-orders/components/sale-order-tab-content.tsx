@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Printer } from 'lucide-react'
@@ -17,11 +17,12 @@ import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
+import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
 import { type SaleOrderItem } from '../data/types'
 import { SaleOrdersItems } from './sale-orders-items'
 import { SaleOrdersMeta } from './sale-orders-meta'
-import { SaleOrdersSearch } from './sale-orders-search'
+import { SaleOrdersSearch, type SaleOrdersSearchHandle } from './sale-orders-search'
 import { SaleOrdersSummary } from './sale-orders-summary'
 import { SaleOrderInvoice } from './sale-order-invoice'
 import { useSaleOrder } from '../hooks/use-sale-order'
@@ -196,7 +197,135 @@ export function SaleOrderTabContent({
   const [printOpen, setPrintOpen] = useState(false)
   const [locationConfirmOpen, setLocationConfirmOpen] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
+  const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
   const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
+
+  // ── Keyboard shortcuts ─────────────────────────────────────
+  const searchRef = useRef<SaleOrdersSearchHandle>(null)
+  const [selectedItemIndex, setSelectedItemIndex] = useState<number>(-1)
+  const [editingPriceItemId, setEditingPriceItemId] = useState<string | null>(null)
+
+  const handleKeyboardShortcuts = useCallback(
+    (event: KeyboardEvent) => {
+      // Don't handle shortcuts when typing in input/textarea (except function keys)
+      const target = event.target as HTMLElement
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT'
+      const isFunctionKey = event.key.startsWith('F') && event.key.length <= 3
+
+      if (isInput && !isFunctionKey && event.key !== 'Escape' && event.key !== 'Delete') return
+
+      switch (event.key) {
+        case 'F1': {
+          event.preventDefault()
+          if (!order.isReadOnly) order.saveDraft()
+          break
+        }
+        case 'Escape': {
+          // Only show reset confirm when no other dialog/modal is open
+          const hasOpenDialog = document.querySelector('[role="dialog"]')
+          if (!isInput && !order.isReadOnly && !hasOpenDialog) {
+            event.preventDefault()
+            setResetConfirmOpen(true)
+          }
+          break
+        }
+        case 'F6': {
+          event.preventDefault()
+          setPrintOpen(true)
+          break
+        }
+        case 'F8': {
+          event.preventDefault()
+          if (order.isReadOnly || order.items.length === 0) break
+          const idx = selectedItemIndex >= 0 && selectedItemIndex < order.items.length
+            ? selectedItemIndex
+            : 0
+          setEditingPriceItemId(order.items[idx].id)
+          break
+        }
+        case 'F9': {
+          event.preventDefault()
+          if (!order.isReadOnly) order.submit()
+          break
+        }
+        case 'ArrowDown': {
+          if (isInput) break
+          event.preventDefault()
+          if (event.shiftKey && order.items.length > 0) {
+            // Shift+ArrowDown → focus search
+            searchRef.current?.focus()
+          } else if (order.items.length > 0) {
+            setSelectedItemIndex((prev) =>
+              prev + 1 >= order.items.length ? 0 : prev + 1
+            )
+          }
+          break
+        }
+        case 'ArrowUp': {
+          if (isInput) break
+          event.preventDefault()
+          if (order.items.length > 0) {
+            setSelectedItemIndex((prev) =>
+              prev - 1 < 0 ? order.items.length - 1 : prev - 1
+            )
+          }
+          break
+        }
+        case 'Delete': {
+          if (isInput) break
+          event.preventDefault()
+          if (
+            !order.isReadOnly &&
+            selectedItemIndex >= 0 &&
+            selectedItemIndex < order.items.length
+          ) {
+            const itemToRemove = order.items[selectedItemIndex]
+            order.removeItem(itemToRemove.id)
+            setSelectedItemIndex((prev) =>
+              Math.min(prev, order.items.length - 2)
+            )
+          }
+          break
+        }
+        case '+':
+        case 'ArrowRight': {
+          if (isInput) break
+          event.preventDefault()
+          if (
+            !order.isReadOnly &&
+            selectedItemIndex >= 0 &&
+            selectedItemIndex < order.items.length
+          ) {
+            const item = order.items[selectedItemIndex]
+            order.handleQuantityChange(item.id, item.quantity + 1)
+          }
+          break
+        }
+        case '-':
+        case 'ArrowLeft': {
+          if (isInput) break
+          event.preventDefault()
+          if (
+            !order.isReadOnly &&
+            selectedItemIndex >= 0 &&
+            selectedItemIndex < order.items.length
+          ) {
+            const item = order.items[selectedItemIndex]
+            if (item.quantity > 1) {
+              order.handleQuantityChange(item.id, item.quantity - 1)
+            }
+          }
+          break
+        }
+      }
+    },
+    [order, selectedItemIndex]
+  )
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyboardShortcuts)
+    return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
+  }, [handleKeyboardShortcuts])
 
   const handleLocationChange = (nextLocationId: string) => {
     if (nextLocationId === (order.selectedLocationId ?? '')) return
@@ -228,6 +357,12 @@ export function SaleOrderTabContent({
     setCancelConfirmOpen(false)
   }
 
+  const handleConfirmResetOrder = () => {
+    order.resetOrder()
+    setSelectedItemIndex(-1)
+    setResetConfirmOpen(false)
+  }
+
   const selectedBankAccount = useMemo(
     () => bankAccounts.find((a) => a.id === order.bankAccountId) ?? null,
     [bankAccounts, order.bankAccountId]
@@ -251,6 +386,7 @@ export function SaleOrderTabContent({
       <Header fixed>
         <div className='flex w-full items-center gap-2'>
           <SaleOrdersSearch
+            ref={searchRef}
             products={products}
             onAddProduct={order.addProduct}
             readOnly={order.isReadOnly}
@@ -292,6 +428,10 @@ export function SaleOrderTabContent({
                 onQuantityChange={order.handleQuantityChange}
                 onRemoveItem={order.removeItem}
                 readOnly={order.isReadOnly}
+                selectedItemIndex={selectedItemIndex}
+                onSelectedItemIndexChange={setSelectedItemIndex}
+                editingPriceItemId={editingPriceItemId}
+                onEditingPriceItemIdChange={setEditingPriceItemId}
               />
             </div>
 
@@ -342,6 +482,17 @@ export function SaleOrderTabContent({
       />
 
       <ConfirmDialog
+        open={resetConfirmOpen}
+        onOpenChange={setResetConfirmOpen}
+        title='Huỷ đơn hiện tại'
+        desc='Bạn có muốn huỷ đơn hiện tại và tạo đơn mới không? Toàn bộ thông tin đơn sẽ bị xóa.'
+        cancelBtnText='Không'
+        confirmText='Xác nhận'
+        destructive
+        handleConfirm={handleConfirmResetOrder}
+      />
+
+      <ConfirmDialog
         open={locationConfirmOpen}
         onOpenChange={handleLocationDialogChange}
         title='Đổi cửa hàng'
@@ -373,6 +524,21 @@ export function SaleOrderTabContent({
           notes={order.notes}
         />
       </PrintPreviewDialog>
+
+      {!order.isReadOnly && (
+        <OrderKeyboardFooter
+          shortcuts={[
+            { key: 'F1', label: 'Lưu nháp' },
+            { key: 'ESC', label: 'Huỷ đơn' },
+            { key: 'F6', label: 'In hoá đơn' },
+            { key: 'F9', label: 'Thanh toán' },
+            { key: '↑↓', label: 'Chọn sản phẩm' },
+            { key: 'F8', label: 'Sửa đơn giá' },
+            { key: '←→', label: 'Tăng giảm số lượng' },
+            { key: 'Del', label: 'Xoá sản phẩm' },
+          ]}
+        />
+      )}
     </>
   )
 }

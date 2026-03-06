@@ -407,6 +407,18 @@ export function useSaleOrder({
     updateMutation.mutate('9_CANCELLED')
   }
 
+  const resetOrder = useCallback(() => {
+    setItems([])
+    setCustomerId('')
+    setOrderDiscount(0)
+    setPaymentMethod('CASH')
+    setPaidAmount(0)
+    setCashReceived(0)
+    setNotes('')
+    setPrefetchedBatchesByProductId({})
+    prevSubtotalRef.current = 0
+  }, [])
+
   return {
     // Data
     items,
@@ -449,6 +461,7 @@ export function useSaleOrder({
     saveDraft,
     submit,
     cancelOrder,
+    resetOrder,
     initializeFromOrder,
     resetBatchCache,
     setInventoryBatches,

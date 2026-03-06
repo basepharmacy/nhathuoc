@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
 import { SearchIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
@@ -16,17 +16,23 @@ import {
 import { cn, normalizeSearchValue } from '@/lib/utils'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 
+export type SaleOrdersSearchHandle = {
+  focus: () => void
+}
+
 type SaleOrdersSearchProps = {
   products: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
   readOnly?: boolean
 }
 
-export function SaleOrdersSearch({
+export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSearchProps>(function SaleOrdersSearch({
   products,
   onAddProduct,
   readOnly = false,
-}: SaleOrdersSearchProps) {
+}, ref) {
+  const inputRef = useRef<HTMLInputElement>(null)
+  useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }))
   const [searchTerm, setSearchTerm] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const [searchOpen, setSearchOpen] = useState(false)
@@ -104,6 +110,7 @@ export function SaleOrdersSearch({
                   handleAddProduct(productsFiltered[activeIndex] ?? productsFiltered[0])
                 }
               }}
+              ref={inputRef}
               placeholder='Quét mã hoặc nhập để tìm kiếm (F2)'
               className='h-10 rounded-full pl-10 text-sm'
               disabled={readOnly}
@@ -148,4 +155,4 @@ export function SaleOrdersSearch({
       </Popover>
     </div>
   )
-}
+})

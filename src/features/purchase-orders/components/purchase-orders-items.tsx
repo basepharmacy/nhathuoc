@@ -36,13 +36,26 @@ function UnitPriceInput({
   value,
   onChange,
   disabled,
+  forceOpen,
+  onOpenChange,
 }: {
   originalPrice: number
   value: number
   onChange: (value: number) => void
   disabled?: boolean
+  forceOpen?: boolean
+  onOpenChange?: (open: boolean) => void
 }) {
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (forceOpen) setOpen(true)
+  }, [forceOpen])
+
+  const handleOpenChange = (next: boolean) => {
+    setOpen(next)
+    onOpenChange?.(next)
+  }
 
   const discountPercent =
     originalPrice > 0
@@ -50,7 +63,7 @@ function UnitPriceInput({
       : 0
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>
         <div className='flex items-center gap-1.5'>
           {discountPercent > 0 && (
@@ -61,7 +74,7 @@ function UnitPriceInput({
           <Input
             value={formatCurrency(value)}
             onChange={(e) => onChange(normalizeNumber(e.target.value))}
-            onClick={() => !disabled && setOpen(true)}
+            onClick={() => !disabled && handleOpenChange(true)}
             className='h-8 w-full rounded-full text-end text-xs'
             inputMode='numeric'
             disabled={disabled}
@@ -81,7 +94,7 @@ function UnitPriceInput({
             className='h-7 rounded-full px-2.5 text-xs'
             onClick={() => {
               onChange(originalPrice)
-              setOpen(false)
+              handleOpenChange(false)
             }}
           >
             Giá gốc
@@ -95,7 +108,7 @@ function UnitPriceInput({
               className='h-7 rounded-full px-2.5 text-xs'
               onClick={() => {
                 onChange(Math.round(originalPrice * (1 - p / 100)))
-                setOpen(false)
+                handleOpenChange(false)
               }}
             >
               -{p}%
@@ -116,6 +129,10 @@ type PurchaseOrdersItemsProps = {
   pendingBatchItemId: string | null
   onPendingBatchHandled: () => void
   readOnly?: boolean
+  selectedItemIndex?: number
+  onSelectedItemIndexChange?: (index: number) => void
+  editingPriceItemId?: string | null
+  onEditingPriceItemIdChange?: (itemId: string | null) => void
 }
 
 const renderUnitLabel = (unit: ProductUnit) => `${unit.unit_name}`
@@ -135,6 +152,10 @@ export function PurchaseOrdersItems({
   pendingBatchItemId,
   onPendingBatchHandled,
   readOnly = false,
+  selectedItemIndex = -1,
+  onSelectedItemIndexChange,
+  editingPriceItemId,
+  onEditingPriceItemIdChange,
 }: PurchaseOrdersItemsProps) {
   const [activeItemId, setActiveItemId] = useState<string | null>(null)
 
@@ -177,8 +198,14 @@ export function PurchaseOrdersItems({
                 items.map((item, index) => {
                   const lineTotal = item.quantity * item.unitPrice - item.discount
                   const unitOptions = item.product.product_units ?? []
+                  const isSelected = index === selectedItemIndex
+                  const isEditingPrice = editingPriceItemId === item.id
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow
+                      key={item.id}
+                      className={isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : 'cursor-pointer'}
+                      onClick={() => onSelectedItemIndexChange?.(index)}
+                    >
                       <TableCell className='align-middle'>
                         <div className='flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary'>
                           {index + 1}
@@ -263,6 +290,10 @@ export function PurchaseOrdersItems({
                           value={item.unitPrice}
                           onChange={(price) => onUpdateItem(item.id, { unitPrice: price })}
                           disabled={readOnly}
+                          forceOpen={isEditingPrice}
+                          onOpenChange={(open) => {
+                            if (!open && isEditingPrice) onEditingPriceItemIdChange?.(null)
+                          }}
                         />
                       </TableCell>
                       <TableCell className='align-middle'>

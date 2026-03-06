@@ -291,6 +291,22 @@ export function usePurchaseOrder({
       ? updateMutation.mutate(isOrdered ? '4_STORED' : '2_ORDERED')
       : createMutation.mutate('2_ORDERED')
 
+  const resetOrder = useCallback(() => {
+    setItems([])
+    setSupplierId('')
+    setOrderDiscount(0)
+    setPaidAmount(0)
+    setPaymentStatus('1_UNPAID')
+    setNotes('')
+    prevSubtotalRef.current = 0
+    // Generate new order code
+    const ts = Date.now()
+    const enc = ts.toString(36).toUpperCase()
+    const rnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+    setOrderCode(`${enc}-${rnd}`)
+    setIssuedAt(new Date().toISOString())
+  }, [])
+
   return {
     // Data
     items,
@@ -327,6 +343,7 @@ export function usePurchaseOrder({
     resetItems,
     saveDraft,
     submit,
+    resetOrder,
     initializeFromOrder,
   }
 }
