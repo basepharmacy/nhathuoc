@@ -9,6 +9,7 @@ import { type PaymentMethod, type SaleOrderItem, getDefaultUnit } from '../data/
 import {
   allocateQuantityToBatches,
   getAllocatedByBatch,
+  getItemConversionFactor,
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
 
@@ -275,12 +276,18 @@ export function useSaleOrder({
       }
     }
 
+    if (!batches || batches.length === 0) {
+      toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
+      return
+    }
+
+    let outOfStock = false
     setItems((prev) => {
       const allocations = getAllocatedByBatch(product.id, prev)
       const nextBatch = batches ? getNextAvailableBatch(batches, allocations) : null
 
       if (!nextBatch) {
-        toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
+        outOfStock = true
         return prev
       }
 
@@ -299,6 +306,9 @@ export function useSaleOrder({
         },
       ]
     })
+    if (outOfStock) {
+      toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
+    }
   }
 
   const updateItem = (itemId: string, next: Partial<SaleOrderItem>) => {
@@ -308,34 +318,96 @@ export function useSaleOrder({
 
   const handleQuantityChange = (itemId: string, nextQuantity: number) => {
     if (isReadOnly) return
+    let toastMessage: string | null = null
     setItems((prev) => {
       const target = prev.find((item) => item.id === itemId)
       if (!target) return prev
 
       const batches = batchesByProductId[target.product.id] ?? []
       if (batches.length === 0) {
-        toast.error('Không tìm thấy tồn kho cho sản phẩm này.')
+        toastMessage = 'Không tìm thấy tồn kho cho sản phẩm này.'
         return prev
       }
 
-      const totalStock = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
-      const allocatedOther = prev
+      const conversionFactor = getItemConversionFactor(target)
+      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
+      const allocatedOtherBase = prev
         .filter((item) => item.product.id === target.product.id && item.id !== target.id)
-        .reduce((sum, item) => sum + item.quantity, 0)
-      const maxForItem = Math.max(0, totalStock - allocatedOther)
+        .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
+      const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
+      const maxForItem = Math.floor(maxBaseForItem / (conversionFactor || 1))
       const desired = Math.max(1, Math.floor(nextQuantity || 1))
 
       if (Math.min(desired, maxForItem) < desired) {
-        toast.error('Số lượng vượt quá tồn kho hiện tại.')
+        toastMessage = 'Số lượng vượt quá tồn kho hiện tại.'
       }
 
-      return allocateQuantityToBatches({ target, desired, batches, allItems: prev })
+      return allocateQuantityToBatches({ target, desired, batches, allItems: prev, conversionFactor })
     })
+    if (toastMessage) {
+      toast.error(toastMessage)
+    }
   }
 
   const removeItem = (itemId: string) => {
     if (isReadOnly) return
     setItems((prev) => prev.filter((item) => item.id !== itemId))
+  }
+
+  const handleUnitChange = (itemId: string, newUnitId: string) => {
+    if (isReadOnly) return
+    let toastMessage: string | null = null
+    setItems((prev) => {
+      const target = prev.find((item) => item.id === itemId)
+      if (!target) return prev
+
+      const selectedUnit = target.product.product_units?.find((u) => u.id === newUnitId)
+      if (!selectedUnit) return prev
+
+      const newCF = selectedUnit.conversion_factor || 1
+      const batches = batchesByProductId[target.product.id] ?? []
+
+      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
+      const allocatedOtherBase = prev
+        .filter((item) => item.product.id === target.product.id && item.id !== target.id)
+        .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
+      const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
+      const maxInNewUnit = Math.floor(maxBaseForItem / newCF)
+
+      if (maxInNewUnit <= 0) {
+        toastMessage = 'Tồn kho không đủ cho đơn vị này.'
+        return prev
+      }
+
+      // Cap current quantity to max available in the new unit
+      const cappedQuantity = Math.min(target.quantity, maxInNewUnit)
+
+      if (cappedQuantity < target.quantity) {
+        toastMessage = 'Số lượng vượt quá tồn kho hiện tại.'
+      }
+
+      const updatedTarget: SaleOrderItem = {
+        ...target,
+        productUnitId: newUnitId,
+        unitPrice: selectedUnit.sell_price ?? target.unitPrice,
+        quantity: cappedQuantity,
+      }
+
+      const updatedItems = prev.map((item) =>
+        item.id === itemId ? updatedTarget : item
+      )
+
+      return allocateQuantityToBatches({
+        target: updatedTarget,
+        desired: cappedQuantity,
+        batches,
+        allItems: updatedItems,
+        conversionFactor: newCF,
+      })
+    })
+    if (toastMessage) {
+      toast.error(toastMessage)
+    }
   }
 
   const resetItems = useCallback(() => {
@@ -416,12 +488,14 @@ export function useSaleOrder({
     setCashReceived(0)
     setNotes('')
     setPrefetchedBatchesByProductId({})
+    setHasInitialized(false)
     prevSubtotalRef.current = 0
   }, [])
 
   return {
     // Data
     items,
+    batchesByProductId,
     orderCode,
     orderStatus,
     isReadOnly,
@@ -456,6 +530,7 @@ export function useSaleOrder({
     addProduct,
     updateItem,
     handleQuantityChange,
+    handleUnitChange,
     removeItem,
     resetItems,
     saveDraft,

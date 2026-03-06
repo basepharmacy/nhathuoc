@@ -116,6 +116,7 @@ type SaleOrdersItemsProps = {
   items: SaleOrderItem[]
   onUpdateItem: (itemId: string, next: Partial<SaleOrderItem>) => void
   onQuantityChange: (itemId: string, nextQuantity: number) => void
+  onUnitChange: (itemId: string, newUnitId: string) => void
   onRemoveItem: (itemId: string) => void
   readOnly?: boolean
   selectedItemIndex?: number
@@ -136,6 +137,7 @@ export function SaleOrdersItems({
   items,
   onUpdateItem,
   onQuantityChange,
+  onUnitChange,
   onRemoveItem,
   readOnly = false,
   selectedItemIndex = -1,
@@ -200,11 +202,7 @@ export function SaleOrdersItems({
                           onChange={(event) => {
                             if (readOnly) return
                             const value = event.target.value
-                            const selectedUnit = unitOptions.find((unit) => unit.id === value)
-                            onUpdateItem(item.id, {
-                              productUnitId: value,
-                              unitPrice: selectedUnit?.sell_price ?? item.unitPrice,
-                            })
+                            onUnitChange(item.id, value)
                           }}
                           className='h-8 w-full rounded-full border bg-background px-2 text-xs'
                           disabled={readOnly}

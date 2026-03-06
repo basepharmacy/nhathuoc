@@ -85,6 +85,15 @@ export function SaleOrderTabContent({
     }
   }, [order.orderCode])
 
+  // Reset order when navigating back from edit mode (orderId removed)
+  const prevOrderIdRef = useRef(orderId)
+  useEffect(() => {
+    if (prevOrderIdRef.current && !orderId) {
+      order.resetOrder()
+    }
+    prevOrderIdRef.current = orderId
+  }, [orderId, order.resetOrder])
+
   const { data: inventoryBatches = EMPTY_BATCHES } = useQuery({
     ...getInventoryBatchesQueryOptions(tenantId, order.productIds, order.selectedLocationId),
     enabled: !!tenantId && order.productIds.length > 0,
@@ -426,6 +435,7 @@ export function SaleOrderTabContent({
                 items={order.items}
                 onUpdateItem={order.updateItem}
                 onQuantityChange={order.handleQuantityChange}
+                onUnitChange={order.handleUnitChange}
                 onRemoveItem={order.removeItem}
                 readOnly={order.isReadOnly}
                 selectedItemIndex={selectedItemIndex}

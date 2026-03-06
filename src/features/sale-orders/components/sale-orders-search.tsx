@@ -39,7 +39,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
 
   const productsFiltered = useMemo(() => {
     const term = normalizeSearchValue(searchTerm.trim())
-    if (!term) return []
+    if (!term) return products.slice(0, 5)
     return products
       .filter((product) =>
         normalizeSearchValue(product.product_name).includes(term)
@@ -63,12 +63,38 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
     setSearchOpen(false)
   }
 
+  // Auto-focus on mount
+  useEffect(() => {
+    if (!readOnly) {
+      inputRef.current?.focus()
+    }
+  }, [])
+
+  // F2 global shortcut to focus search
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'F2') {
+        e.preventDefault()
+        inputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
+
   const shouldOpenSuggestions =
-    !readOnly && searchOpen && searchTerm.trim().length > 0
+    !readOnly && searchOpen && productsFiltered.length > 0
 
   return (
     <div className='w-full max-w-xl'>
-      <Popover open={shouldOpenSuggestions} onOpenChange={setSearchOpen}>
+      <Popover
+        open={shouldOpenSuggestions}
+        onOpenChange={(open) => {
+          // Prevent Radix from closing when interacting with the anchor input
+          if (!open && document.activeElement === inputRef.current) return
+          setSearchOpen(open)
+        }}
+      >
         <PopoverAnchor asChild>
           <div className='relative'>
             <SearchIcon className='absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground' />

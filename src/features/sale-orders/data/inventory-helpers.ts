@@ -3,6 +3,12 @@ import { type SaleOrderItem } from './types'
 
 export const getBatchQuantity = (batch: InventoryBatch) => batch.quantity ?? 0
 
+/** Return the conversion factor for an item's currently-selected unit (defaults to 1 for base unit). */
+export const getItemConversionFactor = (item: SaleOrderItem): number => {
+  const unit = item.product.product_units?.find((u) => u.id === item.productUnitId)
+  return unit?.conversion_factor || 1
+}
+
 export const getAllocatedByBatch = (productId: string, rows: SaleOrderItem[]) => {
   const map = new Map<string, number>()
   rows.forEach((row) => {
@@ -34,40 +40,59 @@ export const allocateQuantityToBatches = ({
   desired,
   batches,
   allItems,
+  conversionFactor = 1,
 }: {
   target: SaleOrderItem
   desired: number
   batches: InventoryBatch[]
   allItems: SaleOrderItem[]
+  /** Conversion factor of the target item's selected unit (base unit = 1). */
+  conversionFactor?: number
 }): SaleOrderItem[] => {
-  const totalStock = batches.reduce((sum, batch) => sum + getBatchQuantity(batch), 0)
-  const allocatedOther = allItems
-    .filter((item) => item.product.id === target.product.id && item.id !== target.id)
-    .reduce((sum, item) => sum + item.quantity, 0)
+  // Guard against zero conversion factor to prevent division by zero
+  const safeCF = conversionFactor || 1
 
-  const maxForItem = Math.max(0, totalStock - allocatedOther)
+  // Total stock is always in base units
+  const totalStockBase = batches.reduce((sum, batch) => sum + getBatchQuantity(batch), 0)
+
+  // Sum other items' allocations in base units (each item may use a different unit)
+  const allocatedOtherBase = allItems
+    .filter((item) => item.product.id === target.product.id && item.id !== target.id)
+    .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
+
+  // Max available for this item, converted to the target's selected unit
+  const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
+  const maxForItem = Math.floor(maxBaseForItem / safeCF)
   const capped = Math.min(Math.max(1, Math.floor(desired || 1)), maxForItem)
 
-  const allocations = new Map<string, number>()
+  // Track per-batch allocations by other items in base units
+  const allocationsBase = new Map<string, number>()
   allItems.forEach((item) => {
     if (item.product.id !== target.product.id) return
     if (item.id === target.id) return
     if (!item.batchId) return
-    allocations.set(item.batchId, (allocations.get(item.batchId) ?? 0) + item.quantity)
+    const itemCF = getItemConversionFactor(item)
+    allocationsBase.set(
+      item.batchId,
+      (allocationsBase.get(item.batchId) ?? 0) + item.quantity * itemCF
+    )
   })
 
-  let remaining = capped
+  let remaining = capped // in target unit
 
   const nextItems: SaleOrderItem[] = allItems
     .map((item) => {
       if (item.id !== target.id) return item
 
       const batch = batches.find((entry) => entry.id === item.batchId)
-      const available = Math.max(
+      const availableBase = Math.max(
         0,
-        (batch ? getBatchQuantity(batch) : 0) - (allocations.get(item.batchId ?? '') ?? 0)
+        (batch ? getBatchQuantity(batch) : 0) -
+        (allocationsBase.get(item.batchId ?? '') ?? 0)
       )
-      const assigned = Math.min(remaining, available)
+      // Convert available base units to the target's selected unit
+      const availableInUnit = Math.floor(availableBase / safeCF)
+      const assigned = Math.min(remaining, availableInUnit)
       remaining -= assigned
 
       return { ...item, quantity: assigned }
@@ -75,14 +100,21 @@ export const allocateQuantityToBatches = ({
     .filter((item) => item.quantity > 0)
 
   const startIndex = batches.findIndex((batch) => batch.id === target.batchId)
-  const nextBatches = startIndex >= 0 ? batches.slice(startIndex + 1) : batches
+  // Wrap around: try batches after the current one first, then batches before it
+  const nextBatches = startIndex >= 0
+    ? [...batches.slice(startIndex + 1), ...batches.slice(0, startIndex)]
+    : batches
 
   nextBatches.forEach((batch) => {
     if (remaining <= 0) return
-    const available = Math.max(0, getBatchQuantity(batch) - (allocations.get(batch.id) ?? 0))
-    if (available <= 0) return
+    const availableBase = Math.max(
+      0,
+      getBatchQuantity(batch) - (allocationsBase.get(batch.id) ?? 0)
+    )
+    const availableInUnit = Math.floor(availableBase / safeCF)
+    if (availableInUnit <= 0) return
 
-    const assigned = Math.min(remaining, available)
+    const assigned = Math.min(remaining, availableInUnit)
     remaining -= assigned
 
     const existingIndex = nextItems.findIndex(
