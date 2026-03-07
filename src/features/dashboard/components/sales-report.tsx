@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { getStockLossAmountQueryOptions } from '@/client/queries'
+import { getSalesStatisticsQueryOptions } from '@/client/queries'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { formatCurrency } from '@/lib/utils'
@@ -212,18 +212,15 @@ export function SalesReport({ timePeriod }: SalesReportProps) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const locationId = selectedLocationId ?? user?.location?.id ?? undefined
-  const tenantId = user?.profile?.tenant_id ?? ''
-
-  const { data: stockLossAmount = 0 } = useQuery({
-    ...getStockLossAmountQueryOptions({
+  const { data: salesStats } = useQuery({
+    ...getSalesStatisticsQueryOptions({
       period: timePeriod,
-      tenantId,
       locationId,
     }),
-    enabled: !!tenantId,
+    enabled: !!user,
   })
 
-  const salesKpi = getSalesKpi(timePeriod, stockLossAmount)
+  const salesKpi = getSalesKpi(timePeriod, salesStats?.stockLossAmount ?? 0)
   const { data: chartData, tooltipLabelFormatter } = getChartData(timePeriod)
   const topProducts = getTopProducts(timePeriod)
 
