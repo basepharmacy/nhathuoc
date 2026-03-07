@@ -1167,12 +1167,14 @@ export type Database = {
           current_new_customers: number
           current_period_end: string
           current_period_start: string
+          current_total_loss: number
           current_total_profit: number
           current_total_revenue: number
           previous_completed_orders: number
           previous_new_customers: number
           previous_period_end: string
           previous_period_start: string
+          previous_total_loss: number
           previous_total_profit: number
           previous_total_revenue: number
           top_5_products_by_profit: Json

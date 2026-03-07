@@ -15,7 +15,6 @@ import {
   getExpiredInventoryBatchesQueryOptions,
   getLowStockProductsQueryOptions,
   getSalesStatisticsQueryOptions,
-  getStockLossAmountQueryOptions,
 } from '@/client/queries'
 import {
   AlertTriangle,
@@ -40,9 +39,11 @@ type ReportMetrics = {
   revenue: number
   profit: number
   orders: number
+  stockLossAmount: number
   revenueChange: number
   profitChange: number
   ordersChange: number
+  stockLossChange: number
   topProducts: TopProduct[]
 }
 
@@ -50,9 +51,11 @@ const emptyMetrics: ReportMetrics = {
   revenue: 0,
   profit: 0,
   orders: 0,
+  stockLossAmount: 0,
   revenueChange: 0,
   profitChange: 0,
   ordersChange: 0,
+  stockLossChange: 0,
   topProducts: [],
 }
 
@@ -115,15 +118,6 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
       tenantId,
       locationId,
       limit: 5,
-    }),
-    enabled: !!tenantId,
-  })
-
-  const { data: stockLossAmount = 0 } = useQuery({
-    ...getStockLossAmountQueryOptions({
-      period: timePeriod,
-      tenantId,
-      locationId,
     }),
     enabled: !!tenantId,
   })
@@ -193,10 +187,11 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>
-              {formatCurrency(stockLossAmount, { style: 'currency' })}
+              {formatCurrency(data.stockLossAmount, { style: 'currency' })}
             </div>
             <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
               <span>{periodDescription}</span>
+              <ChangeBadge value={data.stockLossChange} label={changeLabel} />
             </div>
           </CardContent>
         </Card>

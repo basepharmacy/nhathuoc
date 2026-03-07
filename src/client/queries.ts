@@ -520,27 +520,3 @@ export const getExpiredInventoryBatchesQueryOptions = (params: {
     },
   })
 
-export const getStockLossAmountQueryOptions = (params: {
-  period: SalesPeriod
-  tenantId: string
-  locationId?: string | null
-}) =>
-  queryOptions({
-    queryKey: [
-      'dashboard-report',
-      'stock-loss-amount',
-      params.period,
-      params.tenantId,
-      params.locationId ?? 'all',
-    ],
-    queryFn: async () => {
-      if (!params.tenantId) {
-        return 0
-      }
-      return dashboardReportRepo.getStockLossAmount({
-        period: params.period,
-        tenantId: params.tenantId,
-        locationId: params.locationId ?? undefined,
-      })
-    },
-  })
