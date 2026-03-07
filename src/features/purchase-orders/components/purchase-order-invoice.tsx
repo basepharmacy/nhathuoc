@@ -1,5 +1,6 @@
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
+import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
 
@@ -43,6 +44,16 @@ export function PurchaseOrderInvoice({
         {storePhone && <p className='text-[10px] text-gray-600'>DT: {storePhone}</p>}
         <h2 className='mt-2 text-base font-bold'>PHIEU NHAP HANG</h2>
         <p className='text-[11px]'>{orderCode}</p>
+        <div className='mt-1 flex justify-center'>
+          <Barcode
+            value={orderCode}
+            width={1.2}
+            height={30}
+            fontSize={0}
+            margin={0}
+            displayValue={false}
+          />
+        </div>
         <p className='text-[11px]'>{now}</p>
       </div>
 
