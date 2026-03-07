@@ -39,6 +39,11 @@ export type ExpiredInventoryBatch = {
   unitName: string
 }
 
+type PeriodRange = {
+  start: Date
+  end: Date
+}
+
 type RpcSalesStatsRow = {
   current_completed_orders: number | null
   current_total_profit: number | null
@@ -122,6 +127,42 @@ const calculateChange = (current: number, previous: number) => {
     return current > 0 ? 100 : 0
   }
   return Number((((current - previous) / previous) * 100).toFixed(1))
+}
+
+const getPeriodRange = (period: SalesPeriod, now: Date = new Date()): PeriodRange => {
+  const start = new Date(now)
+
+  switch (period) {
+    case 'day':
+      start.setHours(0, 0, 0, 0)
+      break
+    case 'week': {
+      start.setHours(0, 0, 0, 0)
+      const dayOfWeek = start.getDay()
+      const offsetToMonday = (dayOfWeek + 6) % 7
+      start.setDate(start.getDate() - offsetToMonday)
+      break
+    }
+    case 'month':
+      start.setDate(1)
+      start.setHours(0, 0, 0, 0)
+      break
+    case 'quarter': {
+      const quarterStartMonth = Math.floor(start.getMonth() / 3) * 3
+      start.setMonth(quarterStartMonth, 1)
+      start.setHours(0, 0, 0, 0)
+      break
+    }
+    case 'year':
+      start.setMonth(0, 1)
+      start.setHours(0, 0, 0, 0)
+      break
+  }
+
+  return {
+    start,
+    end: now,
+  }
 }
 
 export const createDashboardReportRepository = (
@@ -245,6 +286,50 @@ export const createDashboardReportRepository = (
           unitName,
         }
       })
+    },
+
+    async getStockLossAmount(params: {
+      period: SalesPeriod
+      tenantId: string
+      locationId?: string | null
+      now?: Date
+    }): Promise<number> {
+      const { start, end } = getPeriodRange(params.period, params.now)
+
+      let query = client
+        .from('stock_adjustments')
+        .select('quantity, inventory_batches!stock_adjustments_batch_id_fkey(average_cost_price)')
+        .eq('tenant_id', params.tenantId)
+        .lt('quantity', 0)
+        .not('batch_id', 'is', null)
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
+      }
+
+      const { data, error } = await query
+      console.log('Stock adjustments for loss calculation:', { data, error })
+
+      if (error) {
+        throw error
+      }
+
+      const adjustments = (data ?? []) as Array<{
+        quantity: number | null
+        inventory_batches?: { average_cost_price: number | null } | null
+      }>
+
+      if (adjustments.length === 0) {
+        return 0
+      }
+
+      return adjustments.reduce((sum, adjustment) => {
+        const quantity = Math.abs(adjustment.quantity ?? 0)
+        const averageCostPrice = adjustment.inventory_batches?.average_cost_price ?? 0
+        return sum + quantity * averageCostPrice
+      }, 0)
     },
   }
 }

@@ -15,6 +15,7 @@ import {
   getExpiredInventoryBatchesQueryOptions,
   getLowStockProductsQueryOptions,
   getSalesStatisticsQueryOptions,
+  getStockLossAmountQueryOptions,
 } from '@/client/queries'
 import {
   AlertTriangle,
@@ -118,6 +119,15 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
     enabled: !!tenantId,
   })
 
+  const { data: stockLossAmount = 0 } = useQuery({
+    ...getStockLossAmountQueryOptions({
+      period: timePeriod,
+      tenantId,
+      locationId,
+    }),
+    enabled: !!tenantId,
+  })
+
   const data = reportMetrics ?? emptyMetrics
   const periodDescription = periodDescriptions[timePeriod]
   const changeLabel = `so với ${timePeriod === 'day'
@@ -132,7 +142,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
 
   return (
     <div className='space-y-4'>
-      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Doanh thu</CardTitle>
@@ -173,6 +183,20 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
             <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
               <span>{periodDescription}</span>
               <ChangeBadge value={data.ordersChange} label={changeLabel} />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Tiền thất thoát</CardTitle>
+            <TrendingDownIcon className='h-4 w-4 text-muted-foreground' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>
+              {formatCurrency(stockLossAmount, { style: 'currency' })}
+            </div>
+            <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
+              <span>{periodDescription}</span>
             </div>
           </CardContent>
         </Card>
@@ -290,7 +314,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
             <CardContent>
               <div className='space-y-3'>
                 {expiredBatches.map((batch) => (
-                  <div key={batch.batch} className='space-y-1 rounded-lg border border-transparent bg-muted/40 px-3 py-2'>
+                  <div key={batch.id} className='space-y-1 rounded-lg border border-transparent bg-muted/40 px-3 py-2'>
                     <div className='flex items-center justify-between gap-3'>
                       <p className='text-sm font-medium'>{batch.name}</p>
                       <Badge variant='destructive'>Hết hạn</Badge>
@@ -323,8 +347,8 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
             </CardHeader>
             <CardContent>
               <div className='space-y-3'>
-                {stockAlerts.map((item) => (
-                  <div key={item.name} className='flex items-center justify-between gap-3'>
+                {stockAlerts.map((item, index) => (
+                  <div key={`${item.name}-${item.status}-${index}`} className='flex items-center justify-between gap-3'>
                     <div>
                       <p className='text-sm font-medium'>{item.name}</p>
                       <p className='text-xs text-muted-foreground'>

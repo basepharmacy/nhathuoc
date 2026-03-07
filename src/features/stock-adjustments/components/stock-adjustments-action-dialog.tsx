@@ -178,18 +178,24 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange }: Props) {
   const isOpenRef = useRef(open)
 
   const createMutation = useMutation({
-    mutationFn: (values: StockAdjustmentForm) =>
-      stockAdjustmentsRepo.createStockAdjustment({
+    mutationFn: (values: StockAdjustmentForm) => {
+      const normalizedBatchCode = values.batchCode.trim()
+      const existingBatch = validBatches.find((batch) => batch.batch_code === normalizedBatchCode)
+      const isExistingBatch = Boolean(existingBatch)
+
+      return stockAdjustmentsRepo.createStockAdjustment({
         tenant_id: tenantId,
         product_id: values.productId,
         location_id: values.locationId,
-        batch_code: values.batchCode.trim(),
+        batch_id: existingBatch?.id ?? null,
+        batch_code: normalizedBatchCode,
         quantity: values.quantity,
         cost_price: values.costPrice,
         reason_code: values.reasonCode,
         reason: normalizeOptionalText(values.reason),
-        expiry_date: normalizeOptionalText(values.expiryDate),
-      }),
+        expiry_date: isExistingBatch ? null : normalizeOptionalText(values.expiryDate),
+      })
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
       queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId] })

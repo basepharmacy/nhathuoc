@@ -7,6 +7,7 @@ export type AdjustmentItem = {
   productUnitId: string | null
   quantity: number
   costPrice: number
+  batchId: string | null
   batchCode: string
   expiryDate: string
   reasonCode: StockAdjustmentReasonCode

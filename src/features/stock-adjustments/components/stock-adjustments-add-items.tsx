@@ -265,9 +265,9 @@ export function StockAdjustmentsAddItems({
         onOpenChange={(open) => {
           if (!open) setActiveItemId(null)
         }}
-        onSave={(batchCode, expiryDate) => {
+        onSave={(batchCode, expiryDate, batchId) => {
           if (!activeItemId) return
-          onUpdateItem(activeItemId, { batchCode, expiryDate })
+          onUpdateItem(activeItemId, { batchCode, expiryDate, batchId })
           setActiveItemId(null)
         }}
       />

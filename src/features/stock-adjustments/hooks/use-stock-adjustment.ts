@@ -53,16 +53,18 @@ export function useStockAdjustment({
       // Create each adjustment sequentially
       for (const item of items) {
         const normalizedReason = item.reason.trim().length > 0 ? item.reason.trim() : null
+        const isExistingBatch = Boolean(item.batchId)
         await stockAdjustmentsRepo.createStockAdjustment({
           tenant_id: tenantId,
           product_id: item.product.id,
           location_id: selectedLocationId!,
+          batch_id: item.batchId,
           batch_code: item.batchCode.trim(),
           quantity: item.quantity,
           cost_price: item.costPrice,
           reason_code: item.reasonCode,
           reason: normalizedReason,
-          expiry_date: item.expiryDate.trim() || null,
+          expiry_date: isExistingBatch ? null : item.expiryDate.trim() || null,
         })
       }
     },
@@ -105,6 +107,7 @@ export function useStockAdjustment({
         productUnitId: defaultUnit?.id ?? null,
         quantity: 1,
         costPrice,
+        batchId: null,
         batchCode: '',
         expiryDate: '',
         reasonCode: '1_FIRST_STOCK',

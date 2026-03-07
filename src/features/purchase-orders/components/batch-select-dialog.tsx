@@ -31,7 +31,7 @@ type BatchSelectDialogProps = {
   locationId?: string | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onSave: (batchCode: string, expiryDate: string) => void
+  onSave: (batchCode: string, expiryDate: string, batchId?: string | null) => void
   saveLabel?: string
   readOnly?: boolean
 }
@@ -133,7 +133,9 @@ export function BatchSelectDialog({
 
   const handleSave = () => {
     if (readOnly) return
-    onSave(batchCode.trim(), expiryDate.trim())
+    const normalizedBatchCode = batchCode.trim()
+    const matchedBatch = allBatches.find((batch) => batch.batch_code === normalizedBatchCode)
+    onSave(normalizedBatchCode, expiryDate.trim(), matchedBatch?.id ?? null)
   }
 
   return (

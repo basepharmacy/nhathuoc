@@ -857,7 +857,8 @@ export type Database = {
       }
       stock_adjustments: {
         Row: {
-          batch_code: string
+          batch_code: string | null
+          batch_id: string | null
           cost_price: number
           created_at: string | null
           expiry_date: string | null
@@ -870,7 +871,8 @@ export type Database = {
           tenant_id: string
         }
         Insert: {
-          batch_code: string
+          batch_code?: string | null
+          batch_id?: string | null
           cost_price?: number
           created_at?: string | null
           expiry_date?: string | null
@@ -883,7 +885,8 @@ export type Database = {
           tenant_id: string
         }
         Update: {
-          batch_code?: string
+          batch_code?: string | null
+          batch_id?: string | null
           cost_price?: number
           created_at?: string | null
           expiry_date?: string | null
@@ -896,6 +899,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "stock_adjustments_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "inventory_batches"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stock_adjustments_location_id_fkey"
             columns: ["location_id"]

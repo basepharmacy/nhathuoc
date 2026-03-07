@@ -6,8 +6,12 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getStockLossAmountQueryOptions } from '@/client/queries'
+import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import { formatCurrency } from '@/lib/utils'
-import { DollarSign, ShoppingCart, TrendingUp, Users } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { DollarSign, ShoppingCart, TrendingDown, TrendingUp, Users } from 'lucide-react'
 import type { TimePeriod } from '..'
 import { KpiGrid, type KpiItem } from './kpi-card'
 import { MonthlyBarChart } from './monthly-bar-chart'
@@ -37,7 +41,7 @@ const periodTopProductDescriptions: Record<TimePeriod, string> = {
 }
 
 // TODO: replace with actual data fetching
-function getSalesKpi(period: TimePeriod): KpiItem[] {
+function getSalesKpi(period: TimePeriod, stockLossAmount: number): KpiItem[] {
   const changeLabel = periodCompareLabels[period]
   const dataByPeriod: Record<TimePeriod, KpiItem[]> = {
     day: [
@@ -45,30 +49,35 @@ function getSalesKpi(period: TimePeriod): KpiItem[] {
       { title: 'Lợi nhuận', value: formatCurrency(2_130_000, { style: 'currency' }), change: 3.8, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '12', change: -8.3, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '9', change: 12.5, icon: Users, changeLabel },
+      { title: 'Tiền thất thoát', value: formatCurrency(stockLossAmount, { style: 'currency' }), icon: TrendingDown },
     ],
     week: [
       { title: 'Doanh thu', value: formatCurrency(42_350_000, { style: 'currency' }), change: 8.1, icon: DollarSign, changeLabel },
       { title: 'Lợi nhuận', value: formatCurrency(12_700_000, { style: 'currency' }), change: 10.2, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '68', change: 5.4, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '32', change: 7.6, icon: Users, changeLabel },
+      { title: 'Tiền thất thoát', value: formatCurrency(stockLossAmount, { style: 'currency' }), icon: TrendingDown },
     ],
     month: [
       { title: 'Doanh thu', value: formatCurrency(125_430_000, { style: 'currency' }), change: 12.5, icon: DollarSign, changeLabel },
       { title: 'Lợi nhuận', value: formatCurrency(38_200_000, { style: 'currency' }), change: 15.3, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '234', change: 8.2, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '89', change: 5.1, icon: Users, changeLabel },
+      { title: 'Tiền thất thoát', value: formatCurrency(stockLossAmount, { style: 'currency' }), icon: TrendingDown },
     ],
     quarter: [
       { title: 'Doanh thu', value: formatCurrency(382_900_000, { style: 'currency' }), change: 14.2, icon: DollarSign, changeLabel },
       { title: 'Lợi nhuận', value: formatCurrency(118_500_000, { style: 'currency' }), change: 16.4, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '712', change: 9.7, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '248', change: 6.5, icon: Users, changeLabel },
+      { title: 'Tiền thất thoát', value: formatCurrency(stockLossAmount, { style: 'currency' }), icon: TrendingDown },
     ],
     year: [
       { title: 'Doanh thu', value: formatCurrency(1_520_000_000, { style: 'currency' }), change: 18.3, icon: DollarSign, changeLabel },
       { title: 'Lợi nhuận', value: formatCurrency(456_000_000, { style: 'currency' }), change: 22.1, icon: TrendingUp, changeLabel },
       { title: 'Đơn bán', value: '2.845', change: 14.6, icon: ShoppingCart, changeLabel },
       { title: 'Khách hàng', value: '523', change: 11.8, icon: Users, changeLabel },
+      { title: 'Tiền thất thoát', value: formatCurrency(stockLossAmount, { style: 'currency' }), icon: TrendingDown },
     ],
   }
   return dataByPeriod[period]
@@ -200,7 +209,21 @@ type SalesReportProps = {
 }
 
 export function SalesReport({ timePeriod }: SalesReportProps) {
-  const salesKpi = getSalesKpi(timePeriod)
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+  const locationId = selectedLocationId ?? user?.location?.id ?? undefined
+  const tenantId = user?.profile?.tenant_id ?? ''
+
+  const { data: stockLossAmount = 0 } = useQuery({
+    ...getStockLossAmountQueryOptions({
+      period: timePeriod,
+      tenantId,
+      locationId,
+    }),
+    enabled: !!tenantId,
+  })
+
+  const salesKpi = getSalesKpi(timePeriod, stockLossAmount)
   const { data: chartData, tooltipLabelFormatter } = getChartData(timePeriod)
   const topProducts = getTopProducts(timePeriod)
 
