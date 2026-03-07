@@ -177,6 +177,10 @@ export function SaleOrders() {
             navigate={navigate}
             onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
             onOrderCompleted={(createdOrderId) => handleOrderCompleted(tab.id, createdOrderId)}
+            onAddTab={addTab}
+            onCloseTab={() => closeTab(tab.id)}
+            tabCount={tabs.length}
+            isActive={tab.id === activeTabId}
             headerSlot={tabControls}
           />
         </TabsContent>

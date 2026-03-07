@@ -49,7 +49,22 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
           </AlertDialogDescription>
         </AlertDialogHeader>
         {children}
-        <AlertDialogFooter>
+        <AlertDialogFooter
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+              e.preventDefault()
+              const buttons = Array.from(
+                e.currentTarget.querySelectorAll<HTMLButtonElement>('button:not([disabled])')
+              )
+              const idx = buttons.indexOf(e.target as HTMLButtonElement)
+              if (idx < 0) return
+              const next = e.key === 'ArrowRight'
+                ? buttons[(idx + 1) % buttons.length]
+                : buttons[(idx - 1 + buttons.length) % buttons.length]
+              next?.focus()
+            }
+          }}
+        >
           <AlertDialogCancel disabled={isLoading}>
             {cancelBtnText ?? 'Cancel'}
           </AlertDialogCancel>

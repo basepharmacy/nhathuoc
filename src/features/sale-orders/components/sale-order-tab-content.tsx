@@ -41,6 +41,10 @@ type SaleOrderTabContentProps = {
   navigate: (opts: { search?: { orderId: string }; to?: string }) => void
   onOrderCodeChange?: (code: string) => void
   onOrderCompleted?: (createdOrderId: string) => void
+  onAddTab?: () => void
+  onCloseTab?: () => void
+  tabCount?: number
+  isActive?: boolean
   headerSlot?: React.ReactNode
 }
 
@@ -56,6 +60,10 @@ export function SaleOrderTabContent({
   navigate,
   onOrderCodeChange,
   onOrderCompleted,
+  onAddTab,
+  onCloseTab,
+  tabCount = 1,
+  isActive = true,
   headerSlot,
 }: SaleOrderTabContentProps) {
   // ── Per-tab queries ─────────────────────────────────────────
@@ -226,14 +234,21 @@ export function SaleOrderTabContent({
       switch (event.key) {
         case 'F1': {
           event.preventDefault()
+          if (onAddTab) onAddTab()
+          break
+        }
+        case 'F3': {
+          event.preventDefault()
           if (!order.isReadOnly) order.saveDraft()
           break
         }
         case 'Escape': {
           // Only show reset confirm when no other dialog/modal is open
           const hasOpenDialog = document.querySelector('[role="dialog"]')
-          if (!isInput && !order.isReadOnly && !hasOpenDialog) {
+          if (!order.isReadOnly && !hasOpenDialog) {
             event.preventDefault()
+            // Blur the focused input first so user sees the dialog cleanly
+            if (isInput) (target as HTMLElement).blur()
             setResetConfirmOpen(true)
           }
           break
@@ -241,15 +256,6 @@ export function SaleOrderTabContent({
         case 'F6': {
           event.preventDefault()
           setPrintOpen(true)
-          break
-        }
-        case 'F8': {
-          event.preventDefault()
-          if (order.isReadOnly || order.items.length === 0) break
-          const idx = selectedItemIndex >= 0 && selectedItemIndex < order.items.length
-            ? selectedItemIndex
-            : 0
-          setEditingPriceItemId(order.items[idx].id)
           break
         }
         case 'F9': {
@@ -328,13 +334,14 @@ export function SaleOrderTabContent({
         }
       }
     },
-    [order, selectedItemIndex]
+    [order, selectedItemIndex, onAddTab, onCloseTab, tabCount]
   )
 
   useEffect(() => {
+    if (!isActive) return
     window.addEventListener('keydown', handleKeyboardShortcuts)
     return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
-  }, [handleKeyboardShortcuts])
+  }, [handleKeyboardShortcuts, isActive])
 
   const handleLocationChange = (nextLocationId: string) => {
     if (nextLocationId === (order.selectedLocationId ?? '')) return
@@ -367,8 +374,12 @@ export function SaleOrderTabContent({
   }
 
   const handleConfirmResetOrder = () => {
-    order.resetOrder()
-    setSelectedItemIndex(-1)
+    if (tabCount > 1 && onCloseTab) {
+      onCloseTab()
+    } else {
+      order.resetOrder()
+      setSelectedItemIndex(-1)
+    }
     setResetConfirmOpen(false)
   }
 
@@ -538,12 +549,12 @@ export function SaleOrderTabContent({
       {!order.isReadOnly && (
         <OrderKeyboardFooter
           shortcuts={[
-            { key: 'F1', label: 'Lưu nháp' },
+            { key: 'F1', label: 'Tạo đơn mới' },
+            { key: 'F3', label: 'Lưu nháp' },
             { key: 'ESC', label: 'Huỷ đơn' },
             { key: 'F6', label: 'In hoá đơn' },
             { key: 'F9', label: 'Thanh toán' },
             { key: '↑↓', label: 'Chọn sản phẩm' },
-            { key: 'F8', label: 'Sửa đơn giá' },
             { key: '←→', label: 'Tăng giảm số lượng' },
             { key: 'Del', label: 'Xoá sản phẩm' },
           ]}

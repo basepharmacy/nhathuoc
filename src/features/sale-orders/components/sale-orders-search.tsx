@@ -32,6 +32,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
   readOnly = false,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null)
+  const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
   useImperativeHandle(ref, () => ({ focus: () => inputRef.current?.focus() }))
   const [searchTerm, setSearchTerm] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
@@ -39,7 +40,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
 
   const productsFiltered = useMemo(() => {
     const term = normalizeSearchValue(searchTerm.trim())
-    if (!term) return products.slice(0, 5)
+    if (!term) return products
     return products
       .filter((product) =>
         normalizeSearchValue(product.product_name).includes(term)
@@ -56,6 +57,10 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
       Math.min(current, productsFiltered.length - 1)
     )
   }, [productsFiltered])
+
+  useEffect(() => {
+    itemRefs.current.get(activeIndex)?.scrollIntoView({ block: 'nearest' })
+  }, [activeIndex])
 
   const handleAddProduct = (product: ProductWithUnits) => {
     onAddProduct(product)
@@ -157,6 +162,10 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
                 {productsFiltered.map((product, index) => (
                   <CommandItem
                     key={product.id}
+                    ref={(el) => {
+                      if (el) itemRefs.current.set(index, el)
+                      else itemRefs.current.delete(index)
+                    }}
                     value={product.product_name}
                     onSelect={() => handleAddProduct(product)}
                     onMouseEnter={() => setActiveIndex(index)}
