@@ -107,6 +107,11 @@ const staticNavGroups: NavGroup[] = [
         feature: 'purchase',
         items: [
           {
+            title: 'Nhập hàng',
+            url: '/purchase-orders',
+            icon: ClipboardList,
+          },
+          {
             title: 'Nhà cung cấp',
             url: '/suppliers',
             icon: Building2,

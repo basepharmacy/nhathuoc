@@ -68,7 +68,7 @@ export function useSaleOrder({
     const random = Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, '0')
-    return `${encoded}-${random}`
+    return `${encoded}S${random}`
   }, [])
 
   const orderCode = isEdit ? (orderDetail?.sale_order_code ?? '') : generatedOrderCode

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
@@ -8,6 +9,7 @@ import { type PaymentStatus } from '../data/types'
 import type { Supplier } from '@/services/supabase/database/repo/suppliersRepo'
 import type { PurchaseOrder } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { SupplierSwitcher } from './supplier-switcher'
+import { PurchaseOrderQrDialog } from './purchase-order-qr-dialog'
 
 type PurchaseOrdersSummaryProps = {
   suppliers: Supplier[]
@@ -30,6 +32,8 @@ type PurchaseOrdersSummaryProps = {
   onSubmit: () => void
   isSubmitting: boolean
   orderStatus: PurchaseOrder['status']
+  orderCode: string
+  onAddSupplier?: () => void
 }
 
 const PAYMENT_OPTIONS: Array<{ label: string; value: PaymentStatus }> = [
@@ -55,7 +59,10 @@ export function PurchaseOrdersSummary({
   onSubmit,
   isSubmitting,
   orderStatus,
+  orderCode,
+  onAddSupplier,
 }: PurchaseOrdersSummaryProps) {
+  const [qrOpen, setQrOpen] = useState(false)
   const handlePaymentStatusChange = (value: PaymentStatus) => {
     onPaymentStatusChange(value)
     if (value === '1_UNPAID') {
@@ -82,6 +89,7 @@ export function PurchaseOrdersSummary({
         suppliers={suppliers}
         activeSupplierId={supplierId}
         onChange={onSupplierChange}
+        onAddSupplier={onAddSupplier}
         disabled={supplierDisabled}
       />
 
@@ -153,9 +161,26 @@ export function PurchaseOrdersSummary({
                 {formatCurrency(totals.debt)}đ
               </span>
             </div>
+            <div className='flex justify-end'>
+              <button
+                type='button'
+                className='text-xs text-primary underline-offset-2 hover:underline'
+                onClick={() => setQrOpen(true)}
+              >
+                Hiển thị QR
+              </button>
+            </div>
           </div>
         </>
       ) : null}
+
+      <PurchaseOrderQrDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        supplierId={supplierId}
+        amount={paidAmount}
+        orderCode={orderCode}
+      />
 
       <Separator />
       <div className='flex gap-2'>

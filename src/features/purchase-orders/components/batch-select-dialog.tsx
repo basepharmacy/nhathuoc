@@ -97,7 +97,7 @@ export function BatchSelectDialog({
 
     // Extract numeric part from existing LOTxxxxx codes
     allBatches.forEach((batch) => {
-      const match = batch.batch_code.match(/^LOT(\d{5})$/)
+      const match = batch.batch_code.match(/^LO(\d{5})$/)
       if (match) {
         existingLotNumbers.add(parseInt(match[1], 10))
       }
@@ -109,7 +109,7 @@ export function BatchSelectDialog({
       num++
     }
 
-    return `LOT${num.toString().padStart(4, '0')}`
+    return `LO${num.toString().padStart(5, '0')}`
   }
 
   const handleGenerateBatchCode = () => {
@@ -121,7 +121,13 @@ export function BatchSelectDialog({
   useEffect(() => {
     if (!open) return
     setBatchCode(initialBatchCode)
-    setExpiryDate(toDateInputValue(initialExpiryDate))
+    if (initialExpiryDate) {
+      setExpiryDate(toDateInputValue(initialExpiryDate))
+    } else {
+      const defaultDate = new Date()
+      defaultDate.setFullYear(defaultDate.getFullYear() + 1)
+      setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
+    }
   }, [open, initialBatchCode, initialExpiryDate])
 
   useEffect(() => {
@@ -131,8 +137,12 @@ export function BatchSelectDialog({
     }
   }, [selectedBatch])
 
+  const batchCodeError = !batchCode.trim() ? 'Vui lòng nhập mã lô.' : null
+  const expiryDateError = !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
+  const canSave = !batchCodeError && !expiryDateError
+
   const handleSave = () => {
-    if (readOnly) return
+    if (readOnly || !canSave) return
     const normalizedBatchCode = batchCode.trim()
     const matchedBatch = allBatches.find((batch) => batch.batch_code === normalizedBatchCode)
     onSave(normalizedBatchCode, expiryDate.trim(), matchedBatch?.id ?? null)
@@ -170,6 +180,9 @@ export function BatchSelectDialog({
                 <span>Tự động</span>
               </button>
             </div>
+            {batchCodeError ? (
+              <p className='text-xs text-destructive'>{batchCodeError}</p>
+            ) : null}
             {expiredBatch ? (
               <div className='flex items-center gap-2 rounded-md bg-orange-50 px-2 py-1 text-xs text-orange-700 dark:bg-orange-500/10 dark:text-orange-300'>
                 <AlertTriangle className='size-3.5 text-orange-500 dark:text-orange-300' />
@@ -250,6 +263,9 @@ export function BatchSelectDialog({
                 2 năm
               </span>
             </div>
+            {expiryDateError ? (
+              <p className='text-xs text-destructive'>{expiryDateError}</p>
+            ) : null}
           </div>
         </div>
         <DialogFooter>
@@ -260,7 +276,7 @@ export function BatchSelectDialog({
           >
             Hủy
           </Button>
-          <Button type='button' onClick={handleSave} disabled={readOnly}>
+          <Button type='button' onClick={handleSave} disabled={readOnly || !canSave}>
             {saveLabel}
           </Button>
         </DialogFooter>

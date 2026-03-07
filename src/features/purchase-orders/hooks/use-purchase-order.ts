@@ -45,6 +45,7 @@ export function usePurchaseOrder({
   const [notes, setNotes] = useState('')
   const [hasInitialized, setHasInitialized] = useState(false)
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId)
+  const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
 
   // ── Derived / computed ──────────────────────────────────────
   const generatedOrderCode = useMemo(() => {
@@ -53,7 +54,7 @@ export function usePurchaseOrder({
     const random = Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, '0')
-    return `${encoded}-${random}`
+    return `${encoded}P${random}`
   }, [])
 
   const [orderCode, setOrderCode] = useState('')
@@ -99,21 +100,22 @@ export function usePurchaseOrder({
   )
 
   // ── Validation ──────────────────────────────────────────────
-  const validateOrder = () => {
+  const validateOrder = (requireBatch = false) => {
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (!supplierId) throw new Error('Vui lòng chọn nhà cung cấp.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
 
-    // Validate batch code and expiry date for all items
-    const itemsWithoutBatch = items.filter((item) => !item.batchCode.trim())
-    if (itemsWithoutBatch.length > 0) {
-      throw new Error('Tất cả sản phẩm phải được nhập lô hàng.')
-    }
+    if (requireBatch) {
+      const itemsWithoutBatch = items.filter((item) => !item.batchCode.trim())
+      if (itemsWithoutBatch.length > 0) {
+        throw new Error('Vui lòng nhập mã lô cho tất cả sản phẩm.')
+      }
 
-    const itemsWithoutExpiry = items.filter((item) => !item.expiryDate.trim())
-    if (itemsWithoutExpiry.length > 0) {
-      throw new Error('Tất cả sản phẩm phải được nhập hạn sử dụng.')
+      const itemsWithoutExpiry = items.filter((item) => !item.expiryDate.trim())
+      if (itemsWithoutExpiry.length > 0) {
+        throw new Error('Vui lòng nhập hạn sử dụng cho tất cả sản phẩm.')
+      }
     }
   }
 
@@ -143,7 +145,7 @@ export function usePurchaseOrder({
 
   const createMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
-      validateOrder()
+      validateOrder(status !== '1_DRAFT')
       const normalizedPaid = Math.min(paidAmount, totals.total)
       return await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
@@ -173,7 +175,7 @@ export function usePurchaseOrder({
   const updateMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED' | '4_STORED') => {
       if (!orderId || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
-      validateOrder()
+      validateOrder(status !== '1_DRAFT')
       const normalizedPaid = Math.min(paidAmount, totals.total)
 
       await purchaseOrdersRepo.updatePurchaseOrderWithItems({
@@ -193,12 +195,18 @@ export function usePurchaseOrder({
       })
     },
     onSuccess: (_data, status) => {
+      queryClient.invalidateQueries({
+        queryKey: ['purchase-orders'],
+      })
       if (status === '4_STORED') {
         queryClient.invalidateQueries({
           queryKey: ['dashboard-report', 'low-stock-products'],
         })
       }
       toast.success('Đã cập nhật đơn nhập hàng.')
+      if (status === '1_DRAFT') {
+        return
+      }
       navigate({ to: '/purchase-orders/history' })
     },
     onError: handleMutationError,
@@ -298,6 +306,7 @@ export function usePurchaseOrder({
     setPaidAmount(0)
     setPaymentStatus('1_UNPAID')
     setNotes('')
+    setHasInitialized(false)
     prevSubtotalRef.current = 0
     // Generate new order code
     const ts = Date.now()
@@ -306,6 +315,15 @@ export function usePurchaseOrder({
     setOrderCode(`${enc}-${rnd}`)
     setIssuedAt(new Date().toISOString())
   }, [])
+
+  // Reset form when navigating from edit to create
+  const prevOrderIdRef = useRef(orderId)
+  useEffect(() => {
+    if (prevOrderIdRef.current && !orderId) {
+      resetOrder()
+    }
+    prevOrderIdRef.current = orderId
+  }, [orderId, resetOrder])
 
   return {
     // Data
@@ -324,6 +342,8 @@ export function usePurchaseOrder({
     setIssuedAt,
     supplierId,
     setSupplierId,
+    isAddSupplierOpen,
+    setIsAddSupplierOpen,
     selectedLocationId,
     setSelectedLocationId,
     orderDiscount,

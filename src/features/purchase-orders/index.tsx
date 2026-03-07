@@ -23,6 +23,7 @@ import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
 import { PurchaseOrdersSearch, type PurchaseOrdersSearchHandle } from './components/purchase-orders-search'
 import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
 import { PurchaseOrderInvoice } from './components/purchase-order-invoice'
+import { SuppliersActionDialog } from '@/features/suppliers/components/suppliers-action-dialog'
 import { usePurchaseOrder } from './hooks/use-purchase-order'
 
 const route = getRouteApi('/_authenticated/purchase-orders/')
@@ -358,6 +359,7 @@ export function PurchaseOrders() {
             </div>
 
             <PurchaseOrdersSummary
+              orderCode={order.orderCode}
               suppliers={suppliers}
               supplierId={order.supplierId}
               onSupplierChange={order.setSupplierId}
@@ -374,6 +376,12 @@ export function PurchaseOrders() {
               onSaveDraft={order.saveDraft}
               onSubmit={order.submit}
               isSubmitting={order.isSubmitting}
+              onAddSupplier={() => order.setIsAddSupplierOpen(true)}
+            />
+            <SuppliersActionDialog
+              open={order.isAddSupplierOpen}
+              onOpenChange={order.setIsAddSupplierOpen}
+              onCreated={(supplier) => order.setSupplierId(supplier.id)}
             />
           </div>
         )}

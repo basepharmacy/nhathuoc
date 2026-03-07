@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Building2, ChevronDown } from 'lucide-react'
+import { Building2, ChevronDown, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -16,6 +16,7 @@ type SupplierSwitcherProps = {
   suppliers: Supplier[]
   activeSupplierId: string
   onChange: (supplierId: string) => void
+  onAddSupplier?: () => void
   disabled?: boolean
 }
 
@@ -23,6 +24,7 @@ export function SupplierSwitcher({
   suppliers,
   activeSupplierId,
   onChange,
+  onAddSupplier,
   disabled = false,
 }: SupplierSwitcherProps) {
   const [searchTerm, setSearchTerm] = useState('')
@@ -76,6 +78,22 @@ export function SupplierSwitcher({
         <DropdownMenuLabel className='text-xs text-muted-foreground'>
           Nhà cung cấp
         </DropdownMenuLabel>
+        {onAddSupplier && (
+          <>
+            <DropdownMenuItem onClick={onAddSupplier} className='gap-2 p-2'>
+              <div className='flex size-6 items-center justify-center rounded-sm border'>
+                <UserPlus className='size-4 shrink-0' />
+              </div>
+              <div className='grid flex-1 text-sm leading-tight'>
+                <span className='truncate font-medium'>Thêm nhà cung cấp mới</span>
+                <span className='truncate text-xs text-muted-foreground'>
+                  Tạo nhà cung cấp nhanh
+                </span>
+              </div>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
         <div className='px-2 pb-2'>
           <Input
             value={searchTerm}

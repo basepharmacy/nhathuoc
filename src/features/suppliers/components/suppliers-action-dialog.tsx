@@ -65,12 +65,14 @@ type SuppliersActionDialogProps = {
   currentRow?: Supplier
   open: boolean
   onOpenChange: (open: boolean) => void
+  onCreated?: (supplier: Supplier) => void
 }
 
 export function SuppliersActionDialog({
   currentRow,
   open,
   onOpenChange,
+  onCreated,
 }: SuppliersActionDialogProps) {
   const isEdit = !!currentRow
   const { user } = useUser()
@@ -207,8 +209,9 @@ export function SuppliersActionDialog({
 
       return supplier
     },
-    onSuccess: () => {
+    onSuccess: (supplier) => {
       invalidateQueries()
+      onCreated?.(supplier as Supplier)
       if (!isOpenRef.current) return
       form.reset()
       onOpenChange(false)
