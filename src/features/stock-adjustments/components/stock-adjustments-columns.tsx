@@ -3,7 +3,6 @@ import { formatCurrency, formatDateTimeLabel, formatQuantity } from '@/lib/utils
 import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import { Badge } from '@/components/ui/badge'
 import { getReasonCodeLabel } from '../data/reason-code'
-import { DataTableRowActions } from './data-table-row-actions'
 
 export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] = [
   {
@@ -86,9 +85,5 @@ export const stockAdjustmentsColumns: ColumnDef<StockAdjustmentWithRelations>[] 
     accessorKey: 'created_at',
     header: 'Ngày tạo',
     cell: ({ row }) => formatDateTimeLabel(row.original.created_at),
-  },
-  {
-    id: 'actions',
-    cell: DataTableRowActions,
-  },
+  }
 ]

@@ -149,7 +149,7 @@ export type Database = {
           cumulative_quantity: number
           expiry_date: string | null
           id: string
-          location_id: string
+          location_id: string | null
           product_id: string
           quantity: number
           tenant_id: string
@@ -162,7 +162,7 @@ export type Database = {
           cumulative_quantity?: number
           expiry_date?: string | null
           id?: string
-          location_id: string
+          location_id?: string | null
           product_id: string
           quantity?: number
           tenant_id: string
@@ -175,7 +175,7 @@ export type Database = {
           cumulative_quantity?: number
           expiry_date?: string | null
           id?: string
-          location_id?: string
+          location_id?: string | null
           product_id?: string
           quantity?: number
           tenant_id?: string
@@ -548,7 +548,7 @@ export type Database = {
       }
       purchase_order_items: {
         Row: {
-          batch_code: string
+          batch_code: string | null
           created_at: string | null
           discount: number | null
           expiry_date: string | null
@@ -561,7 +561,7 @@ export type Database = {
           unit_price: number
         }
         Insert: {
-          batch_code?: string
+          batch_code?: string | null
           created_at?: string | null
           discount?: number | null
           expiry_date?: string | null
@@ -574,7 +574,7 @@ export type Database = {
           unit_price?: number
         }
         Update: {
-          batch_code?: string
+          batch_code?: string | null
           created_at?: string | null
           discount?: number | null
           expiry_date?: string | null
@@ -629,11 +629,11 @@ export type Database = {
           payment_status: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code: string
           status: Database["public"]["Enums"]["purchase_order_status"]
-          supplier_id: string
+          supplier_id: string | null
           tenant_id: string
           total_amount: number
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -646,11 +646,11 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code: string
           status?: Database["public"]["Enums"]["purchase_order_status"]
-          supplier_id: string
+          supplier_id?: string | null
           tenant_id: string
           total_amount?: number
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -663,11 +663,11 @@ export type Database = {
           payment_status?: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code?: string
           status?: Database["public"]["Enums"]["purchase_order_status"]
-          supplier_id?: string
+          supplier_id?: string | null
           tenant_id?: string
           total_amount?: number
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -790,7 +790,7 @@ export type Database = {
           tenant_id: string
           total_amount: number
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -806,7 +806,7 @@ export type Database = {
           tenant_id: string
           total_amount?: number
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -822,7 +822,7 @@ export type Database = {
           tenant_id?: string
           total_amount?: number
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -863,12 +863,13 @@ export type Database = {
           created_at: string | null
           expiry_date: string | null
           id: string
-          location_id: string
+          location_id: string | null
           product_id: string
           quantity: number
           reason: string | null
           reason_code: Database["public"]["Enums"]["reason_code"]
           tenant_id: string
+          user_id: string | null
         }
         Insert: {
           batch_code?: string | null
@@ -877,12 +878,13 @@ export type Database = {
           created_at?: string | null
           expiry_date?: string | null
           id?: string
-          location_id: string
+          location_id?: string | null
           product_id: string
           quantity: number
           reason?: string | null
           reason_code?: Database["public"]["Enums"]["reason_code"]
           tenant_id: string
+          user_id?: string | null
         }
         Update: {
           batch_code?: string | null
@@ -891,12 +893,13 @@ export type Database = {
           created_at?: string | null
           expiry_date?: string | null
           id?: string
-          location_id?: string
+          location_id?: string | null
           product_id?: string
           quantity?: number
           reason?: string | null
           reason_code?: Database["public"]["Enums"]["reason_code"]
           tenant_id?: string
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -925,6 +928,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_adjustments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]

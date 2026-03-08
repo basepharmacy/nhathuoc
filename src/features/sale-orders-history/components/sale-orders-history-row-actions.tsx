@@ -10,6 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
 
 type SaleOrdersHistoryRowActionsProps = {
@@ -46,16 +51,27 @@ export function SaleOrdersHistoryRowActions({
           </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => onDelete(row.original)}
-          disabled={!isDraft}
-          className='text-red-500!'
-        >
-          Xóa
-          <DropdownMenuShortcut>
-            <Trash2 size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <DropdownMenuItem
+                onClick={() => onDelete(row.original)}
+                disabled={!isDraft}
+                className='text-red-500!'
+              >
+                Xóa
+                <DropdownMenuShortcut>
+                  <Trash2 size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </div>
+          </TooltipTrigger>
+          {!isDraft && (
+            <TooltipContent side='left'>
+              Chỉ được phép xoá đơn nháp
+            </TooltipContent>
+          )}
+        </Tooltip>
       </DropdownMenuContent>
     </DropdownMenu>
   )

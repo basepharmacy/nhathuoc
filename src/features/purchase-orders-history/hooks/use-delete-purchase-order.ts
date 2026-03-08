@@ -37,8 +37,8 @@ export function useDeletePurchaseOrder(tenantId: string) {
   })
 
   const handleDelete = useCallback((order: PurchaseOrderWithRelations) => {
-    if (order.status !== '1_DRAFT') {
-      toast.error('Chỉ có thể xóa đơn nháp.')
+    if (order.status !== '1_DRAFT' && order.status !== '2_ORDERED') {
+      toast.error('Chỉ có thể xóa đơn nháp hoặc đã đặt hàng.')
       return
     }
     setDeleteTarget(order)

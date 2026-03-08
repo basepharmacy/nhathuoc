@@ -10,6 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
 type PurchaseOrdersHistoryRowActionsProps = {
@@ -24,6 +29,7 @@ export function PurchaseOrdersHistoryRowActions({
   onDelete,
 }: PurchaseOrdersHistoryRowActionsProps) {
   const isDraft = row.original.status === '1_DRAFT'
+  const canDelete = row.original.status === '1_DRAFT' || row.original.status === '2_ORDERED'
   const primaryLabel = isDraft ? 'Chỉnh sửa' : 'Xem chi tiết'
   const PrimaryIcon = isDraft ? Pencil : Eye
 
@@ -46,16 +52,27 @@ export function PurchaseOrdersHistoryRowActions({
           </DropdownMenuShortcut>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => onDelete(row.original)}
-          disabled={!isDraft}
-          className='text-red-500!'
-        >
-          Xóa
-          <DropdownMenuShortcut>
-            <Trash2 size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <DropdownMenuItem
+                onClick={() => onDelete(row.original)}
+                disabled={!canDelete}
+                className='text-red-500!'
+              >
+                Xóa
+                <DropdownMenuShortcut>
+                  <Trash2 size={16} />
+                </DropdownMenuShortcut>
+              </DropdownMenuItem>
+            </div>
+          </TooltipTrigger>
+          {!canDelete && (
+            <TooltipContent side='left'>
+              Không thể xoá đơn hàng đã nhập kho. Hãy dùng tính năng điều chỉnh tồn kho để điều chỉnh lại tồn kho nếu cần
+            </TooltipContent>
+          )}
+        </Tooltip>
       </DropdownMenuContent>
     </DropdownMenu>
   )

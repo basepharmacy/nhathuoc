@@ -10,6 +10,11 @@ import {
   DropdownMenuShortcut,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { Can } from '@/components/permission-guard'
 import { type StaffUser } from '../data/staff-schema'
 import { useStaff } from './staff-provider'
@@ -20,6 +25,7 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useStaff()
+  const isOwner = row.original.role === 'OWNER'
   return (
     <Can feature='settings' action='edit'>
       <DropdownMenu modal={false}>
@@ -45,18 +51,30 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
             </DropdownMenuShortcut>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original)
-              setOpen('delete')
-            }}
-            className='text-red-500!'
-          >
-            Xóa
-            <DropdownMenuShortcut>
-              <Trash2 size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div>
+                <DropdownMenuItem
+                  disabled={isOwner}
+                  onClick={() => {
+                    setCurrentRow(row.original)
+                    setOpen('delete')
+                  }}
+                  className='text-red-500!'
+                >
+                  Xóa
+                  <DropdownMenuShortcut>
+                    <Trash2 size={16} />
+                  </DropdownMenuShortcut>
+                </DropdownMenuItem>
+              </div>
+            </TooltipTrigger>
+            {isOwner && (
+              <TooltipContent side='left'>
+                Không thể xoá tài khoản chủ hệ thống
+              </TooltipContent>
+            )}
+          </Tooltip>
         </DropdownMenuContent>
       </DropdownMenu>
     </Can>

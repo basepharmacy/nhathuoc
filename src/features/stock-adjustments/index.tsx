@@ -12,7 +12,6 @@ import { Main } from '@/components/layout/main'
 import { StockAdjustmentsProvider } from './components/stock-adjustments-provider'
 import { StockAdjustmentsPrimaryButtons } from './components/stock-adjustments-primary-buttons'
 import { StockAdjustmentsTable } from './components/stock-adjustments-table'
-import { StockAdjustmentsDialogs } from './components/stock-adjustments-dialogs'
 import { useStockAdjustmentsTable } from './hooks/use-stock-adjustments-table'
 
 export function StockAdjustments() {
@@ -73,8 +72,6 @@ export function StockAdjustments() {
           filters={filters}
         />
       </Main>
-
-      <StockAdjustmentsDialogs />
     </StockAdjustmentsProvider>
   )
 }

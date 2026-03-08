@@ -403,7 +403,9 @@ export function StaffActionDialog({
                           className='col-span-4 grid gap-2'
                           disabled={isEdit}
                         >
-                          {roles.map(({ label, value }) => (
+                          {roles
+                            .filter(({ value }) => isEdit || value !== 'OWNER')
+                            .map(({ label, value }) => (
                             <FormItem
                               key={value}
                               className='flex items-center space-y-0 gap-2'
