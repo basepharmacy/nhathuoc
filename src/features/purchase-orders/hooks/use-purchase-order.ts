@@ -15,7 +15,7 @@ type UsePurchaseOrderParams = {
     id: string
     purchase_order_code: string | null
     status: PurchaseOrder['status']
-    supplier_id: string
+    supplier_id: string | null
     discount: number | null
     paid_amount: number | null
     payment_status: PaymentStatus

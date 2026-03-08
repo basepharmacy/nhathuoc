@@ -104,7 +104,7 @@ export function PurchaseOrders() {
 
     order.initializeFromOrder({
       mappedItems,
-      supplierId: orderDetail.supplier_id,
+      supplierId: orderDetail.supplier_id ?? '',
       discount: orderDetail.discount ?? 0,
       paidAmount: orderDetail.paid_amount ?? 0,
       paymentStatus: orderDetail.payment_status,
