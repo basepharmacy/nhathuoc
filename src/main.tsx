@@ -4,11 +4,13 @@ import { AxiosError } from 'axios'
 import {
   QueryCache,
   QueryClient,
-  QueryClientProvider,
 } from '@tanstack/react-query'
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
+import { isNetworkError } from '@/services/offline/mutation-queue'
+import { createIdbPersister } from '@/services/offline/persister'
 import { AuthUserProvider } from './client/provider'
 import { DirectionProvider } from './context/direction-provider'
 import { FontProvider } from './context/font-provider'
@@ -22,9 +24,13 @@ import './styles/index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
+      networkMode: 'always',
       retry: (failureCount, error) => {
         // eslint-disable-next-line no-console
         if (import.meta.env.DEV) console.log({ failureCount, error })
+
+        // Don't retry on network errors — use cached data instead
+        if (isNetworkError(error)) return false
 
         if (failureCount >= 0 && import.meta.env.DEV) return false
         if (failureCount > 3 && import.meta.env.PROD) return false
@@ -38,7 +44,11 @@ const queryClient = new QueryClient({
       staleTime: 10 * 1000, // 10s
     },
     mutations: {
+      networkMode: 'offlineFirst',
       onError: (error) => {
+        // Don't show error toasts for network errors — handled by offline queue
+        if (isNetworkError(error)) return
+
         handleServerError(error)
 
         if (error instanceof AxiosError) {
@@ -51,6 +61,9 @@ const queryClient = new QueryClient({
   },
   queryCache: new QueryCache({
     onError: (error) => {
+      // Silently ignore network errors — app uses cached data when offline
+      if (isNetworkError(error)) return
+
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
@@ -87,13 +100,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+const persister = createIdbPersister()
+
 // Render the app
 const rootElement = document.getElementById('root')!
 if (!rootElement.innerHTML) {
   const root = ReactDOM.createRoot(rootElement)
   root.render(
     <StrictMode>
-      <QueryClientProvider client={queryClient}>
+      <PersistQueryClientProvider
+        client={queryClient}
+        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+      >
         <AuthUserProvider>
           <LocationProvider>
             <ThemeProvider>
@@ -105,7 +123,7 @@ if (!rootElement.innerHTML) {
             </ThemeProvider>
           </LocationProvider>
         </AuthUserProvider>
-      </QueryClientProvider>
+      </PersistQueryClientProvider>
     </StrictMode>
   )
 }

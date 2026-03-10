@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { inventoryBatchesRepo, saleOrdersRepo } from '@/client'
+import { saleOrdersRepo } from '@/client'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { type SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
 import { type PaymentMethod, type SaleOrderItem, getDefaultUnit } from '../data/types'
 import {
   allocateQuantityToBatches,
@@ -12,6 +13,7 @@ import {
   getItemConversionFactor,
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
+import { useOnlineStatus } from '@/hooks/use-online-status'
 
 type UseSaleOrderParams = {
   tenantId: string
@@ -42,6 +44,7 @@ export function useSaleOrder({
   onComplete,
 }: UseSaleOrderParams) {
   const queryClient = useQueryClient()
+  const { isOnline } = useOnlineStatus()
   const isEdit = Boolean(orderId)
 
   // ── Form state ──────────────────────────────────────────────
@@ -57,9 +60,6 @@ export function useSaleOrder({
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId)
   const [inventoryBatches, setInventoryBatches] = useState<InventoryBatch[]>([])
-  const [prefetchedBatchesByProductId, setPrefetchedBatchesByProductId] = useState<
-    Record<string, InventoryBatch[]>
-  >({})
 
   // ── Derived / computed ──────────────────────────────────────
   const generatedOrderCode = useMemo(() => {
@@ -82,18 +82,12 @@ export function useSaleOrder({
   )
 
   const batchesByProductId = useMemo(() => {
-    const map: Record<string, InventoryBatch[]> = { ...prefetchedBatchesByProductId }
-    const grouped = inventoryBatches.reduce<Record<string, InventoryBatch[]>>((acc, batch) => {
+    return inventoryBatches.reduce<Record<string, InventoryBatch[]>>((acc, batch) => {
       if (!acc[batch.product_id]) acc[batch.product_id] = []
       acc[batch.product_id].push(batch)
       return acc
     }, {})
-
-    Object.entries(grouped).forEach(([productId, batches]) => {
-      map[productId] = batches
-    })
-    return map
-  }, [inventoryBatches, prefetchedBatchesByProductId])
+  }, [inventoryBatches])
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
@@ -164,7 +158,7 @@ export function useSaleOrder({
   const createMutation = useMutation({
     mutationFn: async (status: SaleOrder['status']) => {
       validateOrder()
-      return await saleOrdersRepo.createSaleOrderWithItems({
+      const payload = {
         order: {
           sale_order_code: orderCode,
           customer_id: customerId || null,
@@ -179,15 +173,49 @@ export function useSaleOrder({
           notes: notes.trim().length > 0 ? notes.trim() : null,
         },
         items: buildOrderItems(),
-      })
+      }
+
+      // If offline, queue mutation immediately instead of attempting Supabase call
+      if (!isOnline) {
+        await addOfflineMutation({
+          type: 'create-sale-order',
+          payload,
+        })
+        return { id: `offline-${Date.now()}`, _offline: true } as SaleOrder & { _offline?: boolean }
+      }
+
+      try {
+        return await saleOrdersRepo.createSaleOrderWithItems(payload)
+      } catch (error) {
+        if (isNetworkError(error)) {
+          await addOfflineMutation({
+            type: 'create-sale-order',
+            payload,
+          })
+          return { id: `offline-${Date.now()}`, _offline: true } as SaleOrder & { _offline?: boolean }
+        }
+        throw error
+      }
     },
     onSuccess: (order, status) => {
+      const isOfflineQueued = (order as SaleOrder & { _offline?: boolean })._offline
+      if (isOfflineQueued) {
+        toast.success('Đã lưu đơn hàng offline. Sẽ tự đồng bộ khi có mạng.')
+        if (status === '2_COMPLETE' && onComplete) {
+          onComplete(order.id)
+        }
+        return
+      }
+
       if (status === '2_COMPLETE') {
         queryClient.invalidateQueries({
           queryKey: ['dashboard-report', 'sales-statistics'],
         })
         queryClient.invalidateQueries({
           queryKey: ['dashboard-report', 'low-stock-products'],
+        })
+        queryClient.invalidateQueries({
+          queryKey: ["inventory-batches", tenantId, 'all', 'all-available'],
         })
       }
       toast.success('Đã tạo đơn bán hàng.')
@@ -246,7 +274,7 @@ export function useSaleOrder({
   })
 
   // ── Item actions ────────────────────────────────────────────
-  const addProduct = async (product: ProductWithUnits) => {
+  const addProduct = (product: ProductWithUnits) => {
     if (isReadOnly || !tenantId) return
     if (!selectedLocationId) {
       toast.error('Bạn cần phải chọn cửa hàng.')
@@ -255,26 +283,7 @@ export function useSaleOrder({
     const defaultUnit = getDefaultUnit(product)
     const unitPrice = defaultUnit?.sell_price ?? 0
 
-    let batches = batchesByProductId[product.id]
-
-    if (!batches || batches.length === 0) {
-      try {
-        const fetched = await inventoryBatchesRepo.getInventoryBatchesByProductIds({
-          tenantId,
-          productIds: [product.id],
-          locationId: selectedLocationId,
-        })
-        batches = fetched
-        setPrefetchedBatchesByProductId((prev) => ({ ...prev, [product.id]: fetched }))
-      } catch (error) {
-        const message =
-          error && typeof error === 'object' && 'message' in error
-            ? String((error as { message: string }).message)
-            : 'Không thể kiểm tra tồn kho.'
-        toast.error(message)
-        return
-      }
-    }
+    const batches = batchesByProductId[product.id]
 
     if (!batches || batches.length === 0) {
       toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
@@ -284,7 +293,7 @@ export function useSaleOrder({
     let outOfStock = false
     setItems((prev) => {
       const allocations = getAllocatedByBatch(product.id, prev)
-      const nextBatch = batches ? getNextAvailableBatch(batches, allocations) : null
+      const nextBatch = getNextAvailableBatch(batches, allocations)
 
       if (!nextBatch) {
         outOfStock = true
@@ -435,7 +444,6 @@ export function useSaleOrder({
     paidAmount: number
     notes: string
     locationId: string | null
-    prefetchedBatches: Record<string, InventoryBatch[]>
   }) => {
     setItems(params.mappedItems)
     setCustomerId(params.customerId)
@@ -451,9 +459,6 @@ export function useSaleOrder({
           : 'TRANSFER'
         : 'CASH'
     )
-    if (Object.keys(params.prefetchedBatches).length > 0) {
-      setPrefetchedBatchesByProductId((prev) => ({ ...prev, ...params.prefetchedBatches }))
-    }
     // Sync subtotal ref so the discount reset effect doesn't fire on init
     const initSubtotal = params.mappedItems.reduce(
       (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
@@ -463,7 +468,7 @@ export function useSaleOrder({
     setHasInitialized(true)
   }, [])
 
-  const resetBatchCache = useCallback(() => setPrefetchedBatchesByProductId({}), [])
+  const resetBatchCache = useCallback(() => { }, [])
 
   // ── Derived flags ───────────────────────────────────────────
   const isSubmitting = createMutation.isPending || updateMutation.isPending
@@ -487,7 +492,6 @@ export function useSaleOrder({
     setPaidAmount(0)
     setCashReceived(0)
     setNotes('')
-    setPrefetchedBatchesByProductId({})
     setHasInitialized(false)
     prevSubtotalRef.current = 0
   }, [])

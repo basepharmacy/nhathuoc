@@ -201,6 +201,34 @@ export const createInventoryBatchRepository = (
         total: count ?? 0,
       }
     },
+    async getAllAvailableBatches(params: {
+      tenantId: string
+      locationId?: string | null
+    }): Promise<InventoryBatch[]> {
+      let query = client
+        .from('inventory_batches')
+        .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id')
+        .eq('tenant_id', params.tenantId)
+        .gt('quantity', 0)
+
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
+      }
+
+      // Only include batches that are not expired or have no expiry date
+      const today = new Date().toISOString().split('T')[0]
+      query = query.or(`expiry_date.is.null,expiry_date.gte.${today}`)
+
+      const { data, error } = await query
+        .order('expiry_date', { ascending: true })
+        .order('batch_code', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as InventoryBatch[]
+    },
     async getInventoryBatchesByProductIds(params: {
       tenantId: string
       productIds: string[]

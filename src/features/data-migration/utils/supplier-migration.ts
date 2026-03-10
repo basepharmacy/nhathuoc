@@ -3,18 +3,18 @@ import type { SupplierInsert } from '@/services/supabase/database/repo/suppliers
 import type { ProcessLog } from './types'
 import { parseCSV, readFileAsText } from './csv-parser'
 
-interface KiotVietSupplierRow {
-  'Mã nhà cung cấp': string
-  'Tên nhà cung cấp': string
-  'Email': string
-  'Điện thoại': string
-  'Địa chỉ': string
-  'Khu vực': string
-  'Phường/Xã': string
-  'Ghi chú': string
-  'Trạng thái': string
-  'Công ty': string
-}
+// interface KiotVietSupplierRow {
+//   'Mã nhà cung cấp': string
+//   'Tên nhà cung cấp': string
+//   'Email': string
+//   'Điện thoại': string
+//   'Địa chỉ': string
+//   'Khu vực': string
+//   'Phường/Xã': string
+//   'Ghi chú': string
+//   'Trạng thái': string
+//   'Công ty': string
+// }
 
 function mapKiotVietSupplier(
   row: Record<string, string>,

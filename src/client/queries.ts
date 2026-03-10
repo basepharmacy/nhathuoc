@@ -355,6 +355,22 @@ export const getSupplierPaymentsHistoryQueryOptions = (
     },
   })
 
+export const getAllAvailableInventoryBatchesQueryOptions = (
+  tenantId: string,
+) =>
+  queryOptions({
+    queryKey: ["inventory-batches", tenantId, 'all', 'all-available'],
+    queryFn: async () => {
+      if (!tenantId) {
+        return []
+      }
+      const batches = await inventoryBatchesRepo.getAllAvailableBatches({
+        tenantId,
+      })
+      return batches
+    },
+  })
+
 export const getInventoryBatchesQueryOptions = (
   tenantId: string,
   productIds: string[],

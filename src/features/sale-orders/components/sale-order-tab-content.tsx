@@ -2,9 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Printer } from 'lucide-react'
-import { inventoryBatchesRepo } from '@/client'
 import {
-  getInventoryBatchesQueryOptions,
+  getAllAvailableInventoryBatchesQueryOptions,
   getSaleOrderDetailQueryOptions,
 } from '@/client/queries'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
@@ -103,14 +102,18 @@ export function SaleOrderTabContent({
   }, [orderId, order.resetOrder])
 
   const { data: inventoryBatches = EMPTY_BATCHES } = useQuery({
-    ...getInventoryBatchesQueryOptions(tenantId, order.productIds, order.selectedLocationId),
-    enabled: !!tenantId && order.productIds.length > 0,
+    ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
+    enabled: !!tenantId,
   })
 
   // ── Effects ─────────────────────────────────────────────────
   useEffect(() => {
-    order.setInventoryBatches(inventoryBatches)
-  }, [inventoryBatches])
+    const inventoryBatchesByLocation = inventoryBatches.filter((batch) => {
+      if (!order.selectedLocationId) return true
+      return batch.location_id === order.selectedLocationId
+    })
+    order.setInventoryBatches(inventoryBatchesByLocation)
+  }, [inventoryBatches, order.selectedLocationId])
 
   useEffect(() => {
     order.resetBatchCache()
@@ -140,75 +143,38 @@ export function SaleOrderTabContent({
   useEffect(() => {
     if (!orderDetail || order.hasInitialized || products.length === 0) return
 
-    let isActive = true
+    const productLookup = new Map(products.map((p) => [p.id, p]))
+    const batchById = new Map(inventoryBatches.map((b) => [b.id, b]))
 
-    const load = async () => {
-      const productLookup = new Map(products.map((p) => [p.id, p]))
-      const orderProductIds = Array.from(
-        new Set((orderDetail.items ?? []).map((item) => item.product_id))
-      )
-
-      let batches: InventoryBatch[] = []
-      if (orderProductIds.length > 0) {
-        try {
-          batches = await inventoryBatchesRepo.getInventoryBatchesByProductIds({
-            tenantId,
-            productIds: orderProductIds,
-            locationId: orderDetail.location_id ?? userLocationId,
-          })
-        } catch (error) {
-          const message =
-            error && typeof error === 'object' && 'message' in error
-              ? String((error as { message: string }).message)
-              : 'Không thể tải tồn kho.'
-          toast.error(message)
+    const mappedItems = (orderDetail.items ?? [])
+      .map((item) => {
+        const product = productLookup.get(item.product_id)
+        if (!product) return null
+        const batch = item.batch_id ? batchById.get(item.batch_id) : null
+        return {
+          id: String(item.id),
+          product,
+          productUnitId: item.product_unit_id ?? null,
+          quantity: item.quantity ?? 0,
+          unitPrice: item.unit_price ?? 0,
+          discount: item.discount ?? 0,
+          batchId: item.batch_id ?? null,
+          batchCode: batch?.batch_code ?? '',
+          expiryDate: batch?.expiry_date ?? '',
         }
-      }
-
-      if (!isActive) return
-
-      const grouped = batches.reduce<Record<string, InventoryBatch[]>>((acc, batch) => {
-        if (!acc[batch.product_id]) acc[batch.product_id] = []
-        acc[batch.product_id].push(batch)
-        return acc
-      }, {})
-
-      const batchById = new Map(batches.map((b) => [b.id, b]))
-
-      const mappedItems = (orderDetail.items ?? [])
-        .map((item) => {
-          const product = productLookup.get(item.product_id)
-          if (!product) return null
-          const batch = item.batch_id ? batchById.get(item.batch_id) : null
-          return {
-            id: String(item.id),
-            product,
-            productUnitId: item.product_unit_id ?? null,
-            quantity: item.quantity ?? 0,
-            unitPrice: item.unit_price ?? 0,
-            discount: item.discount ?? 0,
-            batchId: item.batch_id ?? null,
-            batchCode: batch?.batch_code ?? '',
-            expiryDate: batch?.expiry_date ?? '',
-          }
-        })
-        .filter((item): item is SaleOrderItem => Boolean(item))
-
-      order.initializeFromOrder({
-        mappedItems,
-        status: orderDetail.status,
-        customerId: orderDetail.customer_id ?? '',
-        discount: orderDetail.discount ?? 0,
-        paidAmount: orderDetail.customer_paid_amount ?? 0,
-        notes: orderDetail.notes ?? '',
-        locationId: orderDetail.location_id ?? userLocationId,
-        prefetchedBatches: grouped,
       })
-    }
+      .filter((item): item is SaleOrderItem => Boolean(item))
 
-    void load()
-    return () => { isActive = false }
-  }, [orderDetail, order.hasInitialized, products, tenantId, userLocationId, orderId])
+    order.initializeFromOrder({
+      mappedItems,
+      status: orderDetail.status,
+      customerId: orderDetail.customer_id ?? '',
+      discount: orderDetail.discount ?? 0,
+      paidAmount: orderDetail.customer_paid_amount ?? 0,
+      notes: orderDetail.notes ?? '',
+      locationId: orderDetail.location_id ?? userLocationId,
+    })
+  }, [orderDetail, order.hasInitialized, products, inventoryBatches, tenantId, userLocationId, orderId])
 
   // ── Print ──────────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
