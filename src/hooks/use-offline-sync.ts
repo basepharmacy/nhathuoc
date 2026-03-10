@@ -13,9 +13,9 @@ async function replayMutation(mutation: OfflineMutation): Promise<void> {
   switch (mutation.type) {
     case 'create-sale-order': {
       const payload = mutation.payload as Parameters<
-        typeof saleOrdersRepo.createSaleOrderWithItems
+        typeof saleOrdersRepo.createSaleOrderWithItemsV2
       >[0]
-      await saleOrdersRepo.createSaleOrderWithItems(payload)
+      await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
       break
     }
   }

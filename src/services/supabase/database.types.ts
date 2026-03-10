@@ -1109,6 +1109,7 @@ export type Database = {
           name: string
           phone: string | null
           representative: string | null
+          supplier_code: string | null
           tenant_id: string
           updated_at: string | null
         }
@@ -1121,6 +1122,7 @@ export type Database = {
           name: string
           phone?: string | null
           representative?: string | null
+          supplier_code?: string | null
           tenant_id: string
           updated_at?: string | null
         }
@@ -1133,6 +1135,7 @@ export type Database = {
           name?: string
           phone?: string | null
           representative?: string | null
+          supplier_code?: string | null
           tenant_id?: string
           updated_at?: string | null
         }
@@ -1202,6 +1205,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_sale_order: {
+        Args: {
+          p_customer_id?: string
+          p_customer_paid_amount?: number
+          p_discount?: number
+          p_issued_at?: string
+          p_items?: Json
+          p_location_id?: string
+          p_notes?: string
+          p_sale_order_code?: string
+          p_status?: Database["public"]["Enums"]["sale_order_status"]
+          p_total_amount?: number
+        }
+        Returns: string
+      }
       get_inventory_statistics: {
         Args: { p_location_id?: string }
         Returns: {

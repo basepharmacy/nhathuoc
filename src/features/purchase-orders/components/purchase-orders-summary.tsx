@@ -149,10 +149,18 @@ export function PurchaseOrdersSummary({
               <span>Số tiền thanh toán</span>
               <Input
                 value={formatCurrency(paidAmount)}
-                onChange={(event) => onPaidAmountChange(normalizeNumber(event.target.value))}
+                onChange={(event) => {
+                  const value = normalizeNumber(event.target.value)
+                  if (value >= totals.total) {
+                    onPaidAmountChange(totals.total)
+                    onPaymentStatusChange('3_PAID')
+                  } else {
+                    onPaidAmountChange(value)
+                  }
+                }}
                 className='h-8 w-28 rounded-full text-right text-xs'
                 inputMode='numeric'
-                disabled={isReadOnly}
+                disabled={isReadOnly || paymentStatus !== '2_PARTIALLY_PAID'}
               />
             </div>
             <div className='flex items-center justify-between text-muted-foreground'>

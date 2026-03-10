@@ -90,6 +90,18 @@ export function usePurchaseOrder({
     prevSubtotalRef.current = subtotal
   }, [subtotal])
 
+  const prevTotalRef = useRef<number | null>(null)
+  useEffect(() => {
+    const total = Math.max(0, subtotal - orderDiscount)
+    if (prevTotalRef.current !== null && prevTotalRef.current !== total) {
+      if (total <= paidAmount) {
+        setPaidAmount(total)
+        setPaymentStatus('3_PAID')
+      }
+    }
+    prevTotalRef.current = total
+  }, [subtotal, orderDiscount, paidAmount])
+
   const totals = useMemo(
     () => {
       const total = Math.max(0, subtotal - orderDiscount)
@@ -285,6 +297,7 @@ export function usePurchaseOrder({
       0
     )
     prevSubtotalRef.current = initSubtotal
+    prevTotalRef.current = Math.max(0, initSubtotal - params.discount)
     setHasInitialized(true)
   }, [])
 

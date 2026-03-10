@@ -171,38 +171,41 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
       order: SaleOrderInsert
       items: Array<Omit<SaleOrderItemInsert, 'sale_order_id'>>
     }): Promise<SaleOrderWithItems> {
+      const { data: orderId, error: rpcError } = await client.rpc('create_sale_order', {
+        p_customer_id: params.order.customer_id ?? undefined,
+        p_customer_paid_amount: params.order.customer_paid_amount ?? 0,
+        p_discount: params.order.discount ?? 0,
+        p_issued_at: params.order.issued_at ?? undefined,
+        p_items: params.items.map((item) => ({
+          product_id: item.product_id,
+          product_unit_id: item.product_unit_id ?? null,
+          batch_id: item.batch_id ?? null,
+          quantity: item.quantity ?? 0,
+          unit_price: item.unit_price ?? 0,
+          discount: item.discount ?? 0,
+        })) as unknown as undefined,
+        p_location_id: params.order.location_id ?? undefined,
+        p_notes: params.order.notes ?? undefined,
+        p_sale_order_code: params.order.sale_order_code ?? undefined,
+        p_status: params.order.status ?? undefined,
+        p_total_amount: params.order.total_amount ?? 0,
+      })
+
+      if (rpcError) {
+        throw rpcError
+      }
+
       const { data, error } = await client
         .from('sale_orders')
-        .insert({
-          tenant_id: params.order.tenant_id,
-          customer_id: params.order.customer_id ?? null,
-          user_id: params.order.user_id,
-          sale_order_code: params.order.sale_order_code,
-          location_id: params.order.location_id ?? null,
-          issued_at: params.order.issued_at ?? null,
-          status: params.order.status,
-          customer_paid_amount: params.order.customer_paid_amount ?? 0,
-          discount: params.order.discount ?? 0,
-          total_amount: params.order.total_amount ?? 0,
-          notes: params.order.notes ?? null,
-          sale_order_items: params.items.map((item) => ({
-            tenant_id: params.order.tenant_id,
-            product_id: item.product_id,
-            batch_id: item.batch_id ?? null,
-            discount: item.discount ?? 0,
-            quantity: item.quantity ?? 0,
-            unit_price: item.unit_price ?? 0,
-            product_unit_id: item.product_unit_id ?? null,
-          })),
-        } as any)
         .select('*, items:sale_order_items(*)')
+        .eq('id', orderId)
         .single()
 
       if (error) {
         throw error
       }
 
-      return data as unknown as SaleOrderWithItems
+      return data as SaleOrderWithItems
     },
     async getSaleOrderByIdWithItems(params: {
       tenantId: string
