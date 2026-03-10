@@ -1,0 +1,52 @@
+import type { FileUploadState, ProcessLog } from './types'
+
+export function createFileSelectHandler(
+  setter: React.Dispatch<React.SetStateAction<FileUploadState>>
+) {
+  return (file: File) => {
+    const dummyRowCount = Math.floor(Math.random() * 500) + 50
+    setter({ file, fileName: file.name, rowCount: dummyRowCount })
+  }
+}
+
+export function createFileRemoveHandler(
+  setter: React.Dispatch<React.SetStateAction<FileUploadState>>
+) {
+  return () => {
+    setter({ file: null, fileName: '', rowCount: null })
+  }
+}
+
+export function canGoNext(currentStep: number, sourceSystem: string) {
+  switch (currentStep) {
+    case 0:
+      return !!sourceSystem
+    default:
+      return true
+  }
+}
+
+export function getSourceSystemLabel(sourceSystem: string) {
+  return sourceSystem === 'kiotviet' ? 'KiotViet' : 'hệ thống gốc'
+}
+
+export function simulateMigration(
+  dummyLogs: { message: string; type: ProcessLog['type'] }[],
+  setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
+  setProgress: React.Dispatch<React.SetStateAction<number>>,
+  setLogs: React.Dispatch<React.SetStateAction<ProcessLog[]>>
+) {
+  setIsProcessing(true)
+  setProgress(0)
+  setLogs([])
+
+  dummyLogs.forEach((log, index) => {
+    setTimeout(() => {
+      setLogs((prev) => [...prev, { ...log, timestamp: new Date() }])
+      setProgress(((index + 1) / dummyLogs.length) * 100)
+      if (index === dummyLogs.length - 1) {
+        setIsProcessing(false)
+      }
+    }, (index + 1) * 800)
+  })
+}
