@@ -313,6 +313,7 @@ export function PurchaseOrders() {
             products={activeProducts}
             onAddProduct={handleAddProduct}
             readOnly={order.isItemsReadOnly}
+            autoFocus={!order.isEdit}
           />
           <Button
             type='button'

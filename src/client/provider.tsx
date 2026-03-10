@@ -48,27 +48,38 @@ export function AuthUserProvider({ children }: AuthUserProviderProps) {
   const queryClient = useQueryClient()
 
   useEffect(() => {
-    supabaseAuth.getSession().then((session) => {
-      if (session?.user) {
-        setAuthUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          role: (session.user.app_metadata?.role as string | undefined) ?? null,
-        })
-      }
-    })
-
     const subscription = supabaseAuth.onAuthStateChange((event, session) => {
       if (event === 'TOKEN_REFRESHED') return
       if (session?.user) {
-        setAuthUser({
-          id: session.user.id,
-          email: session.user.email || '',
-          role: (session.user.app_metadata?.role as string | undefined) ?? null,
+        setAuthUser((prev) => {
+          // Avoid unnecessary re-renders if user hasn't changed
+          if (prev?.id === session.user.id) return prev
+          return {
+            id: session.user.id,
+            email: session.user.email || '',
+            role:
+              (session.user.app_metadata?.role as string | undefined) ?? null,
+          }
         })
-      } else {
+      } else if (event === 'SIGNED_OUT') {
+        // Only clear state on explicit sign-out, not on transient failures
         setAuthUser(null)
         queryClient.clear()
+      }
+    })
+
+    // Fallback: ensure session is loaded if INITIAL_SESSION was missed
+    supabaseAuth.getSession().then((session) => {
+      if (session?.user) {
+        setAuthUser((prev) => {
+          if (prev) return prev
+          return {
+            id: session.user.id,
+            email: session.user.email || '',
+            role:
+              (session.user.app_metadata?.role as string | undefined) ?? null,
+          }
+        })
       }
     })
 

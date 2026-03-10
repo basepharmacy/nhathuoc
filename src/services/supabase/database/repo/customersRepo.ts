@@ -1,9 +1,6 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import { Customer, CustomerInsert, CustomerUpdate } from '../model'
 
-export type Customer = Tables<'customers'>
-export type CustomerInsert = TablesInsert<'customers'>
-export type CustomerUpdate = TablesUpdate<'customers'>
 
 export const createCustomerRepository = (client: BasePharmacySupabaseClient) => ({
   async getCustomerById(params: {

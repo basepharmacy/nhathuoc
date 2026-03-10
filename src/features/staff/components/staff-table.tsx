@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
@@ -21,6 +21,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTableToolbar } from '@/components/data-table'
+import { useLocationContext } from '@/context/location-provider'
 import { type Location } from '@/services/supabase'
 import { roles } from '../data/staff-data'
 import { type StaffUser } from '../data/staff-schema'
@@ -39,15 +40,31 @@ export function StaffTable({
   isLoading,
   isError,
 }: DataTableProps) {
+  const { selectedLocationId } = useLocationContext()
+
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
+    selectedLocationId
+      ? [{ id: 'location', value: [selectedLocationId] }]
+      : []
+  )
+
+  useEffect(() => {
+    if (!selectedLocationId) {
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location'))
+      return
+    }
+    setColumnFilters((prev) => {
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location')
+      return [...withoutLocation, { id: 'location', value: [selectedLocationId] }]
+    })
+  }, [selectedLocationId])
 
   const locationOptions = useMemo(
     () => [
-      { label: 'Toàn hệ thống', value: 'ALL' },
       ...locations.map((location) => ({
         label: location.name,
         value: location.id,
@@ -97,7 +114,7 @@ export function StaffTable({
           },
           {
             columnId: 'location',
-            title: 'Chi nhánh',
+            title: 'Cửa hàng',
             options: locationOptions,
           },
         ]}

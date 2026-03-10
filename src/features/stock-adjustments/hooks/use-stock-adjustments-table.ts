@@ -85,17 +85,13 @@ export function useStockAdjustmentsTable({
   }), [tenantId, pagination, searchValue, locationIds, reasonCodes, adjustmentTypes])
 
   useEffect(() => {
-    if (!selectedLocationId) return
+    if (!selectedLocationId) {
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
+      return
+    }
     setColumnFilters((prev) => {
-      const hasLocationFilter = prev.some((filter) => filter.id === 'location_id')
-      if (hasLocationFilter) return prev
-      return [
-        ...prev,
-        {
-          id: 'location_id',
-          value: [selectedLocationId],
-        },
-      ]
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
+      return [...withoutLocation, { id: 'location_id', value: [selectedLocationId] }]
     })
   }, [selectedLocationId])
 

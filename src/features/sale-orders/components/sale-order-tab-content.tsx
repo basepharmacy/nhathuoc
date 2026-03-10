@@ -6,11 +6,7 @@ import {
   getAllAvailableInventoryBatchesQueryOptions,
   getSaleOrderDetailQueryOptions,
 } from '@/client/queries'
-import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
-import { type Customer } from '@/services/supabase/database/repo/customersRepo'
-import { type BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
-import { type Location } from '@/services/supabase/database/repo/locationsRepo'
+import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch } from '@/services/supabase/'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
@@ -376,6 +372,7 @@ export function SaleOrderTabContent({
             products={products}
             onAddProduct={order.addProduct}
             readOnly={order.isReadOnly}
+            autoFocus={!order.isEdit}
           />
           {headerSlot}
           <Button

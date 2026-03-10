@@ -167,6 +167,43 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       return order as SaleOrder
     },
+    async createSaleOrderWithItemsV2(params: {
+      order: SaleOrderInsert
+      items: Array<Omit<SaleOrderItemInsert, 'sale_order_id'>>
+    }): Promise<SaleOrderWithItems> {
+      const { data, error } = await client
+        .from('sale_orders')
+        .insert({
+          tenant_id: params.order.tenant_id,
+          customer_id: params.order.customer_id ?? null,
+          user_id: params.order.user_id,
+          sale_order_code: params.order.sale_order_code,
+          location_id: params.order.location_id ?? null,
+          issued_at: params.order.issued_at ?? null,
+          status: params.order.status,
+          customer_paid_amount: params.order.customer_paid_amount ?? 0,
+          discount: params.order.discount ?? 0,
+          total_amount: params.order.total_amount ?? 0,
+          notes: params.order.notes ?? null,
+          sale_order_items: params.items.map((item) => ({
+            tenant_id: params.order.tenant_id,
+            product_id: item.product_id,
+            batch_id: item.batch_id ?? null,
+            discount: item.discount ?? 0,
+            quantity: item.quantity ?? 0,
+            unit_price: item.unit_price ?? 0,
+            product_unit_id: item.product_unit_id ?? null,
+          })),
+        } as any)
+        .select('*, items:sale_order_items(*)')
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      return data as unknown as SaleOrderWithItems
+    },
     async getSaleOrderByIdWithItems(params: {
       tenantId: string
       orderId: string

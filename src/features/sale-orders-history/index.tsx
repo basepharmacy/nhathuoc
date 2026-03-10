@@ -176,17 +176,13 @@ export function SaleOrdersHistory() {
   }, [columnFilters])
 
   useEffect(() => {
-    if (!selectedLocationId) return
+    if (!selectedLocationId) {
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_name'))
+      return
+    }
     setColumnFilters((prev) => {
-      const hasLocationFilter = prev.some((filter) => filter.id === 'location_name')
-      if (hasLocationFilter) return prev
-      return [
-        ...prev,
-        {
-          id: 'location_name',
-          value: [selectedLocationId],
-        },
-      ]
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_name')
+      return [...withoutLocation, { id: 'location_name', value: [selectedLocationId] }]
     })
   }, [selectedLocationId])
 

@@ -24,12 +24,14 @@ type PurchaseOrdersSearchProps = {
   products: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
   readOnly?: boolean
+  autoFocus?: boolean
 }
 
 export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, PurchaseOrdersSearchProps>(function PurchaseOrdersSearch({
   products,
   onAddProduct,
   readOnly = false,
+  autoFocus = false,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null)
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
@@ -71,7 +73,7 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
 
   // Auto-focus on mount
   useEffect(() => {
-    if (!readOnly) {
+    if (autoFocus) {
       inputRef.current?.focus()
     }
   }, [])

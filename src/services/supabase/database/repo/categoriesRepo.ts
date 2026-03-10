@@ -22,6 +22,7 @@ export const createCategoryRepository = (client: BasePharmacySupabaseClient) => 
 
     return (data ?? []) as Category[]
   },
+  // TODO: Cần tạo rpc để lấy kèm số lượng sản phẩm đang active trong mỗi category để tránh việc phải query 2 lần như hiện tại
   async getCategoriesWithActiveProductsCount(
     tenantId: string
   ): Promise<CategoryWithActiveProductsCount[]> {
@@ -62,7 +63,6 @@ export const createCategoryRepository = (client: BasePharmacySupabaseClient) => 
     })) as CategoryWithActiveProductsCount[]
   },
   async createCategory(params: CategoryInsert): Promise<Category> {
-    console.log("Creating category with params:", params)
     const { data, error } = await client
       .from('categories')
       .insert({
@@ -73,7 +73,6 @@ export const createCategoryRepository = (client: BasePharmacySupabaseClient) => 
       .select()
       .single()
 
-    console.log("Created category with data:", data)
     if (error) {
       throw error
     }
@@ -98,7 +97,6 @@ export const createCategoryRepository = (client: BasePharmacySupabaseClient) => 
     return data as Category
   },
   async deleteCategory(categoryId: string): Promise<void> {
-    console.log("Deleting category with id:", categoryId)
     const { error } = await client
       .from('categories')
       .delete()

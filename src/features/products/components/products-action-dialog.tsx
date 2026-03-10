@@ -945,7 +945,7 @@ export function ProductsActionDialog({
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
-          {isEdit && currentRow?.status === '1_DRAFT' && (
+          {((isEdit && currentRow?.status === '1_DRAFT') || !isEdit) && (
             <Button
               type='button'
               variant='secondary'

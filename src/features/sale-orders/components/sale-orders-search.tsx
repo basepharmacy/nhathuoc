@@ -24,12 +24,14 @@ type SaleOrdersSearchProps = {
   products: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
   readOnly?: boolean
+  autoFocus?: boolean
 }
 
 export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSearchProps>(function SaleOrdersSearch({
   products,
   onAddProduct,
   readOnly = false,
+  autoFocus = false,
 }, ref) {
   const inputRef = useRef<HTMLInputElement>(null)
   const itemRefs = useRef<Map<number, HTMLDivElement>>(new Map())
@@ -43,7 +45,8 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
     if (!term) return products
     return products
       .filter((product) =>
-        normalizeSearchValue(product.product_name).includes(term)
+        normalizeSearchValue(product.product_name).includes(term) ||
+        normalizeSearchValue(product.active_ingredient || '').includes(term)
       )
       .slice(0, 6)
   }, [products, searchTerm])
@@ -70,7 +73,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
 
   // Auto-focus on mount
   useEffect(() => {
-    if (!readOnly) {
+    if (autoFocus) {
       inputRef.current?.focus()
     }
   }, [])

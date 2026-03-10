@@ -57,13 +57,12 @@ export const createBankAccountRepository = (
 
     return data as BankAccount
   },
-
+  // Các tài khoản khác của cùng tenant sẽ tự động bị set is_default = false ở xử lý bên server
   async setDefaultBankAccount(id: string): Promise<void> {
     const { error } = await client
       .from('bank_accounts')
       .update({ is_default: true })
       .eq('id', id)
-
     if (error) throw error
   },
 

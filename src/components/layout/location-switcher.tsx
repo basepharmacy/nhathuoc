@@ -18,6 +18,20 @@ import { useLocationContext } from '@/context/location-provider'
 import { usePermissions } from '@/hooks/use-permissions'
 import type { Location } from '@/services/supabase/database/model'
 
+const statusColorMap: Record<Location['status'], string> = {
+  '1_ACTIVE': 'bg-green-500',
+  '2_INACTIVE': 'bg-red-500',
+  '3_CLOSED': 'bg-gray-400',
+}
+
+function StatusDot({ status }: { status: Location['status'] }) {
+  return (
+    <span
+      className={`inline-block size-2 shrink-0 rounded-full ${statusColorMap[status]}`}
+    />
+  )
+}
+
 function getLocationIcon(type: Location['type']): React.ElementType {
   switch (type) {
     case '1_WAREHOUSE':
@@ -139,6 +153,7 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                       {location.address ?? '—'}
                     </span>
                   </div>
+                  <StatusDot status={location.status} />
                 </DropdownMenuItem>
               )
             })}

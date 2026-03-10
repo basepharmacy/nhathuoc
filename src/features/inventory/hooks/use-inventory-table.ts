@@ -59,21 +59,19 @@ export function useInventoryTable({
   }, [columnFilters])
 
   useEffect(() => {
-    if (!defaultLocationId) return
+    if (!defaultLocationId) {
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
+      return
+    }
     if (locations.length > 0 && !locations.some((location) => location.id === defaultLocationId)) {
       return
     }
 
-    const hasLocationFilter = columnFilters.some(
-      (filter) => filter.id === 'location_id'
-    )
-    if (hasLocationFilter) return
-
-    setColumnFilters((prev) => [
-      ...prev,
-      { id: 'location_id', value: [defaultLocationId] },
-    ])
-  }, [columnFilters, defaultLocationId, locations])
+    setColumnFilters((prev) => {
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
+      return [...withoutLocation, { id: 'location_id', value: [defaultLocationId] }]
+    })
+  }, [defaultLocationId, locations])
 
   // Filter options
   const locationOptions = useMemo(

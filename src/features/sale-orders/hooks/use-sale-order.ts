@@ -185,7 +185,7 @@ export function useSaleOrder({
       }
 
       try {
-        return await saleOrdersRepo.createSaleOrderWithItems(payload)
+        return await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
       } catch (error) {
         if (isNetworkError(error)) {
           await addOfflineMutation({
