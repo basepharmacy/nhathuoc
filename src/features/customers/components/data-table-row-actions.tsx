@@ -1,16 +1,10 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { useNavigate } from '@tanstack/react-router'
 import { Eye, Pencil, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+  DataTableRowActions as RowActions,
+  type RowAction,
+} from '@/components/data-table-row-actions'
 import { usePermissions } from '@/hooks/use-permissions'
 import { type Customer } from '../data/schema'
 import { useCustomers } from './customers-provider'
@@ -23,61 +17,36 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useCustomers()
   const { role } = usePermissions()
   const navigate = useNavigate()
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
-        >
-          <DotsHorizontalIcon className='h-4 w-4' />
-          <span className='sr-only'>Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[160px]'>
-        <DropdownMenuItem
-          onClick={() =>
-            navigate({
-              to: '/customers/$customerId',
-              params: { customerId: row.original.id },
-            })
-          }
-        >
-          Xem chi tiết
-          <DropdownMenuShortcut>
-            <Eye size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          onClick={() => {
-            setCurrentRow(row.original)
-            setOpen('edit')
-          }}
-        >
-          Chỉnh sửa
-          <DropdownMenuShortcut>
-            <Pencil size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        {role === 'OWNER' && (
-          <>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                setCurrentRow(row.original)
-                setOpen('delete')
-              }}
-              className='text-red-500!'
-            >
-              Xóa
-              <DropdownMenuShortcut>
-                <Trash2 size={16} />
-              </DropdownMenuShortcut>
-            </DropdownMenuItem>
-          </>
-        )}
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+
+  const actions: RowAction[] = [
+    {
+      label: 'Xem chi tiết',
+      icon: Eye,
+      onClick: () =>
+        navigate({
+          to: '/customers/$customerId',
+          params: { customerId: row.original.id },
+        }),
+    },
+    {
+      label: 'Chỉnh sửa',
+      icon: Pencil,
+      onClick: () => {
+        setCurrentRow(row.original)
+        setOpen('edit')
+      },
+    },
+    {
+      label: 'Xóa',
+      icon: Trash2,
+      destructive: true,
+      hidden: role !== 'OWNER',
+      onClick: () => {
+        setCurrentRow(row.original)
+        setOpen('delete')
+      },
+    },
+  ]
+
+  return <RowActions actions={actions} />
 }

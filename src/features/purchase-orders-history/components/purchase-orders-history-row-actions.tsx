@@ -1,20 +1,9 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Eye, Pencil, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+  DataTableRowActions as RowActions,
+  type RowAction,
+} from '@/components/data-table-row-actions'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
 type PurchaseOrdersHistoryRowActionsProps = {
@@ -29,51 +18,25 @@ export function PurchaseOrdersHistoryRowActions({
   onDelete,
 }: PurchaseOrdersHistoryRowActionsProps) {
   const isDraft = row.original.status === '1_DRAFT'
-  const canDelete = row.original.status === '1_DRAFT' || row.original.status === '2_ORDERED'
-  const primaryLabel = isDraft ? 'Chỉnh sửa' : 'Xem chi tiết'
-  const PrimaryIcon = isDraft ? Pencil : Eye
+  const canDelete =
+    row.original.status === '1_DRAFT' || row.original.status === '2_ORDERED'
 
-  return (
-    <DropdownMenu modal={false}>
-      <DropdownMenuTrigger asChild>
-        <Button
-          variant='ghost'
-          className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
-        >
-          <DotsHorizontalIcon className='h-4 w-4' />
-          <span className='sr-only'>Open menu</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align='end' className='w-[160px]'>
-        <DropdownMenuItem onClick={() => onEdit(row.original)}>
-          {primaryLabel}
-          <DropdownMenuShortcut>
-            <PrimaryIcon size={16} />
-          </DropdownMenuShortcut>
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              <DropdownMenuItem
-                onClick={() => onDelete(row.original)}
-                disabled={!canDelete}
-                className='text-red-500!'
-              >
-                Xóa
-                <DropdownMenuShortcut>
-                  <Trash2 size={16} />
-                </DropdownMenuShortcut>
-              </DropdownMenuItem>
-            </div>
-          </TooltipTrigger>
-          {!canDelete && (
-            <TooltipContent side='left'>
-              Không thể xoá đơn hàng đã nhập kho. Hãy dùng tính năng điều chỉnh tồn kho để điều chỉnh lại tồn kho nếu cần
-            </TooltipContent>
-          )}
-        </Tooltip>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  )
+  const actions: RowAction[] = [
+    {
+      label: isDraft ? 'Chỉnh sửa' : 'Xem chi tiết',
+      icon: isDraft ? Pencil : Eye,
+      onClick: () => onEdit(row.original),
+    },
+    {
+      label: 'Xóa',
+      icon: Trash2,
+      destructive: true,
+      disabled: !canDelete,
+      tooltip:
+        'Không thể xoá đơn hàng đã nhập kho. Hãy dùng tính năng điều chỉnh tồn kho để điều chỉnh lại tồn kho nếu cần',
+      onClick: () => onDelete(row.original),
+    },
+  ]
+
+  return <RowActions actions={actions} />
 }

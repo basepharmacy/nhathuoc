@@ -1,20 +1,9 @@
-import { DotsHorizontalIcon } from '@radix-ui/react-icons'
 import { type Row } from '@tanstack/react-table'
 import { Trash2, UserPen } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+  DataTableRowActions as RowActions,
+  type RowAction,
+} from '@/components/data-table-row-actions'
 import { Can } from '@/components/permission-guard'
 import { type StaffUser } from '../data/staff-schema'
 import { useStaff } from './staff-provider'
@@ -26,57 +15,37 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useStaff()
   const isOwner = row.original.role === 'OWNER'
+
+  const actions: RowAction[] = [
+    {
+      label: 'Chỉnh sửa',
+      icon: UserPen,
+      onClick: () => {
+        setCurrentRow(row.original)
+        setOpen('edit')
+      },
+    },
+    {
+      label: 'Xóa',
+      icon: Trash2,
+      destructive: true,
+      disabled: isOwner,
+      tooltip: 'Không thể xoá tài khoản chủ hệ thống',
+      onClick: () => {
+        setCurrentRow(row.original)
+        setOpen('delete')
+      },
+    },
+  ]
+
   return (
-    <Can feature='settings' action='edit'>
-      <DropdownMenu modal={false}>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant='ghost'
-            className='flex h-8 w-8 p-0 data-[state=open]:bg-muted'
-          >
-            <DotsHorizontalIcon className='h-4 w-4' />
-            <span className='sr-only'>Open menu</span>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end' className='w-[160px]'>
-          <DropdownMenuItem
-            onClick={() => {
-              setCurrentRow(row.original)
-              setOpen('edit')
-            }}
-          >
-            Chỉnh sửa
-            <DropdownMenuShortcut>
-              <UserPen size={16} />
-            </DropdownMenuShortcut>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div>
-                <DropdownMenuItem
-                  disabled={isOwner}
-                  onClick={() => {
-                    setCurrentRow(row.original)
-                    setOpen('delete')
-                  }}
-                  className='text-red-500!'
-                >
-                  Xóa
-                  <DropdownMenuShortcut>
-                    <Trash2 size={16} />
-                  </DropdownMenuShortcut>
-                </DropdownMenuItem>
-              </div>
-            </TooltipTrigger>
-            {isOwner && (
-              <TooltipContent side='left'>
-                Không thể xoá tài khoản chủ hệ thống
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </Can>
+    <RowActions
+      actions={actions}
+      wrapper={(children) => (
+        <Can feature='settings' action='edit'>
+          {children}
+        </Can>
+      )}
+    />
   )
 }

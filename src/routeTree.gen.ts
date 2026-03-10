@@ -20,7 +20,6 @@ import { Route as authSignInRouteImport } from './routes/(auth)/sign-in'
 import { Route as authOtpRouteImport } from './routes/(auth)/otp'
 import { Route as authForgotPasswordRouteImport } from './routes/(auth)/forgot-password'
 import { Route as AuthenticatedSettingsRouteRouteImport } from './routes/_authenticated/settings/route'
-import { Route as AuthenticatedTasksIndexRouteImport } from './routes/_authenticated/tasks/index'
 import { Route as AuthenticatedSuppliersIndexRouteImport } from './routes/_authenticated/suppliers/index'
 import { Route as AuthenticatedStaffsIndexRouteImport } from './routes/_authenticated/staffs/index'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
@@ -103,11 +102,6 @@ const AuthenticatedSettingsRouteRoute =
     path: '/settings',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedTasksIndexRoute = AuthenticatedTasksIndexRouteImport.update({
-  id: '/tasks/',
-  path: '/tasks/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSuppliersIndexRoute =
   AuthenticatedSuppliersIndexRouteImport.update({
     id: '/suppliers/',
@@ -298,7 +292,6 @@ export interface FileRoutesByFullPath {
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/staffs/': typeof AuthenticatedStaffsIndexRoute
   '/suppliers/': typeof AuthenticatedSuppliersIndexRoute
-  '/tasks/': typeof AuthenticatedTasksIndexRoute
   '/inventory/adjustments/new': typeof AuthenticatedInventoryAdjustmentsNewRoute
   '/inventory/adjustments/': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
@@ -336,7 +329,6 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/staffs': typeof AuthenticatedStaffsIndexRoute
   '/suppliers': typeof AuthenticatedSuppliersIndexRoute
-  '/tasks': typeof AuthenticatedTasksIndexRoute
   '/inventory/adjustments/new': typeof AuthenticatedInventoryAdjustmentsNewRoute
   '/inventory/adjustments': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
@@ -377,7 +369,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/staffs/': typeof AuthenticatedStaffsIndexRoute
   '/_authenticated/suppliers/': typeof AuthenticatedSuppliersIndexRoute
-  '/_authenticated/tasks/': typeof AuthenticatedTasksIndexRoute
   '/_authenticated/inventory/adjustments/new': typeof AuthenticatedInventoryAdjustmentsNewRoute
   '/_authenticated/inventory/adjustments/': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
@@ -418,7 +409,6 @@ export interface FileRouteTypes {
     | '/settings/'
     | '/staffs/'
     | '/suppliers/'
-    | '/tasks/'
     | '/inventory/adjustments/new'
     | '/inventory/adjustments/'
   fileRoutesByTo: FileRoutesByTo
@@ -456,7 +446,6 @@ export interface FileRouteTypes {
     | '/settings'
     | '/staffs'
     | '/suppliers'
-    | '/tasks'
     | '/inventory/adjustments/new'
     | '/inventory/adjustments'
   id:
@@ -496,7 +485,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/'
     | '/_authenticated/staffs/'
     | '/_authenticated/suppliers/'
-    | '/_authenticated/tasks/'
     | '/_authenticated/inventory/adjustments/new'
     | '/_authenticated/inventory/adjustments/'
   fileRoutesById: FileRoutesById
@@ -590,13 +578,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof AuthenticatedSettingsRouteRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/tasks/': {
-      id: '/_authenticated/tasks/'
-      path: '/tasks'
-      fullPath: '/tasks/'
-      preLoaderRoute: typeof AuthenticatedTasksIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/suppliers/': {
@@ -829,7 +810,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSaleOrdersIndexRoute: typeof AuthenticatedSaleOrdersIndexRoute
   AuthenticatedStaffsIndexRoute: typeof AuthenticatedStaffsIndexRoute
   AuthenticatedSuppliersIndexRoute: typeof AuthenticatedSuppliersIndexRoute
-  AuthenticatedTasksIndexRoute: typeof AuthenticatedTasksIndexRoute
   AuthenticatedInventoryAdjustmentsNewRoute: typeof AuthenticatedInventoryAdjustmentsNewRoute
   AuthenticatedInventoryAdjustmentsIndexRoute: typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
@@ -857,7 +837,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSaleOrdersIndexRoute: AuthenticatedSaleOrdersIndexRoute,
   AuthenticatedStaffsIndexRoute: AuthenticatedStaffsIndexRoute,
   AuthenticatedSuppliersIndexRoute: AuthenticatedSuppliersIndexRoute,
-  AuthenticatedTasksIndexRoute: AuthenticatedTasksIndexRoute,
   AuthenticatedInventoryAdjustmentsNewRoute:
     AuthenticatedInventoryAdjustmentsNewRoute,
   AuthenticatedInventoryAdjustmentsIndexRoute:
