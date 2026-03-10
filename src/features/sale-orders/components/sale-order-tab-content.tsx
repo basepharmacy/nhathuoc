@@ -205,10 +205,12 @@ export function SaleOrderTabContent({
           break
         }
         case 'Escape': {
-          // Only show reset confirm when no other dialog/modal is open
-          const hasOpenDialog = document.querySelector('[role="dialog"]')
-          if (!order.isReadOnly && !hasOpenDialog) {
-            event.preventDefault()
+          event.preventDefault()
+          const hasOpenDialog = document.querySelector('[role="dialog"], [role="alertdialog"]')
+          if (hasOpenDialog) {
+            setCancelConfirmOpen(false)
+            setResetConfirmOpen(false)
+          } else if (!order.isReadOnly) {
             // Blur the focused input first so user sees the dialog cleanly
             if (isInput) (target as HTMLElement).blur()
             setResetConfirmOpen(true)

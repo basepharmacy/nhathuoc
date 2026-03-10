@@ -152,10 +152,11 @@ export function PurchaseOrders() {
           break
         }
         case 'Escape': {
-          // Only show reset confirm when no other dialog/modal is open
-          const hasOpenDialog = document.querySelector('[role="dialog"]')
-          if (!isInput && !order.isReadOnly && !hasOpenDialog) {
-            event.preventDefault()
+          event.preventDefault()
+          const hasOpenDialog = document.querySelector('[role="dialog"], [role="alertdialog"]')
+          if (hasOpenDialog) {
+            setResetConfirmOpen(false)
+          } else if (!isInput && !order.isReadOnly) {
             setResetConfirmOpen(true)
           }
           break
