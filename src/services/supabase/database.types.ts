@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_history: {
+        Row: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at: string
+          id: string
+          metadata: Json | null
+          reference_code: string | null
+          reference_id: string | null
+          tenant_id: string
+          user_id: string | null
+        }
+        Insert: {
+          activity_type: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reference_code?: string | null
+          reference_id?: string | null
+          tenant_id: string
+          user_id?: string | null
+        }
+        Update: {
+          activity_type?: Database["public"]["Enums"]["activity_type"]
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          reference_code?: string | null
+          reference_id?: string | null
+          tenant_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activity_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bank_accounts: {
         Row: {
           account_holder: string
@@ -1192,9 +1240,32 @@ export type Database = {
           top_5_products_by_revenue: Json
         }[]
       }
+      get_tenant_overview: {
+        Args: { p_location_id?: string }
+        Returns: {
+          total_customers: number
+          total_locations_active: number
+          total_locations_closed: number
+          total_locations_inactive: number
+          total_products_active: number
+          total_products_inactive: number
+          total_staff: number
+          total_suppliers_active: number
+          total_suppliers_inactive: number
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
+      activity_type:
+        | "PURCHASE_ORDER_ORDERED"
+        | "PURCHASE_ORDER_STORED"
+        | "PURCHASE_ORDER_CANCELLED"
+        | "SALE_ORDER_COMPLETED"
+        | "SALE_ORDER_CANCELLED"
+        | "STOCK_ADJUSTMENT_CREATED"
+        | "SUPPLIER_PAYMENT_CREATED"
+        | "SUPPLIER_PAYMENT_DELETED"
       location_status: "1_ACTIVE" | "2_INACTIVE" | "3_CLOSED"
       location_type: "1_WAREHOUSE" | "2_STORE" | "9_OTHER"
       product_status: "1_DRAFT" | "2_ACTIVE" | "3_INACTIVE" | "4_ARCHIVED"
@@ -1342,6 +1413,16 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      activity_type: [
+        "PURCHASE_ORDER_ORDERED",
+        "PURCHASE_ORDER_STORED",
+        "PURCHASE_ORDER_CANCELLED",
+        "SALE_ORDER_COMPLETED",
+        "SALE_ORDER_CANCELLED",
+        "STOCK_ADJUSTMENT_CREATED",
+        "SUPPLIER_PAYMENT_CREATED",
+        "SUPPLIER_PAYMENT_DELETED",
+      ],
       location_status: ["1_ACTIVE", "2_INACTIVE", "3_CLOSED"],
       location_type: ["1_WAREHOUSE", "2_STORE", "9_OTHER"],
       product_status: ["1_DRAFT", "2_ACTIVE", "3_INACTIVE", "4_ARCHIVED"],

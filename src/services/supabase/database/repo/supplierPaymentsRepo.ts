@@ -56,6 +56,16 @@ export const createSupplierPaymentRepository = (
 
       return (data ?? []) as SupplierPayment[]
     },
+    async deleteSupplierPayment(paymentId: string): Promise<void> {
+      const { error } = await client
+        .from('supplier_payments')
+        .delete()
+        .eq('id', paymentId)
+
+      if (error) {
+        throw error
+      }
+    },
     async getSupplierPaymentsHistory(
       params: SupplierPaymentsHistoryQueryInput
     ): Promise<SupplierPaymentsHistoryQueryResult> {

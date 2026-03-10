@@ -97,6 +97,8 @@ export function SaleOrders() {
     enabled: !!tenantId,
   })
 
+  const activeProducts = products.filter((p) => p.status === '2_ACTIVE')
+
   const { data: customers = [] } = useQuery({
     ...getCustomersQueryOptions(tenantId),
     enabled: !!tenantId,
@@ -170,7 +172,7 @@ export function SaleOrders() {
             tenantId={tenantId}
             userId={userId}
             userLocationId={userLocationId}
-            products={products}
+            products={activeProducts}
             customers={customers}
             bankAccounts={bankAccounts}
             locations={locations}

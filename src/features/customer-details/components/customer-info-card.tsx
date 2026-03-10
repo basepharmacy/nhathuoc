@@ -1,8 +1,6 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { type Customer } from '@/features/customers/data/schema'
@@ -14,12 +12,8 @@ type CustomerInfoCardProps = {
 export function CustomerInfoCard({ customer }: CustomerInfoCardProps) {
   return (
     <Card className='gap-4'>
-      <CardHeader className='pb-2'>
-        <CardTitle>Thông tin khách hàng</CardTitle>
-      </CardHeader>
-      <Separator />
       <CardContent className='space-y-4'>
-        <div className='grid gap-4 md:grid-cols-2'>
+        <div className='grid gap-4 md:grid-cols-3'>
           <div>
             <p className='text-sm text-muted-foreground'>Tên</p>
             <p className='font-medium'>{customer.name}</p>

@@ -47,11 +47,17 @@ export function PurchaseOrders() {
     ...getProductsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
+  const activeProducts = useMemo(() => products.filter((p) => p.status === '2_ACTIVE'), [products])
 
   const { data: suppliers = [] } = useQuery({
     ...getSuppliersQueryOptions(tenantId),
     enabled: !!tenantId,
   })
+
+  const activeSuppliers = useMemo(
+    () => suppliers.filter((s) => s.is_active),
+    [suppliers]
+  )
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -304,7 +310,7 @@ export function PurchaseOrders() {
         <div className='flex w-full items-center gap-4'>
           <PurchaseOrdersSearch
             ref={searchRef}
-            products={products}
+            products={activeProducts}
             onAddProduct={handleAddProduct}
             readOnly={order.isItemsReadOnly}
           />
@@ -360,7 +366,7 @@ export function PurchaseOrders() {
 
             <PurchaseOrdersSummary
               orderCode={order.orderCode}
-              suppliers={suppliers}
+              suppliers={activeSuppliers}
               supplierId={order.supplierId}
               onSupplierChange={order.setSupplierId}
               totals={order.totals}

@@ -109,7 +109,7 @@ export function ProductsActionDialog({
       ? {
         product_name: currentRow.product_name,
         product_type: currentRow.product_type,
-        status: currentRow.status,
+        status: currentRow.status === '1_DRAFT' ? '2_ACTIVE' : currentRow.status,
         category_id: currentRow.category_id ?? 'none',
         min_stock: currentRow.min_stock ?? null,
         active_ingredient: currentRow.active_ingredient ?? '',
@@ -125,7 +125,7 @@ export function ProductsActionDialog({
         product_type: '1_OTC',
         status: '2_ACTIVE',
         category_id: 'none',
-        min_stock: null,
+        min_stock: 10,
         active_ingredient: '',
         regis_number: '',
         jan_code: '',
@@ -879,7 +879,7 @@ export function ProductsActionDialog({
                               <FormControl>
                                 <div className='col-span-4 flex flex-wrap gap-2'>
                                   {Object.entries(productStatusLabels)
-                                    .filter(([value]) => value !== '4_ARCHIVED')
+                                    .filter(([value]) => value !== '4_ARCHIVED' && value !== '1_DRAFT')
                                     .map(([value, label]) => (
                                       <button
                                         key={value}
@@ -945,14 +945,16 @@ export function ProductsActionDialog({
           <Button type='button' variant='outline' onClick={() => onOpenChange(false)}>
             Hủy
           </Button>
-          <Button
-            type='button'
-            variant='secondary'
-            disabled={isPending}
-            onClick={() => submitWithStatus('1_DRAFT')}
-          >
-            Lưu nháp
-          </Button>
+          {isEdit && currentRow?.status === '1_DRAFT' && (
+            <Button
+              type='button'
+              variant='secondary'
+              disabled={isPending}
+              onClick={() => submitWithStatus('1_DRAFT')}
+            >
+              Lưu nháp
+            </Button>
+          )}
           <Button type='submit' form='product-form' disabled={isPending}>
             {isEdit ? 'Lưu' : 'Thêm'}
           </Button>

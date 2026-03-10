@@ -1,8 +1,6 @@
 import {
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { type Supplier } from '@/features/suppliers/data/schema'
@@ -14,10 +12,6 @@ type SupplierInfoCardProps = {
 export function SupplierInfoCard({ supplier }: SupplierInfoCardProps) {
   return (
     <Card className='gap-4'>
-      <CardHeader className='pb-2'>
-        <CardTitle>Thông tin nhà cung cấp</CardTitle>
-      </CardHeader>
-      <Separator />
       <CardContent className='space-y-4'>
         <div className='grid gap-4 md:grid-cols-2'>
           <div>

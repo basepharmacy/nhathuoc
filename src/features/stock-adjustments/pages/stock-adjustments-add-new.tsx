@@ -30,6 +30,8 @@ export function StockAdjustmentsAddNew() {
     enabled: !!tenantId,
   })
 
+  const activeProducts = products.filter((p) => p.status === '2_ACTIVE')
+
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
     enabled: !!tenantId,
@@ -107,7 +109,7 @@ export function StockAdjustmentsAddNew() {
             Quay lại
           </Button>
           <StockAdjustmentsAddSearch
-            products={products}
+            products={activeProducts}
             onAddProduct={handleAddProduct}
           />
           <Button

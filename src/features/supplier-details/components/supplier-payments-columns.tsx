@@ -1,6 +1,8 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { Trash2 } from 'lucide-react'
 import { LongText } from '@/components/long-text'
 import { DataTableColumnHeader } from '@/components/data-table'
+import { Button } from '@/components/ui/button'
 import { formatCurrency } from '@/lib/utils'
 import { type SupplierPayment } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 
@@ -11,15 +13,18 @@ const formatDateLabel = (value?: string | null) => {
   return new Intl.DateTimeFormat('vi-VN').format(date)
 }
 
-export const supplierPaymentsColumns: ColumnDef<SupplierPayment>[] = [
+export const getSupplierPaymentsColumns = ({
+  onDelete,
+}: {
+  onDelete?: (payment: SupplierPayment) => void
+}): ColumnDef<SupplierPayment>[] => [
   {
-    id: 'reference_code',
-    accessorFn: (row) => row.reference_code ?? row.id,
+    accessorKey: 'reference_code',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Mã thanh toán' />
     ),
     cell: ({ row }) => (
-      <LongText className='max-w-40 ps-3'>{row.getValue('reference_code')}</LongText>
+      <LongText className='max-w-40 ps-3'>{row.getValue('reference_code') || '—'}</LongText>
     ),
     enableSorting: false,
   },
@@ -57,4 +62,23 @@ export const supplierPaymentsColumns: ColumnDef<SupplierPayment>[] = [
     ),
     enableSorting: false,
   },
+  ...(onDelete
+    ? [
+        {
+          id: 'actions',
+          cell: ({ row }: { row: { original: SupplierPayment } }) => (
+            <Button
+              variant='ghost'
+              size='icon'
+              className='h-8 w-8 text-red-500 hover:text-red-600'
+              onClick={() => onDelete(row.original)}
+            >
+              <Trash2 size={16} />
+              <span className='sr-only'>Xóa</span>
+            </Button>
+          ),
+          enableSorting: false,
+        } as ColumnDef<SupplierPayment>,
+      ]
+    : []),
 ]

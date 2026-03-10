@@ -515,7 +515,7 @@ export function SuppliersActionDialog({
                             onCheckedChange={field.onChange}
                           />
                           <span className='text-sm text-muted-foreground'>
-                            {field.value ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+                            {field.value ? 'Đang giao dịch' : 'Ngừng giao dịch'}
                           </span>
                         </div>
                       </FormControl>
