@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   Card,
   CardContent,
@@ -12,6 +13,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { locationsRepo } from '@/client'
+import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import { Link } from '@tanstack/react-router'
 import { FileUploadZone } from './file-upload-zone'
 import type { FileUploadState } from '../utils/types'
 import { getSourceSystemLabel } from '../utils/migration'
@@ -25,6 +29,9 @@ export function StepContent({
   customers,
   onFileSelect,
   onFileRemove,
+  productLocationId,
+  onProductLocationChange,
+  tenantId,
 }: {
   currentStep: number
   sourceSystem: string
@@ -34,8 +41,23 @@ export function StepContent({
   customers: FileUploadState
   onFileSelect: (type: 'products' | 'suppliers' | 'customers') => (file: File) => void
   onFileRemove: (type: 'products' | 'suppliers' | 'customers') => () => void
+  productLocationId: string
+  onProductLocationChange: (value: string) => void
+  tenantId: string
 }) {
   const systemLabel = getSourceSystemLabel(sourceSystem)
+  const [locations, setLocations] = useState<Location[]>([])
+
+  useEffect(() => {
+    if (!tenantId) return
+    locationsRepo.getLocationsByTenantId(tenantId).then((all) => {
+      const active = all.filter((l) => l.status === '1_ACTIVE')
+      setLocations(active)
+      if (active.length > 0 && !productLocationId) {
+        onProductLocationChange(active[0].id)
+      }
+    })
+  }, [tenantId])
 
   return (
     <div className='mx-auto w-full max-w-2xl'>
@@ -76,7 +98,36 @@ export function StepContent({
               {systemLabel}.
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className='space-y-4'>
+            <p className='text-sm text-red-600'>
+              Lưu ý: Các sản phẩm đã tồn tại trong hệ thống sẽ không được tạo
+              lại. Xin hãy điều chỉnh tồn kho thủ công {' '}
+              <Link
+                to='/inventory/adjustments'
+                className='underline font-semibold hover:text-red-800'
+              >
+                tại đây
+              </Link>
+              .
+            </p>
+            <div className='space-y-2'>
+              <label className='text-sm font-medium'>Chi nhánh / Kho</label>
+              <Select
+                value={productLocationId}
+                onValueChange={onProductLocationChange}
+              >
+                <SelectTrigger className='w-full'>
+                  <SelectValue placeholder='Chọn chi nhánh / kho' />
+                </SelectTrigger>
+                <SelectContent>
+                  {locations.map((loc) => (
+                    <SelectItem key={loc.id} value={loc.id}>
+                      {loc.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <FileUploadZone
               label='sản phẩm'
               state={products}

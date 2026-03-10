@@ -58,6 +58,28 @@ export const createSupplierRepository = (client: BasePharmacySupabaseClient) => 
 
     return data as Supplier
   },
+  async createBatchSuppliers(params: SupplierInsert[]): Promise<Supplier[]> {
+    const rows = params.map((p) => ({
+      tenant_id: p.tenant_id,
+      name: p.name,
+      phone: p.phone ?? null,
+      address: p.address ?? null,
+      representative: p.representative ?? null,
+      description: p.description ?? null,
+      is_active: p.is_active ?? true,
+    }))
+
+    const { data, error } = await client
+      .from('suppliers')
+      .insert(rows)
+      .select()
+
+    if (error) {
+      throw error
+    }
+
+    return data as Supplier[]
+  },
   async updateSupplier(supplierId: string, params: SupplierUpdate): Promise<Supplier> {
     const { data, error } = await client
       .from('suppliers')

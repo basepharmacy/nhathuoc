@@ -95,6 +95,21 @@ export const createStockAdjustmentRepository = (
       return data as StockAdjustment
     },
 
+    async createBatchStockAdjustments(
+      params: StockAdjustmentInsert[]
+    ): Promise<StockAdjustment[]> {
+      const { data, error } = await client
+        .from('stock_adjustments')
+        .insert(params)
+        .select()
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as StockAdjustment[]
+    },
+
     async deleteStockAdjustment(id: string): Promise<void> {
       const { error } = await client
         .from('stock_adjustments')

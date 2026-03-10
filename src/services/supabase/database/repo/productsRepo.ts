@@ -171,6 +171,46 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
 
       return product
     },
+    async createBatchProducts(params: (ProductInsert & { id: string })[]): Promise<Product[]> {
+      const rows = params.map((p) => ({
+        id: p.id,
+        tenant_id: p.tenant_id,
+        product_name: p.product_name,
+        product_type: p.product_type,
+        status: p.status,
+        category_id: p.category_id ?? null,
+        min_stock: p.min_stock ?? null,
+        active_ingredient: p.active_ingredient ?? null,
+        regis_number: p.regis_number ?? null,
+        jan_code: p.jan_code ?? null,
+        made_company_name: p.made_company_name ?? null,
+        sale_company_name: p.sale_company_name ?? null,
+        description: p.description ?? null,
+      }))
+
+      const { data, error } = await client
+        .from('products')
+        .insert(rows)
+        .select()
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as Product[]
+    },
+    async createBatchProductUnits(params: ProductUnitInsert[]): Promise<ProductUnit[]> {
+      const { data, error } = await client
+        .from('product_units')
+        .insert(params)
+        .select()
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as ProductUnit[]
+    },
     async deleteProduct(productId: string): Promise<void> {
       const { error } = await client.from('products').delete().eq('id', productId)
 
