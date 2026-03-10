@@ -10,13 +10,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import type { Customer } from '@/services/supabase/database/repo/customersRepo'
+import type { Customer } from '@/services/supabase/'
 
 type CustomerSwitcherProps = {
   customers: Customer[]
   activeCustomerId: string
   onChange: (customerId: string) => void
-  onAddCustomer?: () => void
+  onAddCustomer: () => void
   disabled?: boolean
 }
 
@@ -41,7 +41,6 @@ export function CustomerSwitcher({
         customer.name,
         customer.address ?? '',
         customer.phone ?? '',
-        customer.description ?? '',
       ]
         .join(' ')
         .toLowerCase()
@@ -78,22 +77,18 @@ export function CustomerSwitcher({
         <DropdownMenuLabel className='text-xs text-muted-foreground'>
           Khách hàng
         </DropdownMenuLabel>
-        {onAddCustomer && (
-          <>
-            <DropdownMenuItem onClick={onAddCustomer} className='gap-2 p-2'>
-              <div className='flex size-6 items-center justify-center rounded-sm border'>
-                <UserPlus className='size-4 shrink-0' />
-              </div>
-              <div className='grid flex-1 text-sm leading-tight'>
-                <span className='truncate font-medium'>Thêm khách hàng mới</span>
-                <span className='truncate text-xs text-muted-foreground'>
-                  Tạo khách hàng nhanh
-                </span>
-              </div>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-          </>
-        )}
+        <DropdownMenuItem onClick={onAddCustomer} className='gap-2 p-2'>
+          <div className='flex size-6 items-center justify-center rounded-sm border'>
+            <UserPlus className='size-4 shrink-0' />
+          </div>
+          <div className='grid flex-1 text-sm leading-tight'>
+            <span className='truncate font-medium'>Thêm khách hàng mới</span>
+            <span className='truncate text-xs text-muted-foreground'>
+              Tạo khách hàng nhanh
+            </span>
+          </div>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
         <div className='px-2 pb-2'>
           <Input
             value={searchTerm}

@@ -19,16 +19,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
-import type { Customer } from '@/services/supabase/database/repo/customersRepo'
-import type { BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
-import type { SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
+import type { Customer, BankAccount, SaleOrder } from '@/services/supabase/'
 import { CustomerSwitcher } from './customer-switcher'
 
 type SaleOrdersSummaryProps = {
   customers: Customer[]
   customerId: string
   onCustomerChange: (customerId: string) => void
-  onAddCustomer?: () => void
+  onAddCustomer: () => void
   totals: {
     subtotal: number
     total: number

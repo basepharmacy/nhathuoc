@@ -300,6 +300,9 @@ export function useSaleOrder({
         return prev
       }
 
+      const conversionFactor = defaultUnit?.conversion_factor || 1
+      const batchStock = Math.floor((nextBatch.quantity ?? 0) / conversionFactor)
+
       return [
         ...prev,
         {
@@ -312,6 +315,7 @@ export function useSaleOrder({
           batchId: nextBatch.id,
           batchCode: nextBatch.batch_code ?? '',
           expiryDate: nextBatch.expiry_date ?? '',
+          stock: batchStock,
         },
       ]
     })

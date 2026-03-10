@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { SaleOrderTabContent } from './components/sale-order-tab-content'
+import { toast } from 'sonner'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
 
@@ -42,11 +43,17 @@ export function SaleOrders() {
   const [tabs, setTabs] = useState<Tab[]>([initialTabRef.current])
   const [activeTabId, setActiveTabId] = useState(initialTabRef.current.id)
 
+  const MAX_TABS = 4
+
   const addTab = useCallback(() => {
+    if (tabs.length >= MAX_TABS) {
+      toast.error(`Chỉ được mở tối đa ${MAX_TABS} đơn hàng cùng lúc`)
+      return
+    }
     const newTab = createTab()
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
-  }, [])
+  }, [tabs])
 
   const updateTabLabel = useCallback((tabId: string, label: string) => {
     setTabs((prev) =>

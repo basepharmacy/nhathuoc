@@ -17,9 +17,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, normalizeNumber } from '@/lib/utils'
+import { formatCurrency, normalizeNumber, formatDateLabel } from '@/lib/utils'
 import { type SaleOrderItem } from '../data/types'
-import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductUnit } from '@/services/supabase'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -126,12 +126,6 @@ type SaleOrdersItemsProps = {
 }
 
 const renderUnitLabel = (unit: ProductUnit) => `${unit.unit_name}`
-const formatDateLabel = (value?: string | null) => {
-  if (!value) return ''
-  const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('vi-VN').format(date)
-}
 
 export function SaleOrdersItems({
   items,
@@ -164,7 +158,7 @@ export function SaleOrdersItems({
             <TableBody>
               {items.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className='h-24 text-center text-sm text-muted-foreground'>
+                  <TableCell colSpan={7} className='h-21 text-center text-sm text-muted-foreground'>
                     Chưa có sản phẩm. Hãy tìm kiếm để thêm.
                   </TableCell>
                 </TableRow>
@@ -194,6 +188,7 @@ export function SaleOrdersItems({
                           {item.expiryDate ? (
                             <span>HSD: {formatDateLabel(item.expiryDate)}</span>
                           ) : null}
+                          <span>SL: {item.stock}</span>
                         </div>
                       </TableCell>
                       <TableCell className='align-middle'>

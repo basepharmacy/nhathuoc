@@ -139,6 +139,7 @@ export const allocateQuantityToBatches = ({
       batchId: batch.id,
       batchCode: batch.batch_code ?? '',
       expiryDate: batch.expiry_date ?? '',
+      stock: Math.floor(getBatchQuantity(batch) / safeCF),
     })
   })
 

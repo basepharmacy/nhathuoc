@@ -12,6 +12,7 @@ export type SaleOrderItem = {
   batchId: string
   batchCode: string
   expiryDate: string
+  stock: number
 }
 
 export const getDefaultUnit = (product: ProductWithUnits) =>
