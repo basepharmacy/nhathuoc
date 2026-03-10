@@ -1,14 +1,13 @@
 import { ContentSection } from '../components/content-section'
-import { AccountForm } from './account-form'
+import { TenantInfo } from './tenant-info'
 
 export function SettingsAccount() {
   return (
     <ContentSection
-      title='Account'
-      desc='Update your account settings. Set your preferred language and
-          timezone.'
+      title='Tài khoản hệ thống'
+      desc='Thông tin tenant của hệ thống.'
     >
-      <AccountForm />
+      <TenantInfo />
     </ContentSection>
   )
 }
