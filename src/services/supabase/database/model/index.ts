@@ -1,4 +1,4 @@
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import type { Tables, TablesInsert, TablesUpdate, Enums } from '../../database.types'
 import type { Tenant } from '../repo/tenantsRepo'
 import type { Location } from '../repo/locationsRepo'
 import type { Supplier } from '../repo/suppliersRepo'
@@ -30,3 +30,5 @@ export type { InventoryBatch }
 export type Customer = Tables<'customers'>
 export type CustomerInsert = TablesInsert<'customers'>
 export type CustomerUpdate = TablesUpdate<'customers'>
+
+export type SaleOrderStatus = Enums<'sale_order_status'>

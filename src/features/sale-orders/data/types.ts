@@ -1,4 +1,4 @@
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductWithUnits, SaleOrderStatus } from '@/services/supabase/'
 
 export type PaymentMethod = 'CASH' | 'TRANSFER'
 
@@ -15,6 +15,18 @@ export type SaleOrderItem = {
   stock: number
 }
 
-export const getDefaultUnit = (product: ProductWithUnits) =>
-  product.product_units?.find((unit) => unit.is_base_unit) ??
-  product.product_units?.[0]
+export type SaleOrder = {
+  id: string
+  orderCode: string
+  customerId: string
+  paymentMethod: PaymentMethod
+  subTotal: number // Tổng tiền trước khi trừ chiết khấu
+  orderDiscount: number
+  totalAmount: number // Tổng tiền sau khi đã trừ chiết khấu (cần thanh toán)
+  paidAmount: number
+  bankAccountId: string | null
+  locationId: string
+  notes: string | null
+  status: SaleOrderStatus
+  items: SaleOrderItem[]
+}

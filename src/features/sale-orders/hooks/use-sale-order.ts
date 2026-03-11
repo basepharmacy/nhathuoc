@@ -6,7 +6,8 @@ import { type ProductWithUnits } from '@/services/supabase/database/repo/product
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { type SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
 import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
-import { type PaymentMethod, type SaleOrderItem, getDefaultUnit } from '../data/types'
+import { type PaymentMethod, type SaleOrderItem } from '../data/types'
+import { getDefaultUnit } from '../data/inventory-helpers'
 import {
   allocateQuantityToBatches,
   getAllocatedByBatch,
@@ -506,8 +507,8 @@ export function useSaleOrder({
     batchesByProductId,
     orderCode,
     orderStatus,
-    isReadOnly,
-    isEdit,
+    isReadOnly,  // TODO bỏ
+    isEdit, // TODO bỏ 
     isSubmitting,
     hasInitialized,
     productIds,

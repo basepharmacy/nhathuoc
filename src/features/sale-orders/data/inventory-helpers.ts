@@ -1,4 +1,4 @@
-import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatch, ProductWithUnits } from '@/services/supabase/'
 import { type SaleOrderItem } from './types'
 
 export const getBatchQuantity = (batch: InventoryBatch) => batch.quantity ?? 0
@@ -145,3 +145,7 @@ export const allocateQuantityToBatches = ({
 
   return nextItems
 }
+
+export const getDefaultUnit = (product: ProductWithUnits) =>
+  product.product_units?.find((unit) => unit.is_base_unit) ??
+  product.product_units?.[0]

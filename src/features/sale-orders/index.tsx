@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
-import { Plus, X } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import {
@@ -9,15 +8,17 @@ import {
   getBankAccountsQueryOptions,
   getLocationsQueryOptions,
   getProductsQueryOptions,
+  getSaleOrderDetailQueryOptions,
+  getAllAvailableInventoryBatchesQueryOptions,
 } from '@/client/queries'
-import { Button } from '@/components/ui/button'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { SaleOrderTabContent } from './components/sale-order-tab-content'
+import { type Tab } from './components/sale-order-tab-controls'
 import { toast } from 'sonner'
+import { InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
-
-type Tab = { id: string; label: string }
+const EMPTY_BATCHES: InventoryBatch[] = []
 
 let tabCounter = 1
 
@@ -33,7 +34,6 @@ export function SaleOrders() {
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
-  const userLocationId = sidebarLocationId ?? null
 
   // ── Tab state ───────────────────────────────────────────────
   const initialTabRef = useRef<Tab | null>(null)
@@ -121,48 +121,17 @@ export function SaleOrders() {
     enabled: !!tenantId,
   })
 
-  // ── Tab controls (shared across tabs) ──────────────────────
-  const tabControls = (
-    <div className='flex shrink-0 items-center gap-1'>
-      <TabsList className='shrink-0'>
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className='group relative gap-1 pr-6'
-          >
-            {tab.label}
-            {tabs.length > 1 && (
-              <button
-                type='button'
-                className='absolute right-1 top-1/2 -translate-y-1/2 rounded-sm p-0.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 group-data-[state=active]:opacity-100'
-                onClick={(e) => {
-                  e.stopPropagation()
-                  closeTab(tab.id)
-                }}
-                aria-label={`Đóng ${tab.label}`}
-              >
-                <X className='size-3' />
-              </button>
-            )}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+  const { data: orderDetail } = useQuery({
+    ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
+    enabled: !!tenantId && !!orderId,
+  })
 
-      {!orderId && (
-        <Button
-          type='button'
-          variant='ghost'
-          size='icon'
-          className='size-7 shrink-0'
-          onClick={addTab}
-          aria-label='Thêm đơn mới'
-        >
-          <Plus className='size-4' />
-        </Button>
-      )}
-    </div>
-  )
+  const { data: inventoryBatches = EMPTY_BATCHES } = useQuery({
+    ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+
 
   // ── Render ──────────────────────────────────────────────────
   return (
@@ -178,7 +147,7 @@ export function SaleOrders() {
             orderId={tab === tabs[0] ? orderId : undefined}
             tenantId={tenantId}
             userId={userId}
-            userLocationId={userLocationId}
+            userLocationId={sidebarLocationId}
             products={activeProducts}
             customers={customers}
             bankAccounts={bankAccounts}
@@ -188,9 +157,10 @@ export function SaleOrders() {
             onOrderCompleted={(createdOrderId) => handleOrderCompleted(tab.id, createdOrderId)}
             onAddTab={addTab}
             onCloseTab={() => closeTab(tab.id)}
+            onCloseTabById={closeTab}
             tabCount={tabs.length}
             isActive={tab.id === activeTabId}
-            headerSlot={tabControls}
+            tabs={tabs}
           />
         </TabsContent>
       ))}

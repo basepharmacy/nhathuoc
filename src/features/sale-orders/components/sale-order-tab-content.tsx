@@ -1,12 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Printer } from 'lucide-react'
-import {
-  getAllAvailableInventoryBatchesQueryOptions,
-  getSaleOrderDetailQueryOptions,
-} from '@/client/queries'
 import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch } from '@/services/supabase/'
+import { SaleOrderTabControls, type Tab } from './sale-order-tab-controls'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
@@ -22,7 +18,6 @@ import { SaleOrdersSummary } from './sale-orders-summary'
 import { SaleOrderInvoice } from './sale-order-invoice'
 import { useSaleOrder } from '../hooks/use-sale-order'
 
-const EMPTY_BATCHES: InventoryBatch[] = []
 
 type SaleOrderTabContentProps = {
   orderId?: string
@@ -33,14 +28,16 @@ type SaleOrderTabContentProps = {
   customers: Customer[]
   bankAccounts: BankAccount[]
   locations: Location[]
+  inventoryBatches: InventoryBatch[]
   navigate: (opts: { search?: { orderId: string }; to?: string }) => void
   onOrderCodeChange?: (code: string) => void
   onOrderCompleted?: (createdOrderId: string) => void
   onAddTab?: () => void
   onCloseTab?: () => void
+  onCloseTabById?: (tabId: string) => void
   tabCount?: number
   isActive?: boolean
-  headerSlot?: React.ReactNode
+  tabs?: Tab[]
 }
 
 export function SaleOrderTabContent({
@@ -52,20 +49,18 @@ export function SaleOrderTabContent({
   customers,
   bankAccounts,
   locations,
+  inventoryBatches,
   navigate,
   onOrderCodeChange,
   onOrderCompleted,
   onAddTab,
   onCloseTab,
+  onCloseTabById,
   tabCount = 1,
   isActive = true,
-  headerSlot,
+  tabs,
 }: SaleOrderTabContentProps) {
   // ── Per-tab queries ─────────────────────────────────────────
-  const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
-    ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
-    enabled: !!tenantId && !!orderId,
-  })
 
   const order = useSaleOrder({
     tenantId,
@@ -97,11 +92,6 @@ export function SaleOrderTabContent({
     prevOrderIdRef.current = orderId
   }, [orderId, order.resetOrder])
 
-  const { data: inventoryBatches = EMPTY_BATCHES } = useQuery({
-    ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
-    enabled: !!tenantId,
-  })
-
   // ── Effects ─────────────────────────────────────────────────
   useEffect(() => {
     const inventoryBatchesByLocation = inventoryBatches.filter((batch) => {
@@ -121,12 +111,12 @@ export function SaleOrderTabContent({
   }, [order.selectedLocationId, locations, userLocationId, order.setSelectedLocationId])
 
   useEffect(() => {
-    if (!orderId || isOrderLoading) return
+    if (!orderId) return
     if (!orderDetail) {
       toast.error('Không tìm thấy đơn bán hàng.')
       navigate({ to: '/' })
     }
-  }, [orderDetail, orderId, isOrderLoading, navigate])
+  }, [orderDetail, orderId, navigate])
 
   useEffect(() => {
     if (order.bankAccountId || bankAccounts.length === 0) return
@@ -376,7 +366,14 @@ export function SaleOrderTabContent({
             readOnly={order.isReadOnly}
             autoFocus={!order.isEdit}
           />
-          {headerSlot}
+          {tabs && onCloseTabById && onAddTab && (
+            <SaleOrderTabControls
+              tabs={tabs}
+              orderId={orderId}
+              onCloseTab={onCloseTabById}
+              onAddTab={onAddTab}
+            />
+          )}
           <Button
             type='button'
             variant='outline'
