@@ -1,20 +1,7 @@
 import { suppliersRepo } from '@/client'
 import type { SupplierInsert } from '@/services/supabase/database/repo/suppliersRepo'
-import type { ProcessLog } from './types'
-import { parseCSV, readFileAsText } from './csv-parser'
-
-// interface KiotVietSupplierRow {
-//   'Mã nhà cung cấp': string
-//   'Tên nhà cung cấp': string
-//   'Email': string
-//   'Điện thoại': string
-//   'Địa chỉ': string
-//   'Khu vực': string
-//   'Phường/Xã': string
-//   'Ghi chú': string
-//   'Trạng thái': string
-//   'Công ty': string
-// }
+import type { ProcessLog } from '../../utils/types'
+import { parseFile } from '../../utils/file-parser'
 
 function mapKiotVietSupplier(
   row: Record<string, string>,
@@ -41,8 +28,7 @@ export async function migrateSuppliers(
 ): Promise<{ success: number; failed: number }> {
   addLog({ message: 'Đang đọc file CSV nhà cung cấp...', type: 'info' })
 
-  const content = await readFileAsText(file)
-  const rows = parseCSV(content)
+  const rows = await parseFile(file)
 
   if (rows.length === 0) {
     addLog({ message: 'File CSV không có dữ liệu', type: 'error' })

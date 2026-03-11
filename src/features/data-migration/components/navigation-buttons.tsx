@@ -10,6 +10,7 @@ export function NavigationButtons({
   onNext,
   onSkip,
   onStartMigration,
+  isCompleted,
 }: {
   currentStep: number
   isProcessing: boolean
@@ -18,6 +19,7 @@ export function NavigationButtons({
   onNext: () => void
   onSkip: () => void
   onStartMigration: () => void
+  isCompleted: boolean
 }) {
   return (
     <div className='mx-auto flex w-full max-w-2xl items-center justify-between'>
@@ -50,7 +52,7 @@ export function NavigationButtons({
             Tiếp theo
             <ChevronRight className='size-4' />
           </Button>
-        ) : (
+        ) : !isCompleted ? (
           <Button
             onClick={onStartMigration}
             disabled={isProcessing}
@@ -60,7 +62,7 @@ export function NavigationButtons({
             )}
             Bắt đầu chuyển đổi
           </Button>
-        )}
+        ) : null}
       </div>
     </div>
   )

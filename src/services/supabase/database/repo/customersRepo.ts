@@ -71,6 +71,26 @@ export const createCustomerRepository = (client: BasePharmacySupabaseClient) => 
 
     return data as Customer
   },
+  async createBatchCustomers(params: CustomerInsert[]): Promise<Customer[]> {
+    const rows = params.map((p) => ({
+      tenant_id: p.tenant_id,
+      name: p.name,
+      phone: p.phone ?? null,
+      address: p.address ?? null,
+      description: p.description ?? null,
+    }))
+
+    const { data, error } = await client
+      .from('customers')
+      .insert(rows)
+      .select()
+
+    if (error) {
+      throw error
+    }
+
+    return data as Customer[]
+  },
   async deleteCustomer(customerId: string): Promise<void> {
     const { error } = await client.from('customers').delete().eq('id', customerId)
 

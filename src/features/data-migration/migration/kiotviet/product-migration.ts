@@ -9,8 +9,8 @@ import type {
   ProductUnitInsert,
 } from '@/services/supabase/database/repo/productsRepo'
 import type { StockAdjustmentInsert } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
-import type { ProcessLog } from './types'
-import { parseCSV, readFileAsText } from './csv-parser'
+import type { ProcessLog } from '../../utils/types'
+import { parseFile } from '../../utils/file-parser'
 
 function parseKiotVietNumber(value: string): number {
   if (!value) return 0
@@ -39,8 +39,7 @@ export async function migrateProducts(
 ): Promise<{ success: number; failed: number }> {
   addLog({ message: 'Đang đọc file CSV sản phẩm...', type: 'info' })
 
-  const content = await readFileAsText(file)
-  const rows = parseCSV(content)
+  const rows = await parseFile(file)
 
   if (rows.length === 0) {
     addLog({ message: 'File CSV không có dữ liệu', type: 'error' })

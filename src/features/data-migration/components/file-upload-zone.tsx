@@ -2,6 +2,7 @@ import { useRef } from 'react'
 import { FileSpreadsheet, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { FileUploadState } from '../utils/types'
+import { isSupportedFile } from '../utils/file-parser'
 
 export function FileUploadZone({
   label,
@@ -19,7 +20,7 @@ export function FileUploadZone({
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault()
     const file = e.dataTransfer.files[0]
-    if (file && file.name.endsWith('.csv')) {
+    if (file && isSupportedFile(file.name)) {
       onFileSelect(file)
     }
   }
@@ -66,7 +67,7 @@ export function FileUploadZone({
       </div>
       <div className='text-center'>
         <p className='text-sm font-medium'>
-          Kéo thả file CSV {label} vào đây
+          Kéo thả file CSV/Excel {label} vào đây
         </p>
         <p className='text-xs text-muted-foreground'>
           hoặc nhấn để chọn file từ máy tính
@@ -75,7 +76,7 @@ export function FileUploadZone({
       <input
         ref={inputRef}
         type='file'
-        accept='.csv'
+        accept='.csv,.xlsx,.xls'
         className='hidden'
         onChange={handleChange}
       />

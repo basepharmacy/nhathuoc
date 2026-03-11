@@ -1,13 +1,12 @@
 import type { FileUploadState, ProcessLog } from './types'
-import { parseCSV, readFileAsText } from './csv-parser'
+import { parseFile } from './file-parser'
 
 export function createFileSelectHandler(
   setter: React.Dispatch<React.SetStateAction<FileUploadState>>
 ) {
   return async (file: File) => {
     try {
-      const content = await readFileAsText(file)
-      const rows = parseCSV(content)
+      const rows = await parseFile(file)
       setter({ file, fileName: file.name, rowCount: rows.length })
     } catch {
       setter({ file, fileName: file.name, rowCount: null })
