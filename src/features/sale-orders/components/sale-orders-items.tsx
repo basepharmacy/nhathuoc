@@ -162,10 +162,11 @@ export function SaleOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = item.quantity * item.unitPrice - item.discount
+                  const lineTotal = item.quantity * item.unitPrice
                   const unitOptions = item.product.product_units ?? []
                   const isSelected = index === selectedItemIndex
                   const isEditingPrice = editingPriceItemId === item.id
+                  const originalPrice = unitOptions.find((u) => u.id === item.productUnitId)?.sell_price ?? item.unitPrice
                   return (
                     <TableRow
                       key={item.id}
@@ -210,12 +211,9 @@ export function SaleOrdersItems({
                       </TableCell>
                       <TableCell className='align-middle'>
                         <UnitPriceInput
-                          originalPrice={
-                            unitOptions.find((u) => u.id === item.productUnitId)?.sell_price ??
-                            item.unitPrice
-                          }
+                          originalPrice={originalPrice}
                           value={item.unitPrice}
-                          onChange={(price) => onUpdateItem(item.id, { unitPrice: price })}
+                          onChange={(price) => onUpdateItem(item.id, { unitPrice: price, discount: Math.max(0, originalPrice - price) })}
                           forceOpen={isEditingPrice}
                           onOpenChange={(open) => {
                             if (!open && isEditingPrice) onEditingPriceItemIdChange?.(null)

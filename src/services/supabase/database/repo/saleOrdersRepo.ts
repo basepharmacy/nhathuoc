@@ -245,6 +245,30 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       return (data ?? null) as SaleOrderWithRelations | null
     },
+    async updateSaleOrder(params: {
+      orderId: string
+      order: SaleOrderUpdate
+    }): Promise<SaleOrder> {
+      const { data, error } = await client
+        .from('sale_orders')
+        .update({
+          customer_id: params.order.customer_id ?? null,
+          status: params.order.status,
+          customer_paid_amount: params.order.customer_paid_amount,
+          discount: params.order.discount,
+          total_amount: params.order.total_amount,
+          notes: params.order.notes ?? null,
+        })
+        .eq('id', params.orderId)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      return data as SaleOrder
+    },
     async updateSaleOrderWithItems(params: {
       orderId: string
       tenantId: string

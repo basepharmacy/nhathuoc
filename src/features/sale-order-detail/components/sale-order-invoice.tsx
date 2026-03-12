@@ -18,7 +18,7 @@ type SaleOrderInvoiceProps = {
   paymentMethod: 'CASH' | 'TRANSFER'
   cashReceived?: number
   changeAmount?: number
-  bankAccount: BankAccount | null
+  bankAccount: BankAccount
   notes: string | null
 }
 

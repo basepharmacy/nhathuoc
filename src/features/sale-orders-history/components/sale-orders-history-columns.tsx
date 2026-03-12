@@ -3,17 +3,17 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/long-text'
-import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { type SaleOrderWithRelations, SaleOrderStatus } from '@/services/supabase/'
 import { formatCurrency } from '@/lib/utils'
 import { SaleOrdersHistoryRowActions } from './sale-orders-history-row-actions.tsx'
 
-const orderStatusLabels: Record<SaleOrderWithRelations['status'], string> = {
+const orderStatusLabels: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'Nháp',
   '2_COMPLETE': 'Hoàn tất',
   '9_CANCELLED': 'Đã hủy',
 }
 
-const orderStatusColors: Record<SaleOrderWithRelations['status'], string> = {
+const orderStatusColors: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
   '2_COMPLETE': 'bg-emerald-100/40 text-emerald-900 dark:text-emerald-200 border-emerald-200',
   '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
@@ -79,7 +79,7 @@ export const getSaleOrdersHistoryColumns = (
     {
       id: 'amount_due',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Cần thanh toán' />
+        <DataTableColumnHeader column={column} title='Số tiền' />
       ),
       cell: ({ row }) => {
         const totalAmount = row.original.total_amount ?? 0
@@ -89,19 +89,7 @@ export const getSaleOrdersHistoryColumns = (
           </span>
         )
       },
-      meta: { label: 'Cần thanh toán' },
-    },
-    {
-      accessorKey: 'customer_paid_amount',
-      header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Đã thanh toán' />
-      ),
-      cell: ({ row }) => (
-        <span className='text-sm text-nowrap'>
-          {formatCurrency(row.getValue('customer_paid_amount'))}
-        </span>
-      ),
-      meta: { label: 'Đã thanh toán' },
+      meta: { label: 'Số tiền' },
     },
     {
       accessorKey: 'status',

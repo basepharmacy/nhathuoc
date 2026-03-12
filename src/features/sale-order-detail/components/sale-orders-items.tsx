@@ -141,7 +141,7 @@ export function SaleOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = item.quantity * item.unit_price - item.discount
+                  const lineTotal = item.quantity * item.unit_price
                   return (
                     <TableRow
                       key={item.id}

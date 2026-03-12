@@ -1,8 +1,11 @@
-import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
+import { saleOrdersRepo } from '@/client'
 import { getRouteApi } from '@tanstack/react-router'
 import { useUser } from '@/client/provider'
 import {
+  getBankAccountsQueryOptions,
   getSaleOrderDetailWithRelationsQueryOptions,
 } from '@/client/queries'
 import { Printer } from 'lucide-react'
@@ -14,7 +17,8 @@ import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { SaleOrdersItems } from './components/sale-orders-items'
 import { SaleOrdersMeta } from './components/sale-orders-meta'
 import { SaleOrdersSummary } from './components//sale-orders-summary'
-import { SaleOrderInvoice } from './components//sale-order-invoice'
+import { SaleOrderInvoice } from './components/sale-order-invoice'
+import { BankAccount } from '../bank-accounts/data/schema'
 
 
 const route = getRouteApi('/_authenticated/sale-orders/detail')
@@ -23,38 +27,72 @@ export function SaleOrders() {
   const { orderId } = route.useSearch()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const [bankId, setBankId] = useState<string>('')
+
   const { data: orderDetail, isLoading, isError } = useQuery({
     ...getSaleOrderDetailWithRelationsQueryOptions(tenantId, orderId ?? ''),
     enabled: !!tenantId && !!orderId,
   })
-  // TODO xử lý trường hợp bị lỗi hoặc không tìm thấy đơn hàng
-  if (isError || !orderDetail) {
-    return (
-      <div className='flex items-center justify-center py-10 text-muted-foreground'>
-        Không tìm thấy đơn hàng.
-      </div>
-    )
-  }
 
-  const paymentMethod = orderDetail.customer_paid_amount ? 'CASH' : 'TRANSFER'
-  const changeAmount = orderDetail.customer_paid_amount ? orderDetail.customer_paid_amount - orderDetail.total_amount : undefined
-  const subTotalAmount = orderDetail.total_amount + orderDetail.discount
-  const isCompleted = orderDetail.status === '2_COMPLETE'
+  const { data: bankAccounts = [] } = useQuery({
+    ...getBankAccountsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+  useEffect(() => {
+    if (bankAccounts.length === 0) return
+    const defaultAccount = bankAccounts.find((account) => account.is_default) ?? bankAccounts[0]
+    if (defaultAccount) {
+      setBankId(defaultAccount.id)
+    }
+  }, [bankAccounts])
+
   // ── Print ──────────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
   const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
 
-  const handleConfirmCancelOrder = () => {
-    //TODO: Implement cancel order logic
-    setCancelConfirmOpen(false)
-  }
+  const queryClient = useQueryClient()
+  const cancelMutation = useMutation({
+    mutationFn: async () => {
+      if (!orderDetail) throw new Error('Không tìm thấy đơn hàng.')
+      return saleOrdersRepo.updateSaleOrder({
+        orderId: orderDetail.id,
+        order: {
+          status: '9_CANCELLED',
+        },
+      })
+    },
+    onSuccess: () => {
+      toast.success('Huỷ đơn hàng thành công')
+      queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail-with-relations', orderId] })
+      setCancelConfirmOpen(false)
+    },
+    onError: (error) => {
+      toast.error('Huỷ đơn hàng thất bại', {
+        description: error.message,
+      })
+    },
+  })
 
+  if (isError) toast.error('Đã xảy ra lỗi khi tải thông tin đơn hàng.')
+
+  const handleConfirmCancelOrder = () => {
+    cancelMutation.mutate()
+  }
 
   // ── Render ──────────────────────────────────────────────────
   return (
     <>
       <Header fixed>
         <div className='flex w-full items-center gap-2'>
+          <div className='flex flex-wrap items-center gap-3'>
+            <h2 className='text-2xl font-bold tracking-tight'>Thông tin đơn hàng</h2>
+            {orderDetail?.status === '2_COMPLETE' && (
+              <p className='text-sm text-muted-foreground'>
+                Bạn có thể chỉnh sửa hoặc huỷ đơn hàng
+              </p>
+            )}
+          </div>
           <Button
             type='button'
             variant='outline'
@@ -69,7 +107,7 @@ export function SaleOrders() {
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        {isLoading ? (
+        {(isLoading || !orderDetail) ? (
           <div className='flex items-center justify-center py-10 text-muted-foreground'>
             Đang tải...
           </div>
@@ -88,17 +126,12 @@ export function SaleOrders() {
             </div>
 
             <SaleOrdersSummary
-              subTotalAmmount={subTotalAmount}
-              totalAmmount={orderDetail.total_amount}
-              orderDiscount={orderDetail.discount}
-              paymentMethod={paymentMethod}
-              customerPaidAmmount={orderDetail.customer_paid_amount}
-              changeAmount={changeAmount}
-              customerName={orderDetail.customer?.name ?? 'Khách lẻ'}
-              isCompleted={isCompleted}
+              bankId={bankId}
+              setBankId={setBankId}
+              bankAccounts={bankAccounts}
+              order={orderDetail}
               onCancelOrder={() => setCancelConfirmOpen(true)}
-              notes={orderDetail.notes ?? ''}
-              isSubmitting={false} //TODO: handle submitting state when cancel order
+              isSubmitting={cancelMutation.isPending}
             />
           </div>
         )}
@@ -119,24 +152,27 @@ export function SaleOrders() {
         open={printOpen}
         onOpenChange={setPrintOpen}
         title='Xem trước hoá đơn'
-        documentTitle={orderDetail.sale_order_code}
+        documentTitle={orderDetail?.sale_order_code}
       >
-        <SaleOrderInvoice
-          orderCode={orderDetail.sale_order_code}
-          storeName={orderDetail.location?.name ?? null}
-          storeAddress={orderDetail.location?.address ?? null}
-          storePhone={orderDetail.location?.phone ?? null}
-          items={orderDetail.items}
-          subtotal={subTotalAmount}
-          total={orderDetail.total_amount}
-          orderDiscount={orderDetail.discount}
-          customerName={orderDetail.customer?.name ?? 'Khách lẻ'}
-          paymentMethod={paymentMethod}
-          cashReceived={orderDetail.customer_paid_amount}
-          changeAmount={changeAmount}
-          bankAccount={null} // TODO get default bank account of the store for transfer payment method
-          notes={orderDetail.notes}
-        />
+        {(isLoading || !orderDetail) ? (
+          <div className='flex items-center justify-center py-10 text-muted-foreground'>Đang tải...</div>
+        ) : (
+          <SaleOrderInvoice
+            orderCode={orderDetail.sale_order_code}
+            storeName={orderDetail.location?.name ?? null}
+            storeAddress={orderDetail.location?.address ?? null}
+            storePhone={orderDetail.location?.phone ?? null}
+            items={orderDetail.items}
+            subtotal={orderDetail.total_amount + orderDetail.discount}
+            total={orderDetail.total_amount}
+            orderDiscount={orderDetail.discount}
+            customerName={orderDetail.customer?.name ?? 'Khách lẻ'}
+            paymentMethod={orderDetail.customer_paid_amount ? 'CASH' : 'TRANSFER'}
+            cashReceived={orderDetail.customer_paid_amount}
+            changeAmount={Math.max((orderDetail.customer_paid_amount ?? 0) - orderDetail.total_amount, 0)}
+            bankAccount={bankAccounts.find((account) => account.id === bankId) as BankAccount}
+            notes={orderDetail.notes}
+          />)}
       </PrintPreviewDialog>
     </>
   )
