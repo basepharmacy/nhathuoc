@@ -5,39 +5,40 @@ import { formatCurrency } from '@/lib/utils'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { type SaleOrderItem } from '../data/types'
 import type { BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
+import { useMemo } from 'react'
+import { Location } from '@/services/supabase/'
 
 type SaleOrderInvoiceProps = {
   orderCode: string
-  storeName?: string
-  storeAddress?: string
-  storePhone?: string
+  location: Location | null
   items: SaleOrderItem[]
-  totals: { subtotal: number; total: number }
+  subtotal: number
   orderDiscount: number
   customerName?: string
   paymentMethod: 'CASH' | 'TRANSFER'
   cashReceived?: number
-  changeAmount?: number
   bankAccount?: BankAccount | null
   notes?: string
 }
 
 export function SaleOrderInvoice({
   orderCode,
-  storeName,
-  storeAddress,
-  storePhone,
+  location,
   items,
-  totals,
+  subtotal,
   orderDiscount,
   customerName,
   paymentMethod,
   cashReceived,
-  changeAmount,
   bankAccount,
   notes,
 }: SaleOrderInvoiceProps) {
   const now = format(new Date(), 'dd/MM/yyyy HH:mm', { locale: vi })
+  const total = useMemo(
+    () => Math.max(0, subtotal - orderDiscount),
+    [subtotal, orderDiscount]
+  )
+  const changeAmount = Math.max(0, (cashReceived ?? 0) - total)
 
   return (
     <div
@@ -46,9 +47,9 @@ export function SaleOrderInvoice({
     >
       {/* Header */}
       <div className='mb-3 text-center'>
-        {storeName && <h1 className='text-sm font-bold uppercase'>{storeName}</h1>}
-        {storeAddress && <p className='text-[10px] text-gray-600'>{storeAddress}</p>}
-        {storePhone && <p className='text-[10px] text-gray-600'>DT: {storePhone}</p>}
+        {location?.name && <h1 className='text-sm font-bold uppercase'>{location.name}</h1>}
+        {location?.address && <p className='text-[10px] text-gray-600'>{location.address}</p>}
+        {location?.phone && <p className='text-[10px] text-gray-600'>DT: {location.phone}</p>}
         <h2 className='mt-2 text-base font-bold'>HOA DON BAN HANG</h2>
         <p className='text-[11px]'>{orderCode}</p>
         <div className='mt-1 flex justify-center'>
@@ -124,7 +125,7 @@ export function SaleOrderInvoice({
       <div className='mt-2 space-y-1 text-[11px]'>
         <div className='flex justify-between'>
           <span>Tong tien:</span>
-          <span>{formatCurrency(totals.subtotal)}d</span>
+          <span>{formatCurrency(subtotal)}d</span>
         </div>
         <div className='flex justify-between'>
           <span>Chiet khau:</span>
@@ -132,7 +133,7 @@ export function SaleOrderInvoice({
         </div>
         <div className='flex justify-between font-bold text-sm'>
           <span>THANH TOAN:</span>
-          <span>{formatCurrency(totals.total)}d</span>
+          <span>{formatCurrency(total)}d</span>
         </div>
       </div>
 
@@ -174,7 +175,7 @@ export function SaleOrderInvoice({
             bankBin={bankAccount.bank_bin}
             accountNumber={bankAccount.account_number}
             accountHolder={bankAccount.account_holder}
-            amount={totals.total}
+            amount={total}
             note={orderCode}
             size={180}
             className='mt-1 border-none'

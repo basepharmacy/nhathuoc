@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useUser } from '@/client/provider'
@@ -15,7 +15,9 @@ import { Tabs, TabsContent } from '@/components/ui/tabs'
 import { SaleOrderTabContent } from './components/sale-order-tab-content'
 import { type Tab } from './components/sale-order-tab-controls'
 import { toast } from 'sonner'
-import { InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { createNewSaleOrder } from './data/types'
+import { mapOrderToSaleOrderInCreate } from './data/sale-order-helper'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
 const EMPTY_BATCHES: InventoryBatch[] = []
@@ -36,8 +38,8 @@ export function SaleOrders() {
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
 
   // ── Tab state ───────────────────────────────────────────────
-  // TODO sửa lại thành tạo tab sau khi 
   const initialTabRef = useRef<Tab | null>(null)
+  // Chuyển khởi tạo tab sau khi đã loading xong dữ liệu order nếu đang ở chế độ
   if (!initialTabRef.current) {
     initialTabRef.current = createTab()
   }
@@ -55,7 +57,7 @@ export function SaleOrders() {
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
   }, [tabs])
-
+  //TODO: Bỏ update ngược tab label khi order code thay đổi, vì order code sẽ không thay đổi
   const updateTabLabel = useCallback((tabId: string, label: string) => {
     setTabs((prev) =>
       prev.map((t) => (t.id === tabId ? { ...t, label } : t))
@@ -82,11 +84,9 @@ export function SaleOrders() {
     (tabId: string) => {
       setTabs((prev) => {
         if (prev.length <= 1) {
-          // Last tab → clear orderId so the tab resets to a new order
           navigate({ search: {} })
           return prev
         }
-        // Multiple tabs → close the completed tab
         const idx = prev.findIndex((t) => t.id === tabId)
         const next = prev.filter((t) => t.id !== tabId)
         if (tabId === activeTabId) {
@@ -139,7 +139,7 @@ export function SaleOrders() {
   })
 
   const {
-    data: orderDetail,
+    data: orderWithItems,
     isLoading: isOrderDetailLoading,
     isError: isOrderDetailError
   } = useQuery({
@@ -156,11 +156,19 @@ export function SaleOrders() {
     enabled: !!tenantId,
   })
 
-  const isLoading = isProductsLoading || isCustomersLoading || isBankAccountsLoading || isLocationsLoading || isOrderDetailLoading || isInventoryBatchesLoading
-  const isError = isProductsError || isCustomersError || isBankAccountsError || isLocationsError || isOrderDetailError || isInventoryBatchesError
+  const isLoading = isProductsLoading || isCustomersLoading || isLocationsLoading || isOrderDetailLoading || isInventoryBatchesLoading
+  const isError = isProductsError || isCustomersError || isLocationsError || isOrderDetailError || isInventoryBatchesError
+
+  // TODO: xử lý lỗi cho trường hợp không get được bank accounts
+  // Có thể vẫn cho phép tạo đơn hàng nhưng sẽ không hiển thị được phần chọn tài khoản ngân hàng
+
+  // ── Build SaleOrderInCreate for edit mode ─────────────────
+  const editOrderData = useMemo(() => {
+    if (!orderId || !orderWithItems) return undefined
+    return mapOrderToSaleOrderInCreate(orderWithItems, products, inventoryBatches, sidebarLocationId)
+  }, [orderId, orderWithItems, products, inventoryBatches, sidebarLocationId])
 
   if (isError) {
-    // TODO phân biệt lỗi để hiển thị thông báo chính xác hơn
     return (
       <div className='flex items-center justify-center py-10 text-muted-foreground'>
         Đã có lỗi xảy ra. Vui lòng thử lại.
@@ -179,35 +187,41 @@ export function SaleOrders() {
   // ── Render ──────────────────────────────────────────────────
   return (
     <Tabs value={activeTabId} onValueChange={setActiveTabId} className='flex flex-1 flex-col'>
-      {tabs.map((tab) => (
-        <TabsContent
-          key={tab.id}
-          value={tab.id}
-          className='flex flex-1 flex-col data-[state=inactive]:hidden'
-          forceMount
-        >
-          <SaleOrderTabContent
-            orderId={tab === tabs[0] ? orderId : undefined}
-            tenantId={tenantId}
-            userId={userId}
-            userLocationId={sidebarLocationId}
-            products={activeProducts}
-            customers={customers}
-            bankAccounts={bankAccounts}
-            locations={locations}
-            onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
-            onOrderCompleted={() => handleOrderSaved(tab.id)}
-            onAddTab={addTab}
-            onCloseTab={() => closeTab(tab.id)}
-            onCloseTabById={closeTab}
-            tabCount={tabs.length}
-            isActive={tab.id === activeTabId}
-            tabs={tabs}
-            orderDetail={orderDetail}
-            inventoryBatches={inventoryBatches}
-          />
-        </TabsContent>
-      ))}
+      {tabs.map((tab) => {
+        const isFirstTab = tab === tabs[0]
+        const initialData = isFirstTab && editOrderData
+          ? editOrderData
+          : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')
+        const tabKey = isFirstTab && orderId ? `edit-${orderId}` : tab.id
+
+        return (
+          <TabsContent
+            key={tabKey}
+            value={tab.id}
+            className='flex flex-1 flex-col data-[state=inactive]:hidden'
+            forceMount
+          >
+            <SaleOrderTabContent
+              initialData={initialData}
+              tenantId={tenantId}
+              userId={userId}
+              products={activeProducts}
+              customers={customers}
+              bankAccounts={bankAccounts}
+              locations={locations}
+              inventoryBatches={inventoryBatches}
+              onOrderCompleted={() => handleOrderSaved(tab.id)}
+              onAddTab={addTab}
+              onCloseTab={() => closeTab(tab.id)}
+              onCloseTabById={closeTab}
+              tabCount={tabs.length}
+              isActive={tab.id === activeTabId}
+              tabs={tabs}
+              onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
+            />
+          </TabsContent>
+        )
+      })}
     </Tabs>
   )
 }

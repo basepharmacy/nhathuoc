@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { saleOrdersRepo } from '@/client'
@@ -6,7 +6,8 @@ import { type ProductWithUnits } from '@/services/supabase/database/repo/product
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { type SaleOrder } from '@/services/supabase'
 import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
-import { type PaymentMethod, type SaleOrderItem } from '../data/types'
+import { type PaymentMethod, type SaleOrderItem, type SaleOrderInCreate } from '../data/types'
+import { generateOrderCode } from '../data/sale-order-helper'
 import { getDefaultUnit } from '../data/inventory-helpers'
 import {
   allocateQuantityToBatches,
@@ -19,109 +20,57 @@ import { useOnlineStatus } from '@/hooks/use-online-status'
 type UseSaleOrderParams = {
   tenantId: string
   userId: string
-  orderId?: string
-  userLocationId: string | null
-  orderDetail?: {
-    id: string
-    sale_order_code: string | null
-    status: SaleOrder['status']
-    customer_id: string | null
-    discount: number | null
-    customer_paid_amount: number | null
-    notes: string | null
-    location_id: string | null
-  }
+  initialData: SaleOrderInCreate
+  inventoryBatches: InventoryBatch[]
   onComplete?: (createdOrderId: string) => void
 }
 
 export function useSaleOrder({
   tenantId,
   userId,
-  orderId,
-  userLocationId,
-  orderDetail,
+  initialData,
+  inventoryBatches,
   onComplete,
 }: UseSaleOrderParams) {
   const queryClient = useQueryClient()
   const { isOnline } = useOnlineStatus()
-  const isEdit = Boolean(orderId)
+  const isEdit = Boolean(initialData.id)
 
-  // ── Form state ──────────────────────────────────────────────
-  const [items, setItems] = useState<SaleOrderItem[]>([])
-  const [customerId, setCustomerId] = useState('')
-  const [orderDiscount, setOrderDiscount] = useState(0)
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
-  const [paidAmount, setPaidAmount] = useState(0)
-  const [cashReceived, setCashReceived] = useState(0)
-  const [bankAccountId, setBankAccountId] = useState('')
-  const [notes, setNotes] = useState('')
-  const [hasInitialized, setHasInitialized] = useState(false)
+  // ── Form state (initialized from initialData) ─────────────
+  const [items, setItems] = useState<SaleOrderItem[]>(initialData.items)
+  const [customerId, setCustomerId] = useState(initialData.customerId)
+  const [orderDiscount, setOrderDiscount] = useState(initialData.orderDiscount)
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(initialData.paymentMethod)
+  const [cashReceived, setCashReceived] = useState(initialData.paidAmount)
+  const [bankAccountId, setBankAccountId] = useState(initialData.bankAccountId ?? '')
+  const [notes, setNotes] = useState(initialData.notes ?? '')
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId)
-  const [inventoryBatches, setInventoryBatches] = useState<InventoryBatch[]>([])
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(initialData.locationId || null)
+  const [orderCode, setOrderCode] = useState(initialData.orderCode)
 
   // ── Derived / computed ──────────────────────────────────────
-  const generatedOrderCode = useMemo(() => {
-    const timestamp = Date.now()
-    const encoded = timestamp.toString(36).toUpperCase() // Convert to base36 for shorter string
-    const random = Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, '0')
-    return `${encoded}S${random}`
-  }, [])
-
-  const orderCode = isEdit ? (orderDetail?.sale_order_code ?? '') : generatedOrderCode
-
   const productIds = useMemo(
     () => Array.from(new Set(items.map((item) => item.product.id))).sort(),
     [items]
   )
 
   const batchesByProductId = useMemo(() => {
-    return inventoryBatches.reduce<Record<string, InventoryBatch[]>>((acc, batch) => {
+    const inventoryBatchesByLocation = inventoryBatches.filter((batch) => batch.location_id === selectedLocationId)
+    return inventoryBatchesByLocation.reduce<Record<string, InventoryBatch[]>>((acc, batch) => {
       if (!acc[batch.product_id]) acc[batch.product_id] = []
       acc[batch.product_id].push(batch)
       return acc
     }, {})
-  }, [inventoryBatches])
+  }, [inventoryBatches, selectedLocationId])
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
     [items]
   )
 
-  const prevSubtotalRef = useRef(subtotal)
-  useEffect(() => {
-    if (prevSubtotalRef.current !== subtotal) {
-      setOrderDiscount(0)
-    }
-    prevSubtotalRef.current = subtotal
-  }, [subtotal])
-
-  const totals = useMemo(
-    () => ({ subtotal, total: Math.max(0, subtotal - orderDiscount) }),
+  const total = useMemo(
+    () => Math.max(0, subtotal - orderDiscount),
     [subtotal, orderDiscount]
-  )
-
-  const changeAmount = useMemo(() => {
-    if (paymentMethod !== 'CASH') return 0
-    return Math.max(0, cashReceived - totals.total)
-  }, [cashReceived, paymentMethod, totals.total])
-
-  const normalizedPaidAmount = useMemo(() => {
-    if (paymentMethod === 'CASH') return Math.min(totals.total, cashReceived)
-    return Math.min(totals.total, paidAmount)
-  }, [cashReceived, paidAmount, paymentMethod, totals.total])
-
-  useEffect(() => {
-    if (paymentMethod !== 'TRANSFER') return
-    setPaidAmount(totals.total)
-    setCashReceived(0)
-  }, [paymentMethod, totals.total])
-
-  const debtAmount = useMemo(
-    () => Math.max(0, totals.total - normalizedPaidAmount),
-    [normalizedPaidAmount, totals.total]
   )
 
   // ── Validation ──────────────────────────────────────────────
@@ -163,15 +112,14 @@ export function useSaleOrder({
           location_id: selectedLocationId,
           issued_at: new Date().toISOString(),
           status,
-          customer_paid_amount: normalizedPaidAmount,
+          customer_paid_amount: paymentMethod === 'CASH' ? cashReceived : 0,
           discount: orderDiscount,
-          total_amount: totals.total,
+          total_amount: total,
           notes: notes.trim().length > 0 ? notes.trim() : null,
         },
         items: buildOrderItems(),
       }
 
-      // If offline, queue mutation immediately instead of attempting Supabase call
       if (!isOnline) {
         await addOfflineMutation({
           type: 'create-sale-order',
@@ -220,18 +168,18 @@ export function useSaleOrder({
 
   const updateMutation = useMutation({
     mutationFn: async (status: SaleOrder['status']) => {
-      if (!orderId || !orderDetail) throw new Error('Không tìm thấy đơn bán hàng.')
+      if (!initialData.id) throw new Error('Không tìm thấy đơn bán hàng.')
       validateOrder()
 
       await saleOrdersRepo.updateSaleOrderWithItems({
-        orderId: orderDetail.id,
+        orderId: initialData.id,
         tenantId,
         order: {
           customer_id: customerId || null,
           status,
-          customer_paid_amount: normalizedPaidAmount,
+          customer_paid_amount: paymentMethod === 'CASH' ? cashReceived : 0,
           discount: orderDiscount,
-          total_amount: totals.total,
+          total_amount: total,
           location_id: selectedLocationId,
           notes: notes.trim().length > 0 ? notes.trim() : null,
         },
@@ -239,9 +187,9 @@ export function useSaleOrder({
       })
     },
     onSuccess: (_data, status) => {
-      if (orderId) {
+      if (initialData.id) {
         queryClient.invalidateQueries({
-          queryKey: ['sale-orders', tenantId, 'detail', orderId],
+          queryKey: ['sale-orders', tenantId, 'detail', initialData.id],
         })
       }
 
@@ -255,14 +203,13 @@ export function useSaleOrder({
       }
 
       toast.success('Đã cập nhật đơn bán hàng.')
-      onComplete?.(orderId ?? '')
+      onComplete?.(initialData.id ?? '')
     },
     onError: handleMutationError,
   })
 
   // ── Item actions ────────────────────────────────────────────
   const addProduct = (product: ProductWithUnits) => {
-    if (!tenantId) return
     if (!selectedLocationId) {
       toast.error('Bạn cần phải chọn cửa hàng.')
       return
@@ -273,7 +220,7 @@ export function useSaleOrder({
     const batches = batchesByProductId[product.id]
 
     if (!batches || batches.length === 0) {
-      toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
+      toast.error(`Sản phẩm ${product.product_name} không có lô tồn kho phù hợp.`)
       return
     }
 
@@ -312,12 +259,10 @@ export function useSaleOrder({
   }
 
   const updateItem = (itemId: string, next: Partial<SaleOrderItem>) => {
-
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, ...next } : item)))
   }
 
   const handleQuantityChange = (itemId: string, nextQuantity: number) => {
-
     let toastMessage: string | null = null
     setItems((prev) => {
       const target = prev.find((item) => item.id === itemId)
@@ -350,12 +295,10 @@ export function useSaleOrder({
   }
 
   const removeItem = (itemId: string) => {
-
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
   const handleUnitChange = (itemId: string, newUnitId: string) => {
-
     let toastMessage: string | null = null
     setItems((prev) => {
       const target = prev.find((item) => item.id === itemId)
@@ -379,7 +322,6 @@ export function useSaleOrder({
         return prev
       }
 
-      // Cap current quantity to max available in the new unit
       const cappedQuantity = Math.min(target.quantity, maxInNewUnit)
 
       if (cappedQuantity < target.quantity) {
@@ -414,52 +356,6 @@ export function useSaleOrder({
     setItems([])
   }, [])
 
-  const handlePaymentMethodChange = useCallback(
-    (value: PaymentMethod) => {
-      setPaymentMethod(value)
-      if (value === 'TRANSFER') {
-        setPaidAmount(totals.total)
-        setCashReceived(0)
-      }
-    },
-    [totals.total]
-  )
-
-  // ── Initialize from existing order ──────────────────────────
-  const initializeFromOrder = useCallback((params: {
-    mappedItems: SaleOrderItem[]
-    status: SaleOrder['status']
-    customerId: string
-    discount: number
-    paidAmount: number
-    notes: string
-    locationId: string | null
-  }) => {
-    setItems(params.mappedItems)
-    setCustomerId(params.customerId)
-    setOrderDiscount(params.discount)
-    setPaidAmount(params.paidAmount)
-    setCashReceived(params.paidAmount)
-    setNotes(params.notes)
-    setSelectedLocationId(params.locationId)
-    setPaymentMethod(
-      params.status === '2_COMPLETE'
-        ? params.paidAmount > 0
-          ? 'CASH'
-          : 'TRANSFER'
-        : 'CASH'
-    )
-    // Sync subtotal ref so the discount reset effect doesn't fire on init
-    const initSubtotal = params.mappedItems.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
-      0
-    )
-    prevSubtotalRef.current = initSubtotal
-    setHasInitialized(true)
-  }, [])
-
-  const resetBatchCache = useCallback(() => { }, [])
-
   // ── Derived flags ───────────────────────────────────────────
   const isSubmitting = createMutation.isPending || updateMutation.isPending
 
@@ -474,11 +370,10 @@ export function useSaleOrder({
     setCustomerId('')
     setOrderDiscount(0)
     setPaymentMethod('CASH')
-    setPaidAmount(0)
     setCashReceived(0)
     setNotes('')
-    setHasInitialized(false)
-    prevSubtotalRef.current = 0
+    setOrderCode(generateOrderCode())
+    //prevSubtotalRef.current = 0
   }, [])
 
   return {
@@ -488,7 +383,6 @@ export function useSaleOrder({
     orderCode,
     isEdit,
     isSubmitting,
-    hasInitialized,
     productIds,
     // Form state + setters
     customerId,
@@ -498,9 +392,7 @@ export function useSaleOrder({
     orderDiscount,
     setOrderDiscount,
     paymentMethod,
-    setPaymentMethod: handlePaymentMethodChange,
-    paidAmount,
-    setPaidAmount,
+    setPaymentMethod,
     cashReceived,
     setCashReceived,
     bankAccountId,
@@ -510,9 +402,7 @@ export function useSaleOrder({
     isAddCustomerOpen,
     setIsAddCustomerOpen,
     // Computed
-    totals,
-    changeAmount,
-    debtAmount,
+    subtotal,
     // Actions
     addProduct,
     updateItem,
@@ -523,8 +413,5 @@ export function useSaleOrder({
     saveDraft,
     submit,
     resetOrder,
-    initializeFromOrder,
-    resetBatchCache,
-    setInventoryBatches,
   }
 }

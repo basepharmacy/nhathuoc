@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
@@ -27,17 +27,13 @@ type SaleOrdersSummaryProps = {
   customerId: string
   onCustomerChange: (customerId: string) => void
   onAddCustomer: () => void
-  totals: {
-    subtotal: number
-    total: number
-  }
+  subtotal: number
   orderDiscount: number
   onOrderDiscountChange: (value: number) => void
   paymentMethod: PaymentMethod
   onPaymentMethodChange: (value: PaymentMethod) => void
   cashReceived: number
   onCashReceivedChange: (value: number) => void
-  changeAmount: number
   bankAccounts: BankAccount[]
   bankAccountId: string
   onBankAccountChange: (value: string) => void
@@ -71,14 +67,13 @@ export function SaleOrdersSummary({
   customerId,
   onCustomerChange,
   onAddCustomer,
-  totals,
+  subtotal,
   orderDiscount,
   onOrderDiscountChange,
   paymentMethod,
   onPaymentMethodChange,
   cashReceived,
   onCashReceivedChange,
-  changeAmount,
   bankAccounts,
   bankAccountId,
   onBankAccountChange,
@@ -89,6 +84,26 @@ export function SaleOrdersSummary({
   isSubmitting,
 }: SaleOrdersSummaryProps) {
   const [cashPopoverOpen, setCashPopoverOpen] = useState(false)
+
+  const total = useMemo(
+    () => Math.max(0, subtotal - orderDiscount),
+    [subtotal, orderDiscount]
+  )
+  const changeAmount = Math.max(0, cashReceived - subtotal)
+  // tự động set lại orderDiscount về 0 nếu subtotal thay đổi và orderDiscount đang lớn hơn subtotal mới
+  useEffect(() => {
+    if (orderDiscount > subtotal) {
+      onOrderDiscountChange(0)
+    }
+  }, [subtotal])
+
+  useEffect(() => {
+    if (bankAccounts.length === 0) return
+    const defaultAccount = bankAccounts.find((account) => account.is_default) ?? bankAccounts[0]
+    if (defaultAccount) {
+      onBankAccountChange(defaultAccount.id)
+    }
+  }, [bankAccounts])
 
   return (
     <div className='space-y-4 rounded-xl border bg-card p-4 shadow-sm h-full'>
@@ -105,13 +120,13 @@ export function SaleOrdersSummary({
         <div className='flex items-center justify-between text-muted-foreground'>
           <span>Tổng tiền</span>
           <span className='font-semibold text-foreground'>
-            {formatCurrency(totals.subtotal)}đ
+            {formatCurrency(subtotal)}đ
           </span>
         </div>
         <div className='flex items-center justify-between text-muted-foreground'>
           <span>Chiết khấu</span>
           <DiscountInput
-            subtotal={totals.subtotal}
+            subtotal={subtotal}
             value={orderDiscount}
             onChange={onOrderDiscountChange}
           />
@@ -123,7 +138,7 @@ export function SaleOrdersSummary({
       <div className='space-y-2 text-center'>
         <div className='text-sm text-muted-foreground'>Cần thanh toán</div>
         <div className='text-3xl font-bold text-foreground'>
-          {formatCurrency(totals.total)}đ
+          {formatCurrency(total)}đ
         </div>
       </div>
 
@@ -169,7 +184,7 @@ export function SaleOrdersSummary({
                   onOpenAutoFocus={(e) => e.preventDefault()}
                 >
                   <div className='flex flex-wrap gap-1.5'>
-                    {getCashPresets(totals.total).map((preset) => (
+                    {getCashPresets(total).map((preset) => (
                       <Button
                         key={preset}
                         type='button'

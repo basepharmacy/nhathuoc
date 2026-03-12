@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState, useRef } from 'react'
 import { Printer } from 'lucide-react'
-import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch, SaleOrderWithItems } from '@/services/supabase/'
+import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch } from '@/services/supabase/'
 import { SaleOrderTabControls, type Tab } from './sale-order-tab-controls'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -9,7 +9,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
-import { type SaleOrderItem } from '../data/types'
+import { type SaleOrderInCreate } from '../data/types'
 import { SaleOrdersItems } from './sale-orders-items'
 import { SaleOrdersMeta } from './sale-orders-meta'
 import { SaleOrdersSearch } from './sale-orders-search'
@@ -20,138 +20,60 @@ import { useSaleOrderKeyboardShortcuts } from '../hooks/use-sale-order-keyboard-
 
 
 type SaleOrderTabContentProps = {
-  orderId?: string
+  initialData: SaleOrderInCreate
   tenantId: string
   userId: string
-  userLocationId: string | null
   products: ProductWithUnits[]
   customers: Customer[]
   bankAccounts: BankAccount[]
   locations: Location[]
   inventoryBatches: InventoryBatch[]
-  orderDetail?: SaleOrderWithItems | null
-  onOrderCodeChange?: (code: string) => void
   onOrderCompleted?: () => void
   onAddTab?: () => void
   onCloseTab?: () => void
   onCloseTabById?: (tabId: string) => void
+  onOrderCodeChange: (code: string) => void
   tabCount?: number
   isActive?: boolean
   tabs?: Tab[]
 }
 
 export function SaleOrderTabContent({
-  orderId,
+  initialData,
   tenantId,
   userId,
-  userLocationId,
   products,
   customers,
   bankAccounts,
   locations,
   inventoryBatches,
-  onOrderCodeChange,
   onOrderCompleted,
   onAddTab,
   onCloseTab,
   onCloseTabById,
+  onOrderCodeChange,
   tabCount = 1,
   isActive = true,
   tabs,
-  orderDetail,
 }: SaleOrderTabContentProps) {
-  // ── Per-tab queries ─────────────────────────────────────────
-
   const order = useSaleOrder({
     tenantId,
     userId,
-    orderId,
-    userLocationId,
-    orderDetail: orderDetail ?? undefined,
+    initialData,
+    inventoryBatches,
     onComplete: onOrderCompleted
       ? () => onOrderCompleted()
       : undefined,
   })
 
+  // ── Effects ─────────────────────────────────────────────────
   const onOrderCodeChangeRef = useRef(onOrderCodeChange)
   onOrderCodeChangeRef.current = onOrderCodeChange
-
   useEffect(() => {
     if (order.orderCode) {
       onOrderCodeChangeRef.current?.(order.orderCode)
     }
   }, [order.orderCode])
-
-  // Reset order when navigating back from edit mode (orderId removed)
-  const prevOrderIdRef = useRef(orderId)
-  useEffect(() => {
-    if (prevOrderIdRef.current && !orderId) {
-      order.resetOrder()
-    }
-    prevOrderIdRef.current = orderId
-  }, [orderId, order.resetOrder])
-
-  // ── Effects ─────────────────────────────────────────────────
-  useEffect(() => {
-    const inventoryBatchesByLocation = inventoryBatches.filter((batch) => {
-      if (!order.selectedLocationId) return true
-      return batch.location_id === order.selectedLocationId
-    })
-    order.setInventoryBatches(inventoryBatchesByLocation)
-  }, [inventoryBatches, order.selectedLocationId])
-
-  useEffect(() => {
-    order.resetBatchCache()
-  }, [order.selectedLocationId])
-
-  useEffect(() => {
-    if (order.selectedLocationId || locations.length === 0) return
-    order.setSelectedLocationId(userLocationId ?? locations[0].id)
-  }, [order.selectedLocationId, locations, userLocationId, order.setSelectedLocationId])
-
-  useEffect(() => {
-    if (order.bankAccountId || bankAccounts.length === 0) return
-    const defaultAccount = bankAccounts.find((account) => account.is_default) ?? bankAccounts[0]
-    if (defaultAccount) {
-      order.setBankAccountId(defaultAccount.id)
-    }
-  }, [bankAccounts, order.bankAccountId, order.setBankAccountId])
-
-  useEffect(() => {
-    if (!orderDetail || order.hasInitialized || products.length === 0) return
-
-    const productLookup = new Map(products.map((p) => [p.id, p]))
-    const batchById = new Map(inventoryBatches.map((b) => [b.id, b]))
-
-    const mappedItems = (orderDetail.items ?? [])
-      .map((item) => {
-        const product = productLookup.get(item.product_id)
-        if (!product) return null
-        const batch = item.batch_id ? batchById.get(item.batch_id) : null
-        return {
-          id: String(item.id),
-          product,
-          productUnitId: item.product_unit_id ?? null,
-          quantity: item.quantity ?? 0,
-          unitPrice: item.unit_price ?? 0,
-          discount: item.discount ?? 0,
-          batchId: item.batch_id ?? null,
-          batchCode: batch?.batch_code ?? '',
-          expiryDate: batch?.expiry_date ?? '',
-        }
-      })
-      .filter((item): item is SaleOrderItem => Boolean(item))
-
-    order.initializeFromOrder({
-      mappedItems,
-      status: orderDetail.status,
-      customerId: orderDetail.customer_id ?? '',
-      discount: orderDetail.discount ?? 0,
-      paidAmount: orderDetail.customer_paid_amount ?? 0,
-      notes: orderDetail.notes ?? '',
-      locationId: orderDetail.location_id ?? userLocationId,
-    })
-  }, [orderDetail, order.hasInitialized, products, inventoryBatches, tenantId, userLocationId, orderId])
 
   // ── Dialogs ───────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
@@ -229,8 +151,6 @@ export function SaleOrderTabContent({
   }, [customers, order.customerId])
 
   // ── Render ──────────────────────────────────────────────────
-  const isLoadingEditData = Boolean(orderId) && (!orderDetail || !order.hasInitialized)
-
   return (
     <>
       <Header fixed>
@@ -244,7 +164,7 @@ export function SaleOrderTabContent({
           {tabs && onCloseTabById && onAddTab && (
             <SaleOrderTabControls
               tabs={tabs}
-              orderId={orderId}
+              orderId={initialData.id}
               onCloseTab={onCloseTabById}
               onAddTab={onAddTab}
             />
@@ -263,58 +183,51 @@ export function SaleOrderTabContent({
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
-        {isLoadingEditData ? (
-          <div className='flex items-center justify-center py-10 text-muted-foreground'>
-            Đang tải...
-          </div>
-        ) : (
-          <div className='grid min-h-[calc(100svh-200px)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]'>
-            <div className='flex flex-col gap-4'>
-              <SaleOrdersMeta
-                locations={locations}
-                locationId={order.selectedLocationId ?? ''}
-                onLocationChange={handleLocationChange}
-                orderCode={order.orderCode}
-                status='1_DRAFT'
-              />
+        <div className='grid min-h-[calc(100svh-200px)] gap-4 lg:grid-cols-[minmax(0,1fr)_320px]'>
+          <div className='flex flex-col gap-4'>
+            <SaleOrdersMeta
+              locations={locations}
+              locationId={order.selectedLocationId ?? ''}
+              onLocationChange={handleLocationChange}
+              orderCode={order.orderCode}
+              status='1_DRAFT'
+            />
 
-              <SaleOrdersItems
-                items={order.items}
-                onUpdateItem={order.updateItem}
-                onQuantityChange={order.handleQuantityChange}
-                onUnitChange={order.handleUnitChange}
-                onRemoveItem={order.removeItem}
-                selectedItemIndex={selectedItemIndex}
-                onSelectedItemIndexChange={setSelectedItemIndex}
-                editingPriceItemId={editingPriceItemId}
-                onEditingPriceItemIdChange={setEditingPriceItemId}
-              />
-            </div>
-
-            <SaleOrdersSummary
-              customers={customers}
-              customerId={order.customerId}
-              onCustomerChange={order.setCustomerId}
-              onAddCustomer={() => order.setIsAddCustomerOpen(true)}
-              totals={order.totals}
-              orderDiscount={order.orderDiscount}
-              onOrderDiscountChange={order.setOrderDiscount}
-              paymentMethod={order.paymentMethod}
-              onPaymentMethodChange={order.setPaymentMethod}
-              cashReceived={order.cashReceived}
-              onCashReceivedChange={order.setCashReceived}
-              changeAmount={order.changeAmount}
-              bankAccounts={bankAccounts}
-              bankAccountId={order.bankAccountId}
-              onBankAccountChange={order.setBankAccountId}
-              notes={order.notes}
-              onNotesChange={order.setNotes}
-              onSaveDraft={order.saveDraft}
-              onSubmit={order.submit}
-              isSubmitting={order.isSubmitting}
+            <SaleOrdersItems
+              items={order.items}
+              onUpdateItem={order.updateItem}
+              onQuantityChange={order.handleQuantityChange}
+              onUnitChange={order.handleUnitChange}
+              onRemoveItem={order.removeItem}
+              selectedItemIndex={selectedItemIndex}
+              onSelectedItemIndexChange={setSelectedItemIndex}
+              editingPriceItemId={editingPriceItemId}
+              onEditingPriceItemIdChange={setEditingPriceItemId}
             />
           </div>
-        )}
+
+          <SaleOrdersSummary
+            customers={customers}
+            customerId={order.customerId}
+            onCustomerChange={order.setCustomerId}
+            onAddCustomer={() => order.setIsAddCustomerOpen(true)}
+            subtotal={order.subtotal}
+            orderDiscount={order.orderDiscount}
+            onOrderDiscountChange={order.setOrderDiscount}
+            paymentMethod={order.paymentMethod}
+            onPaymentMethodChange={order.setPaymentMethod}
+            cashReceived={order.cashReceived}
+            onCashReceivedChange={order.setCashReceived}
+            bankAccounts={bankAccounts}
+            bankAccountId={order.bankAccountId}
+            onBankAccountChange={order.setBankAccountId}
+            notes={order.notes}
+            onNotesChange={order.setNotes}
+            onSaveDraft={order.saveDraft}
+            onSubmit={order.submit}
+            isSubmitting={order.isSubmitting}
+          />
+        </div>
       </Main>
 
       <CustomersActionDialog
@@ -352,16 +265,13 @@ export function SaleOrderTabContent({
       >
         <SaleOrderInvoice
           orderCode={order.orderCode}
-          storeName={selectedLocation?.name}
-          storeAddress={selectedLocation?.address ?? undefined}
-          storePhone={selectedLocation?.phone ?? undefined}
+          location={selectedLocation}
           items={order.items}
-          totals={order.totals}
+          subtotal={order.subtotal}
           orderDiscount={order.orderDiscount}
           customerName={customerName}
           paymentMethod={order.paymentMethod}
           cashReceived={order.cashReceived}
-          changeAmount={order.changeAmount}
           bankAccount={selectedBankAccount}
           notes={order.notes}
         />

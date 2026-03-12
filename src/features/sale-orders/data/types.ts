@@ -1,5 +1,5 @@
 import { type ProductWithUnits, SaleOrderStatus } from '@/services/supabase/'
-
+import { generateOrderCode } from '../data/sale-order-helper'
 export type PaymentMethod = 'CASH' | 'TRANSFER'
 
 export type SaleOrderItem = {
@@ -16,7 +16,7 @@ export type SaleOrderItem = {
 }
 
 export type SaleOrderInCreate = {
-  id: string
+  id?: string // trường hợp edit draft sẽ có id, trường hợp tạo mới sẽ không có
   orderCode: string
   customerId: string
   paymentMethod: PaymentMethod
@@ -29,4 +29,21 @@ export type SaleOrderInCreate = {
   notes: string | null
   status: SaleOrderStatus
   items: SaleOrderItem[]
+}
+
+export function createNewSaleOrder(locationId: string): SaleOrderInCreate {
+  return {
+    orderCode: generateOrderCode(),
+    customerId: '',
+    paymentMethod: 'CASH',
+    subTotal: 0,
+    orderDiscount: 0,
+    totalAmount: 0,
+    paidAmount: 0,
+    bankAccountId: null,
+    locationId,
+    notes: null,
+    status: '1_DRAFT',
+    items: [],
+  }
 }

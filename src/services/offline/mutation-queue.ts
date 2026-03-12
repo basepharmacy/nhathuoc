@@ -33,6 +33,7 @@ export async function removeOfflineMutation(id: string): Promise<void> {
   )
 }
 
+// TODO: xử lý lại logic xác định lỗi mạng đối với supabase
 export function isNetworkError(error: unknown): boolean {
   if (error instanceof TypeError && error.message === 'Failed to fetch') {
     return true
