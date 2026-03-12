@@ -16,7 +16,7 @@ import { SaleOrdersSearch } from './sale-orders-search'
 import { SaleOrdersSummary } from './sale-orders-summary'
 import { SaleOrderInvoice } from './sale-order-invoice'
 import { useSaleOrder } from '../hooks/use-sale-order'
-import { useSaleOrderKeyboardShortcuts } from '../hooks/use-sale-order-keyboard-shortcuts'
+import { useSaleOrderKeyboardShortcuts } from '../hooks/use-keyboard-shortcuts'
 
 
 type SaleOrderTabContentProps = {

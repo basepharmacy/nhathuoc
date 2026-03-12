@@ -66,6 +66,15 @@ function UnitPriceInput({
           <Input
             value={formatCurrency(value)}
             onChange={(e) => onChange(normalizeNumber(e.target.value))}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowUp') {
+                e.preventDefault()
+                onChange(value + 1000)
+              } else if (e.key === 'ArrowDown') {
+                e.preventDefault()
+                onChange(Math.max(0, value - 1000))
+              }
+            }}
             onClick={() => !disabled && handleOpenChange(true)}
             className='h-8 w-full rounded-full text-end text-xs'
             inputMode='numeric'
