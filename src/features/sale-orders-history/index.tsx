@@ -20,7 +20,7 @@ import {
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { useLocationContext } from '@/context/location-provider'
-import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { type SaleOrderWithRelations } from '@/services/supabase'
 import { getSaleOrdersHistoryColumns } from './components/sale-orders-history-columns.tsx'
 import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.tsx'
 
@@ -82,12 +82,17 @@ export function SaleOrdersHistory() {
 
   const handleEdit = useCallback(
     (order: SaleOrderWithRelations) => {
-      navigate({
-        to: '/sale-orders',
-        search: {
-          orderId: order.id,
-        },
-      })
+      if (order.status === '1_DRAFT') {
+        navigate({
+          to: '/sale-orders',
+          search: { orderId: order.id },
+        })
+      } else {
+        navigate({
+          to: '/sale-orders/detail',
+          search: { orderId: order.id },
+        })
+      }
     },
     [navigate]
   )

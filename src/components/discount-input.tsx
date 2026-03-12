@@ -13,7 +13,7 @@ const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 type DiscountInputProps = {
   subtotal: number
   value: number
-  onChange: (value: number) => void
+  onChange?: (value: number) => void
   disabled?: boolean
 }
 
@@ -30,7 +30,7 @@ export function DiscountInput({
     subtotal > 0 ? Math.round((value / subtotal) * 10000) / 100 : 0
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open && !disabled} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <div className='flex items-center gap-1.5'>
           {value > 0 && (
@@ -41,7 +41,7 @@ export function DiscountInput({
           <Input
             ref={inputRef}
             value={formatCurrency(value)}
-            onChange={(e) => onChange(normalizeNumber(e.target.value))}
+            onChange={(e) => onChange?.(normalizeNumber(e.target.value))}
             onClick={() => !disabled && setOpen(true)}
             className='h-8 w-28 rounded-full text-right text-xs'
             inputMode='numeric'
@@ -63,7 +63,7 @@ export function DiscountInput({
               size='sm'
               className='h-7 rounded-full px-2.5 text-xs'
               onClick={() => {
-                onChange(Math.round((subtotal * p) / 100))
+                onChange?.(Math.round((subtotal * p) / 100))
                 setOpen(false)
               }}
             >

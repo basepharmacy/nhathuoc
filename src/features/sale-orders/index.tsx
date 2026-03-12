@@ -161,6 +161,8 @@ export function SaleOrders() {
             tabCount={tabs.length}
             isActive={tab.id === activeTabId}
             tabs={tabs}
+            orderDetail={orderDetail}
+            inventoryBatches={inventoryBatches}
           />
         </TabsContent>
       ))}

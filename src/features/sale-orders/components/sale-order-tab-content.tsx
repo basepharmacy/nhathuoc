@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { Printer } from 'lucide-react'
-import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch } from '@/services/supabase/'
+import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch, SaleOrderWithItems } from '@/services/supabase/'
 import { SaleOrderTabControls, type Tab } from './sale-order-tab-controls'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -29,6 +29,7 @@ type SaleOrderTabContentProps = {
   bankAccounts: BankAccount[]
   locations: Location[]
   inventoryBatches: InventoryBatch[]
+  orderDetail: SaleOrderWithItems | null
   navigate: (opts: { search?: { orderId: string }; to?: string }) => void
   onOrderCodeChange?: (code: string) => void
   onOrderCompleted?: (createdOrderId: string) => void
@@ -59,6 +60,7 @@ export function SaleOrderTabContent({
   tabCount = 1,
   isActive = true,
   tabs,
+  orderDetail,
 }: SaleOrderTabContentProps) {
   // ── Per-tab queries ─────────────────────────────────────────
 

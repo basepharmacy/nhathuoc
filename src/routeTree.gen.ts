@@ -38,6 +38,7 @@ import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authentica
 import { Route as AuthenticatedSuppliersSupplierIdRouteImport } from './routes/_authenticated/suppliers/$supplierId'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedSaleOrdersHistoryRouteImport } from './routes/_authenticated/sale-orders/history'
+import { Route as AuthenticatedSaleOrdersDetailRouteImport } from './routes/_authenticated/sale-orders/detail'
 import { Route as AuthenticatedPurchaseOrdersHistoryRouteImport } from './routes/_authenticated/purchase-orders/history'
 import { Route as AuthenticatedErrorsErrorRouteImport } from './routes/_authenticated/errors/$error'
 import { Route as AuthenticatedCustomersCustomerIdRouteImport } from './routes/_authenticated/customers/$customerId'
@@ -205,6 +206,12 @@ const AuthenticatedSaleOrdersHistoryRoute =
     path: '/sale-orders/history',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSaleOrdersDetailRoute =
+  AuthenticatedSaleOrdersDetailRouteImport.update({
+    id: '/sale-orders/detail',
+    path: '/sale-orders/detail',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedPurchaseOrdersHistoryRoute =
   AuthenticatedPurchaseOrdersHistoryRouteImport.update({
     id: '/purchase-orders/history',
@@ -250,6 +257,7 @@ export interface FileRoutesByFullPath {
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
+  '/_authenticated/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/_authenticated/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
+    | '/sale-orders/detail'
     | '/sale-orders/history'
     | '/settings/account'
     | '/suppliers/$supplierId'
@@ -392,6 +403,7 @@ export interface FileRouteTypes {
     | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
+    | '/sale-orders/detail'
     | '/sale-orders/history'
     | '/settings/account'
     | '/suppliers/$supplierId'
@@ -428,6 +440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/errors/$error'
     | '/_authenticated/purchase-orders/history'
+    | '/_authenticated/sale-orders/detail'
     | '/_authenticated/sale-orders/history'
     | '/_authenticated/settings/account'
     | '/_authenticated/suppliers/$supplierId'
@@ -667,6 +680,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSaleOrdersHistoryRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/sale-orders/detail': {
+      id: '/_authenticated/sale-orders/detail'
+      path: '/sale-orders/detail'
+      fullPath: '/sale-orders/detail'
+      preLoaderRoute: typeof AuthenticatedSaleOrdersDetailRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/purchase-orders/history': {
       id: '/_authenticated/purchase-orders/history'
       path: '/purchase-orders/history'
@@ -727,6 +747,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedPurchaseOrdersHistoryRoute: typeof AuthenticatedPurchaseOrdersHistoryRoute
+  AuthenticatedSaleOrdersDetailRoute: typeof AuthenticatedSaleOrdersDetailRoute
   AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
@@ -754,6 +775,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedPurchaseOrdersHistoryRoute:
     AuthenticatedPurchaseOrdersHistoryRoute,
+  AuthenticatedSaleOrdersDetailRoute: AuthenticatedSaleOrdersDetailRoute,
   AuthenticatedSaleOrdersHistoryRoute: AuthenticatedSaleOrdersHistoryRoute,
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,

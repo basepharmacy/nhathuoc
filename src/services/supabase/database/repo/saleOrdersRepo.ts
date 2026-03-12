@@ -1,19 +1,13 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import type {
+  SaleOrder,
+  SaleOrderInsert,
+  SaleOrderItemInsert,
+  SaleOrderUpdate,
+  SaleOrderWithItems,
+  SaleOrderWithRelations,
+} from '../model'
 
-export type SaleOrder = Tables<'sale_orders'>
-export type SaleOrderInsert = TablesInsert<'sale_orders'>
-export type SaleOrderUpdate = TablesUpdate<'sale_orders'>
-export type SaleOrderItem = Tables<'sale_order_items'>
-export type SaleOrderItemInsert = TablesInsert<'sale_order_items'>
-export type SaleOrderWithRelations = SaleOrder & {
-  customer?: { id: string; name: string } | null
-  location?: { id: string; name: string } | null
-  user?: { id: string; name: string } | null
-}
-export type SaleOrderWithItems = SaleOrder & {
-  items?: SaleOrderItem[]
-}
 
 export type SaleOrdersHistoryQueryInput = {
   tenantId: string
@@ -223,6 +217,33 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
       }
 
       return (data ?? null) as SaleOrderWithItems | null
+    },
+    async getSaleOrderByIdWithRelations(params: {
+      tenantId: string
+      orderId: string
+    }): Promise<SaleOrderWithRelations | null> {
+      const { data, error } = await client
+        .from('sale_orders')
+        .select(`
+          *,
+          items:sale_order_items(
+            *,
+            batch:inventory_batches(id, batch_code, expiry_date, quantity, average_cost_price),
+            product:products(id, product_name),
+            product_unit:product_units(id, unit_name)
+          ),
+          customer:customers(id, name),
+          location:locations(id, name, address, phone),
+          user:profiles(id, name)`)
+        .eq('tenant_id', params.tenantId)
+        .eq('id', params.orderId)
+        .maybeSingle()
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? null) as SaleOrderWithRelations | null
     },
     async updateSaleOrderWithItems(params: {
       orderId: string

@@ -32,3 +32,35 @@ export type CustomerInsert = TablesInsert<'customers'>
 export type CustomerUpdate = TablesUpdate<'customers'>
 
 export type SaleOrderStatus = Enums<'sale_order_status'>
+
+export type SaleOrder = Tables<'sale_orders'>
+export type SaleOrderInsert = TablesInsert<'sale_orders'>
+export type SaleOrderUpdate = TablesUpdate<'sale_orders'>
+export type SaleOrderItem = Tables<'sale_order_items'>
+export type SaleOrderItemInsert = TablesInsert<'sale_order_items'>
+export type SaleOrderItemWithRelation = SaleOrderItem & {
+	batch: {
+		id: string
+		batch_code: string
+		expiry_date: string
+		quantity: number
+		average_cost: number
+	}
+	product: {
+		id: string
+		product_name: string
+	}
+	product_unit: {
+		id: string
+		unit_name: string
+	}
+}
+export type SaleOrderWithRelations = SaleOrder & {
+	items: SaleOrderItemWithRelation[]
+	customer?: { id: string; name: string } | null
+	location?: { id: string; name: string, address?: string | null, phone?: string | null } | null
+	user?: { id: string; name: string } | null
+}
+export type SaleOrderWithItems = SaleOrder & {
+	items?: SaleOrderItem[]
+}

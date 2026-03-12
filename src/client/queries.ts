@@ -256,6 +256,24 @@ export const getSaleOrderDetailQueryOptions = (
     },
   })
 
+export const getSaleOrderDetailWithRelationsQueryOptions = (
+  tenantId: string,
+  orderId: string
+) =>
+  queryOptions({
+    queryKey: ["sale-orders", tenantId, "detail-with-relations", orderId],
+    queryFn: async () => {
+      if (!tenantId || !orderId) {
+        return null
+      }
+      const order = await saleOrdersRepo.getSaleOrderByIdWithRelations({
+        tenantId,
+        orderId,
+      })
+      return order
+    },
+  })
+
 export const getSaleOrdersByCustomerIdQueryOptions = (
   tenantId: string,
   customerId: string
