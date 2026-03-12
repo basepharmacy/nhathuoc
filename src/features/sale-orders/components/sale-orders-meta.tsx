@@ -7,25 +7,23 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { cn } from '@/lib/utils'
-import type { Location } from '@/services/supabase/database/repo/locationsRepo'
-import type { SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
+import type { Location, SaleOrderStatus } from '@/services/supabase/'
 
 type SaleOrdersMetaProps = {
   locations: Location[]
   locationId: string
   onLocationChange: (locationId: string) => void
-  locationDisabled?: boolean
   orderCode: string
-  status: SaleOrder['status']
+  status: SaleOrderStatus
 }
 
-const statusLabels: Record<SaleOrder['status'], string> = {
+const statusLabels: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'Nháp',
   '2_COMPLETE': 'Hoàn tất',
   '9_CANCELLED': 'Đã hủy',
 }
 
-const statusColors: Record<SaleOrder['status'], string> = {
+const statusColors: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
   '2_COMPLETE': 'bg-emerald-100/40 text-emerald-900 dark:text-emerald-200 border-emerald-200',
   '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
@@ -35,7 +33,6 @@ export function SaleOrdersMeta({
   locations,
   locationId,
   onLocationChange,
-  locationDisabled = false,
   orderCode,
   status,
 }: SaleOrdersMetaProps) {
@@ -45,7 +42,7 @@ export function SaleOrdersMeta({
         <div className='flex items-center gap-2 text-muted-foreground'>
           Chi nhánh:
           <Select value={locationId} onValueChange={onLocationChange}>
-            <SelectTrigger className='h-8 min-w-[180px] rounded-full' disabled={locationDisabled}>
+            <SelectTrigger className='h-8 min-w-[180px] rounded-full'>
               <SelectValue placeholder='Chọn chi nhánh' />
             </SelectTrigger>
             <SelectContent>

@@ -14,7 +14,7 @@ import type { Customer } from '@/services/supabase/'
 
 type CustomerSwitcherProps = {
   customers: Customer[]
-  activeCustomerId: string
+  selectedCustomerId: string
   onChange: (customerId: string) => void
   onAddCustomer: () => void
   disabled?: boolean
@@ -22,14 +22,14 @@ type CustomerSwitcherProps = {
 
 export function CustomerSwitcher({
   customers,
-  activeCustomerId,
+  selectedCustomerId,
   onChange,
   onAddCustomer,
   disabled = false,
 }: CustomerSwitcherProps) {
   const [searchTerm, setSearchTerm] = useState('')
-  const activeCustomer =
-    customers.find((customer) => customer.id === activeCustomerId) ?? null
+  const selectedCustomer =
+    customers.find((customer) => customer.id === selectedCustomerId) ?? null
   const filteredCustomers = useMemo(() => {
     const query = searchTerm.trim().toLowerCase()
     if (!query) {
@@ -63,10 +63,10 @@ export function CustomerSwitcher({
             </div>
             <div className='grid text-sm leading-tight'>
               <span className='truncate font-semibold'>
-                {activeCustomer?.name ?? 'Chọn khách hàng'}
+                {selectedCustomer?.name ?? 'Chọn khách hàng'}
               </span>
               <span className='truncate text-xs text-muted-foreground'>
-                {activeCustomer?.address ?? '—'}
+                {selectedCustomer?.address ?? '—'}
               </span>
             </div>
           </div>

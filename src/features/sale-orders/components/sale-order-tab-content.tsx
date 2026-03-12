@@ -1,5 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { toast } from 'sonner'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Printer } from 'lucide-react'
 import { type Customer, BankAccount, Location, ProductWithUnits, InventoryBatch, SaleOrderWithItems } from '@/services/supabase/'
 import { SaleOrderTabControls, type Tab } from './sale-order-tab-controls'
@@ -13,10 +12,11 @@ import { CustomersActionDialog } from '@/features/customers/components/customers
 import { type SaleOrderItem } from '../data/types'
 import { SaleOrdersItems } from './sale-orders-items'
 import { SaleOrdersMeta } from './sale-orders-meta'
-import { SaleOrdersSearch, type SaleOrdersSearchHandle } from './sale-orders-search'
+import { SaleOrdersSearch } from './sale-orders-search'
 import { SaleOrdersSummary } from './sale-orders-summary'
 import { SaleOrderInvoice } from './sale-order-invoice'
 import { useSaleOrder } from '../hooks/use-sale-order'
+import { useSaleOrderKeyboardShortcuts } from '../hooks/use-sale-order-keyboard-shortcuts'
 
 
 type SaleOrderTabContentProps = {
@@ -29,10 +29,9 @@ type SaleOrderTabContentProps = {
   bankAccounts: BankAccount[]
   locations: Location[]
   inventoryBatches: InventoryBatch[]
-  orderDetail: SaleOrderWithItems | null
-  navigate: (opts: { search?: { orderId: string }; to?: string }) => void
+  orderDetail?: SaleOrderWithItems | null
   onOrderCodeChange?: (code: string) => void
-  onOrderCompleted?: (createdOrderId: string) => void
+  onOrderCompleted?: () => void
   onAddTab?: () => void
   onCloseTab?: () => void
   onCloseTabById?: (tabId: string) => void
@@ -51,7 +50,6 @@ export function SaleOrderTabContent({
   bankAccounts,
   locations,
   inventoryBatches,
-  navigate,
   onOrderCodeChange,
   onOrderCompleted,
   onAddTab,
@@ -70,9 +68,8 @@ export function SaleOrderTabContent({
     orderId,
     userLocationId,
     orderDetail: orderDetail ?? undefined,
-    navigate,
     onComplete: onOrderCompleted
-      ? (createdOrderId: string) => onOrderCompleted(createdOrderId)
+      ? () => onOrderCompleted()
       : undefined,
   })
 
@@ -111,14 +108,6 @@ export function SaleOrderTabContent({
     if (order.selectedLocationId || locations.length === 0) return
     order.setSelectedLocationId(userLocationId ?? locations[0].id)
   }, [order.selectedLocationId, locations, userLocationId, order.setSelectedLocationId])
-
-  useEffect(() => {
-    if (!orderId) return
-    if (!orderDetail) {
-      toast.error('Không tìm thấy đơn bán hàng.')
-      navigate({ to: '/' })
-    }
-  }, [orderDetail, orderId, navigate])
 
   useEffect(() => {
     if (order.bankAccountId || bankAccounts.length === 0) return
@@ -164,140 +153,30 @@ export function SaleOrderTabContent({
     })
   }, [orderDetail, order.hasInitialized, products, inventoryBatches, tenantId, userLocationId, orderId])
 
-  // ── Print ──────────────────────────────────────────────────
+  // ── Dialogs ───────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
   const [locationConfirmOpen, setLocationConfirmOpen] = useState(false)
-  const [cancelConfirmOpen, setCancelConfirmOpen] = useState(false)
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
   const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
 
   // ── Keyboard shortcuts ─────────────────────────────────────
-  const searchRef = useRef<SaleOrdersSearchHandle>(null)
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number>(-1)
-  const [editingPriceItemId, setEditingPriceItemId] = useState<string | null>(null)
-
-  const handleKeyboardShortcuts = useCallback(
-    (event: KeyboardEvent) => {
-      // Don't handle shortcuts when typing in input/textarea (except function keys)
-      const target = event.target as HTMLElement
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT'
-      const isFunctionKey = event.key.startsWith('F') && event.key.length <= 3
-
-      if (isInput && !isFunctionKey && event.key !== 'Escape' && event.key !== 'Delete') return
-
-      switch (event.key) {
-        case 'F1': {
-          event.preventDefault()
-          if (onAddTab) onAddTab()
-          break
-        }
-        case 'F3': {
-          event.preventDefault()
-          if (!order.isReadOnly) order.saveDraft()
-          break
-        }
-        case 'Escape': {
-          event.preventDefault()
-          const hasOpenDialog = document.querySelector('[role="dialog"], [role="alertdialog"]')
-          if (hasOpenDialog) {
-            setCancelConfirmOpen(false)
-            setResetConfirmOpen(false)
-          } else if (!order.isReadOnly) {
-            // Blur the focused input first so user sees the dialog cleanly
-            if (isInput) (target as HTMLElement).blur()
-            setResetConfirmOpen(true)
-          }
-          break
-        }
-        case 'F6': {
-          event.preventDefault()
-          setPrintOpen(true)
-          break
-        }
-        case 'F9': {
-          event.preventDefault()
-          if (!order.isReadOnly) order.submit()
-          break
-        }
-        case 'ArrowDown': {
-          if (isInput) break
-          event.preventDefault()
-          if (event.shiftKey && order.items.length > 0) {
-            // Shift+ArrowDown → focus search
-            searchRef.current?.focus()
-          } else if (order.items.length > 0) {
-            setSelectedItemIndex((prev) =>
-              prev + 1 >= order.items.length ? 0 : prev + 1
-            )
-          }
-          break
-        }
-        case 'ArrowUp': {
-          if (isInput) break
-          event.preventDefault()
-          if (order.items.length > 0) {
-            setSelectedItemIndex((prev) =>
-              prev - 1 < 0 ? order.items.length - 1 : prev - 1
-            )
-          }
-          break
-        }
-        case 'Delete': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const itemToRemove = order.items[selectedItemIndex]
-            order.removeItem(itemToRemove.id)
-            setSelectedItemIndex((prev) =>
-              Math.min(prev, order.items.length - 2)
-            )
-          }
-          break
-        }
-        case '+':
-        case 'ArrowRight': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const item = order.items[selectedItemIndex]
-            order.handleQuantityChange(item.id, item.quantity + 1)
-          }
-          break
-        }
-        case '-':
-        case 'ArrowLeft': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const item = order.items[selectedItemIndex]
-            if (item.quantity > 1) {
-              order.handleQuantityChange(item.id, item.quantity - 1)
-            }
-          }
-          break
-        }
-      }
-    },
-    [order, selectedItemIndex, onAddTab, onCloseTab, tabCount]
-  )
-
-  useEffect(() => {
-    if (!isActive) return
-    window.addEventListener('keydown', handleKeyboardShortcuts)
-    return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
-  }, [handleKeyboardShortcuts, isActive])
+  const {
+    searchRef,
+    selectedItemIndex,
+    setSelectedItemIndex,
+    editingPriceItemId,
+    setEditingPriceItemId,
+  } = useSaleOrderKeyboardShortcuts({
+    isActive,
+    items: order.items,
+    onSaveDraft: order.saveDraft,
+    onSubmit: order.submit,
+    onAddTab,
+    onSetResetConfirmOpen: setResetConfirmOpen,
+    onSetPrintOpen: setPrintOpen,
+    onQuantityChange: order.handleQuantityChange,
+    onRemoveItem: order.removeItem,
+  })
 
   const handleLocationChange = (nextLocationId: string) => {
     if (nextLocationId === (order.selectedLocationId ?? '')) return
@@ -322,11 +201,6 @@ export function SaleOrderTabContent({
     if (!open) {
       setPendingLocationId(null)
     }
-  }
-
-  const handleConfirmCancelOrder = () => {
-    order.cancelOrder()
-    setCancelConfirmOpen(false)
   }
 
   const handleConfirmResetOrder = () => {
@@ -355,7 +229,7 @@ export function SaleOrderTabContent({
   }, [customers, order.customerId])
 
   // ── Render ──────────────────────────────────────────────────
-  const isLoadingEditData = Boolean(orderId) && (!orderDetail || !order.hasInitialized || isOrderLoading)
+  const isLoadingEditData = Boolean(orderId) && (!orderDetail || !order.hasInitialized)
 
   return (
     <>
@@ -365,8 +239,7 @@ export function SaleOrderTabContent({
             ref={searchRef}
             products={products}
             onAddProduct={order.addProduct}
-            readOnly={order.isReadOnly}
-            autoFocus={!order.isEdit}
+            autoFocus
           />
           {tabs && onCloseTabById && onAddTab && (
             <SaleOrderTabControls
@@ -401,9 +274,8 @@ export function SaleOrderTabContent({
                 locations={locations}
                 locationId={order.selectedLocationId ?? ''}
                 onLocationChange={handleLocationChange}
-                locationDisabled={order.isReadOnly}
                 orderCode={order.orderCode}
-                status={order.orderStatus}
+                status='1_DRAFT'
               />
 
               <SaleOrdersItems
@@ -412,7 +284,6 @@ export function SaleOrderTabContent({
                 onQuantityChange={order.handleQuantityChange}
                 onUnitChange={order.handleUnitChange}
                 onRemoveItem={order.removeItem}
-                readOnly={order.isReadOnly}
                 selectedItemIndex={selectedItemIndex}
                 onSelectedItemIndexChange={setSelectedItemIndex}
                 editingPriceItemId={editingPriceItemId}
@@ -438,10 +309,8 @@ export function SaleOrderTabContent({
               onBankAccountChange={order.setBankAccountId}
               notes={order.notes}
               onNotesChange={order.setNotes}
-              orderStatus={order.orderStatus}
               onSaveDraft={order.saveDraft}
               onSubmit={order.submit}
-              onCancelOrder={() => setCancelConfirmOpen(true)}
               isSubmitting={order.isSubmitting}
             />
           </div>
@@ -452,18 +321,6 @@ export function SaleOrderTabContent({
         open={order.isAddCustomerOpen}
         onOpenChange={order.setIsAddCustomerOpen}
         onCreated={(customer) => order.setCustomerId(customer.id)}
-      />
-
-      <ConfirmDialog
-        open={cancelConfirmOpen}
-        onOpenChange={setCancelConfirmOpen}
-        title='Huỷ đơn hàng'
-        desc='Bạn có chắc chắn muốn huỷ đơn hàng này không? Tồn kho của các sản phẩm sẽ được hoàn trả.'
-        cancelBtnText='Không'
-        confirmText='Huỷ đơn hàng'
-        destructive
-        isLoading={order.isSubmitting}
-        handleConfirm={handleConfirmCancelOrder}
       />
 
       <ConfirmDialog
@@ -510,20 +367,18 @@ export function SaleOrderTabContent({
         />
       </PrintPreviewDialog>
 
-      {!order.isReadOnly && (
-        <OrderKeyboardFooter
-          shortcuts={[
-            { key: 'F1', label: 'Tạo đơn mới' },
-            { key: 'F3', label: 'Lưu nháp' },
-            { key: 'ESC', label: 'Huỷ đơn' },
-            { key: 'F6', label: 'In hoá đơn' },
-            { key: 'F9', label: 'Thanh toán' },
-            { key: '↑↓', label: 'Chọn sản phẩm' },
-            { key: '←→', label: 'Tăng giảm số lượng' },
-            { key: 'Del', label: 'Xoá sản phẩm' },
-          ]}
-        />
-      )}
+      <OrderKeyboardFooter
+        shortcuts={[
+          { key: 'F1', label: 'Tạo đơn mới' },
+          { key: 'F3', label: 'Lưu nháp' },
+          { key: 'ESC', label: 'Huỷ đơn' },
+          { key: 'F6', label: 'In hoá đơn' },
+          { key: 'F9', label: 'Thanh toán' },
+          { key: '↑↓', label: 'Chọn sản phẩm' },
+          { key: '←→', label: 'Tăng giảm số lượng' },
+          { key: 'Del', label: 'Xoá sản phẩm' },
+        ]}
+      />
     </>
   )
 }

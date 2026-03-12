@@ -36,6 +36,7 @@ export function SaleOrders() {
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
 
   // ── Tab state ───────────────────────────────────────────────
+  // TODO sửa lại thành tạo tab sau khi 
   const initialTabRef = useRef<Tab | null>(null)
   if (!initialTabRef.current) {
     initialTabRef.current = createTab()
@@ -77,12 +78,12 @@ export function SaleOrders() {
     [activeTabId]
   )
 
-  const handleOrderCompleted = useCallback(
-    (tabId: string, createdOrderId: string) => {
+  const handleOrderSaved = useCallback(
+    (tabId: string) => {
       setTabs((prev) => {
         if (prev.length <= 1) {
-          // Last tab → navigate to the created order
-          navigate({ search: { orderId: createdOrderId } })
+          // Last tab → clear orderId so the tab resets to a new order
+          navigate({ search: {} })
           return prev
         }
         // Multiple tabs → close the completed tab
@@ -99,39 +100,81 @@ export function SaleOrders() {
   )
 
   // ── Shared queries (tenant-level) ──────────────────────────
-  const { data: products = [] } = useQuery({
+  const {
+    data: products = [],
+    isLoading: isProductsLoading,
+    isError: isProductsError
+  } = useQuery({
     ...getProductsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
   const activeProducts = products.filter((p) => p.status === '2_ACTIVE')
 
-  const { data: customers = [] } = useQuery({
+  const {
+    data: customers = [],
+    isLoading: isCustomersLoading,
+    isError: isCustomersError
+  } = useQuery({
     ...getCustomersQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const { data: bankAccounts = [] } = useQuery({
+  const {
+    data: bankAccounts = [],
+    isLoading: isBankAccountsLoading,
+    isError: isBankAccountsError
+  } = useQuery({
     ...getBankAccountsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const { data: locations = [] } = useQuery({
+  const {
+    data: locations = [],
+    isLoading: isLocationsLoading,
+    isError: isLocationsError
+  } = useQuery({
     ...getLocationsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const { data: orderDetail } = useQuery({
+  const {
+    data: orderDetail,
+    isLoading: isOrderDetailLoading,
+    isError: isOrderDetailError
+  } = useQuery({
     ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
     enabled: !!tenantId && !!orderId,
   })
 
-  const { data: inventoryBatches = EMPTY_BATCHES } = useQuery({
+  const {
+    data: inventoryBatches = EMPTY_BATCHES,
+    isLoading: isInventoryBatchesLoading,
+    isError: isInventoryBatchesError
+  } = useQuery({
     ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
+  const isLoading = isProductsLoading || isCustomersLoading || isBankAccountsLoading || isLocationsLoading || isOrderDetailLoading || isInventoryBatchesLoading
+  const isError = isProductsError || isCustomersError || isBankAccountsError || isLocationsError || isOrderDetailError || isInventoryBatchesError
 
+  if (isError) {
+    // TODO phân biệt lỗi để hiển thị thông báo chính xác hơn
+    return (
+      <div className='flex items-center justify-center py-10 text-muted-foreground'>
+        Đã có lỗi xảy ra. Vui lòng thử lại.
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className='flex items-center justify-center py-10 text-muted-foreground'>
+        Đang tải...
+      </div>
+    )
+  }
 
   // ── Render ──────────────────────────────────────────────────
   return (
@@ -152,9 +195,8 @@ export function SaleOrders() {
             customers={customers}
             bankAccounts={bankAccounts}
             locations={locations}
-            navigate={navigate}
             onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
-            onOrderCompleted={(createdOrderId) => handleOrderCompleted(tab.id, createdOrderId)}
+            onOrderCompleted={() => handleOrderSaved(tab.id)}
             onAddTab={addTab}
             onCloseTab={() => closeTab(tab.id)}
             onCloseTabById={closeTab}

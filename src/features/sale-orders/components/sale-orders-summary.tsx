@@ -19,7 +19,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
-import type { Customer, BankAccount, SaleOrder } from '@/services/supabase/'
+import type { Customer, BankAccount } from '@/services/supabase/'
 import { CustomerSwitcher } from './customer-switcher'
 
 type SaleOrdersSummaryProps = {
@@ -45,9 +45,7 @@ type SaleOrdersSummaryProps = {
   onNotesChange: (value: string) => void
   onSaveDraft: () => void
   onSubmit: () => void
-  onCancelOrder?: () => void
   isSubmitting: boolean
-  orderStatus: SaleOrder['status']
 }
 
 const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
@@ -88,30 +86,17 @@ export function SaleOrdersSummary({
   onNotesChange,
   onSaveDraft,
   onSubmit,
-  onCancelOrder,
   isSubmitting,
-  orderStatus,
 }: SaleOrdersSummaryProps) {
   const [cashPopoverOpen, setCashPopoverOpen] = useState(false)
-  const isDraft = orderStatus === '1_DRAFT'
-  const isComplete = orderStatus === '2_COMPLETE'
-  const isEditable = isDraft
-  const isReadOnly = !isEditable
-  const submitLabel = isComplete ? 'Đã hoàn tất' : 'Hoàn tất (F9)'
-  const showSaveDraft = isDraft
-  const saveDraftDisabled = !isDraft
-  const customerDisabled = !isDraft
-  const showSubmit = isEditable
-  const showCancelOrder = isComplete
 
   return (
     <div className='space-y-4 rounded-xl border bg-card p-4 shadow-sm h-full'>
       <CustomerSwitcher
         customers={customers}
-        activeCustomerId={customerId}
+        selectedCustomerId={customerId}
         onChange={onCustomerChange}
         onAddCustomer={onAddCustomer}
-        disabled={customerDisabled}
       />
 
       <Separator />
@@ -129,7 +114,6 @@ export function SaleOrdersSummary({
             subtotal={totals.subtotal}
             value={orderDiscount}
             onChange={onOrderDiscountChange}
-            disabled={isReadOnly}
           />
         </div>
       </div>
@@ -157,7 +141,6 @@ export function SaleOrdersSummary({
                 paymentMethod !== option.value && 'text-muted-foreground'
               )}
               onClick={() => onPaymentMethodChange(option.value)}
-              disabled={isReadOnly}
             >
               {option.label}
             </Button>
@@ -174,10 +157,9 @@ export function SaleOrdersSummary({
                     <Input
                       value={formatCurrency(cashReceived)}
                       onChange={(e) => onCashReceivedChange(normalizeNumber(e.target.value))}
-                      onClick={() => !isReadOnly && setCashPopoverOpen(true)}
+                      onClick={() => setCashPopoverOpen(true)}
                       className='h-8 w-28 rounded-full text-right text-xs'
                       inputMode='numeric'
-                      disabled={isReadOnly}
                     />
                   </div>
                 </PopoverTrigger>
@@ -220,7 +202,7 @@ export function SaleOrdersSummary({
               <Select
                 value={bankAccountId}
                 onValueChange={onBankAccountChange}
-                disabled={isReadOnly || bankAccounts.length === 0}
+                disabled={bankAccounts.length === 0}
               >
                 <SelectTrigger className='h-9 rounded-full text-xs'>
                   <SelectValue placeholder='Chọn tài khoản ngân hàng' />
@@ -249,38 +231,23 @@ export function SaleOrdersSummary({
 
       <Separator />
       <div className='flex gap-2'>
-        {showSaveDraft ? (
-          <Button
-            type='button'
-            variant='outline'
-            className='h-9 flex-1 rounded-xl'
-            onClick={onSaveDraft}
-            disabled={isSubmitting || isReadOnly || saveDraftDisabled}
-          >
-            Lưu nháp (F1)
-          </Button>
-        ) : null}
-        {showSubmit ? (
-          <Button
-            type='button'
-            className='h-9 flex-1 rounded-xl'
-            onClick={onSubmit}
-            disabled={isSubmitting || isReadOnly}
-          >
-            {submitLabel}
-          </Button>
-        ) : null}
-        {showCancelOrder ? (
-          <Button
-            type='button'
-            variant='destructive'
-            className='h-9 flex-1 rounded-xl'
-            onClick={onCancelOrder}
-            disabled={isSubmitting}
-          >
-            Huỷ đơn hàng
-          </Button>
-        ) : null}
+        <Button
+          type='button'
+          variant='outline'
+          className='h-9 flex-1 rounded-xl'
+          onClick={onSaveDraft}
+          disabled={isSubmitting}
+        >
+          Lưu nháp (F3)
+        </Button>
+        <Button
+          type='button'
+          className='h-9 flex-1 rounded-xl'
+          onClick={onSubmit}
+          disabled={isSubmitting}
+        >
+          Hoàn tất (F9)
+        </Button>
       </div>
 
       <Textarea
@@ -288,7 +255,6 @@ export function SaleOrdersSummary({
         onChange={(event) => onNotesChange(event.target.value)}
         placeholder='Ghi chú đơn bán hàng'
         className='min-h-[120px] rounded-xl'
-        disabled={isReadOnly}
       />
     </div>
   )

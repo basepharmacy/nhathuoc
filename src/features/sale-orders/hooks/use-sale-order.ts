@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { saleOrdersRepo } from '@/client'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
-import { type SaleOrder } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { type SaleOrder } from '@/services/supabase'
 import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
 import { type PaymentMethod, type SaleOrderItem } from '../data/types'
 import { getDefaultUnit } from '../data/inventory-helpers'
@@ -31,7 +31,6 @@ type UseSaleOrderParams = {
     notes: string | null
     location_id: string | null
   }
-  navigate: (opts: { search?: { orderId: string }; to?: string }) => void
   onComplete?: (createdOrderId: string) => void
 }
 
@@ -41,7 +40,6 @@ export function useSaleOrder({
   orderId,
   userLocationId,
   orderDetail,
-  navigate,
   onComplete,
 }: UseSaleOrderParams) {
   const queryClient = useQueryClient()
@@ -73,9 +71,6 @@ export function useSaleOrder({
   }, [])
 
   const orderCode = isEdit ? (orderDetail?.sale_order_code ?? '') : generatedOrderCode
-  const orderStatus: SaleOrder['status'] = orderDetail?.status ?? '1_DRAFT'
-  const isComplete = orderStatus === '2_COMPLETE'
-  const isReadOnly = isComplete || orderStatus === '9_CANCELLED'
 
   const productIds = useMemo(
     () => Array.from(new Set(items.map((item) => item.product.id))).sort(),
@@ -202,9 +197,7 @@ export function useSaleOrder({
       const isOfflineQueued = (order as SaleOrder & { _offline?: boolean })._offline
       if (isOfflineQueued) {
         toast.success('Đã lưu đơn hàng offline. Sẽ tự đồng bộ khi có mạng.')
-        if (status === '2_COMPLETE' && onComplete) {
-          onComplete(order.id)
-        }
+        onComplete?.(order.id)
         return
       }
 
@@ -220,9 +213,7 @@ export function useSaleOrder({
         })
       }
       toast.success('Đã tạo đơn bán hàng.')
-      if (status === '2_COMPLETE' && onComplete) {
-        onComplete(order.id)
-      }
+      onComplete?.(order.id)
     },
     onError: handleMutationError,
   })
@@ -263,20 +254,15 @@ export function useSaleOrder({
         })
       }
 
-      if (status === '9_CANCELLED') {
-        toast.success('Huỷ đơn hàng thành công.')
-        return
-      }
-
       toast.success('Đã cập nhật đơn bán hàng.')
-      navigate({ to: '/' })
+      onComplete?.(orderId ?? '')
     },
     onError: handleMutationError,
   })
 
   // ── Item actions ────────────────────────────────────────────
   const addProduct = (product: ProductWithUnits) => {
-    if (isReadOnly || !tenantId) return
+    if (!tenantId) return
     if (!selectedLocationId) {
       toast.error('Bạn cần phải chọn cửa hàng.')
       return
@@ -326,12 +312,12 @@ export function useSaleOrder({
   }
 
   const updateItem = (itemId: string, next: Partial<SaleOrderItem>) => {
-    if (isReadOnly) return
+
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, ...next } : item)))
   }
 
   const handleQuantityChange = (itemId: string, nextQuantity: number) => {
-    if (isReadOnly) return
+
     let toastMessage: string | null = null
     setItems((prev) => {
       const target = prev.find((item) => item.id === itemId)
@@ -364,12 +350,12 @@ export function useSaleOrder({
   }
 
   const removeItem = (itemId: string) => {
-    if (isReadOnly) return
+
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
   const handleUnitChange = (itemId: string, newUnitId: string) => {
-    if (isReadOnly) return
+
     let toastMessage: string | null = null
     setItems((prev) => {
       const target = prev.find((item) => item.id === itemId)
@@ -425,9 +411,8 @@ export function useSaleOrder({
   }
 
   const resetItems = useCallback(() => {
-    if (isReadOnly) return
     setItems([])
-  }, [isReadOnly])
+  }, [])
 
   const handlePaymentMethodChange = useCallback(
     (value: PaymentMethod) => {
@@ -484,11 +469,6 @@ export function useSaleOrder({
   const submit = () =>
     isEdit ? updateMutation.mutate('2_COMPLETE') : createMutation.mutate('2_COMPLETE')
 
-  const cancelOrder = () => {
-    if (!isEdit) return
-    updateMutation.mutate('9_CANCELLED')
-  }
-
   const resetOrder = useCallback(() => {
     setItems([])
     setCustomerId('')
@@ -506,9 +486,7 @@ export function useSaleOrder({
     items,
     batchesByProductId,
     orderCode,
-    orderStatus,
-    isReadOnly,  // TODO bỏ
-    isEdit, // TODO bỏ 
+    isEdit,
     isSubmitting,
     hasInitialized,
     productIds,
@@ -544,7 +522,6 @@ export function useSaleOrder({
     resetItems,
     saveDraft,
     submit,
-    cancelOrder,
     resetOrder,
     initializeFromOrder,
     resetBatchCache,

@@ -118,7 +118,6 @@ type SaleOrdersItemsProps = {
   onQuantityChange: (itemId: string, nextQuantity: number) => void
   onUnitChange: (itemId: string, newUnitId: string) => void
   onRemoveItem: (itemId: string) => void
-  readOnly?: boolean
   selectedItemIndex?: number
   onSelectedItemIndexChange?: (index: number) => void
   editingPriceItemId?: string | null
@@ -133,7 +132,6 @@ export function SaleOrdersItems({
   onQuantityChange,
   onUnitChange,
   onRemoveItem,
-  readOnly = false,
   selectedItemIndex = -1,
   onSelectedItemIndexChange,
   editingPriceItemId,
@@ -195,12 +193,10 @@ export function SaleOrdersItems({
                         <select
                           value={item.productUnitId ?? ''}
                           onChange={(event) => {
-                            if (readOnly) return
                             const value = event.target.value
                             onUnitChange(item.id, value)
                           }}
                           className='h-8 w-full rounded-full border bg-background px-2 text-xs'
-                          disabled={readOnly}
                         >
                           <option value='' disabled>
                             Đơn vị
@@ -220,7 +216,6 @@ export function SaleOrdersItems({
                           }
                           value={item.unitPrice}
                           onChange={(price) => onUpdateItem(item.id, { unitPrice: price })}
-                          disabled={readOnly}
                           forceOpen={isEditingPrice}
                           onOpenChange={(open) => {
                             if (!open && isEditingPrice) onEditingPriceItemIdChange?.(null)
@@ -231,7 +226,6 @@ export function SaleOrdersItems({
                         <QuantityStepper
                           value={item.quantity}
                           onChange={(qty) => onQuantityChange(item.id, qty)}
-                          disabled={readOnly}
                         />
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>
@@ -243,11 +237,7 @@ export function SaleOrdersItems({
                           variant='ghost'
                           size='icon'
                           className='h-7 w-7 text-muted-foreground'
-                          onClick={() => {
-                            if (readOnly) return
-                            onRemoveItem(item.id)
-                          }}
-                          disabled={readOnly}
+                          onClick={() => onRemoveItem(item.id)}
                         >
                           <Trash2 className='h-4 w-4' />
                         </Button>

@@ -15,7 +15,7 @@ export type SaleOrderItem = {
   stock: number
 }
 
-export type SaleOrder = {
+export type SaleOrderInCreate = {
   id: string
   orderCode: string
   customerId: string
