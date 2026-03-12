@@ -1,9 +1,10 @@
 import { BasePharmacySupabaseClient } from '../../client'
 import type { Tables } from '../../database.types'
+import { ProductStatus } from '../model'
 
 export type InventoryBatch = Tables<'inventory_batches'>
 export type InventoryBatchWithRelations = InventoryBatch & {
-  products?: { id: string; product_name: string } | null
+  products?: { id: string; product_name: string, status: ProductStatus } | null
   locations?: { id: string; name: string } | null
 }
 
@@ -43,6 +44,7 @@ export type InventoryProductsListQueryInput = {
 export type InventoryProductsListItem = {
   productId: string
   productName: string
+  status: ProductStatus
   totalQuantity: number
   totalCumulativeQuantity: number
   averageCostPrice: number
@@ -94,7 +96,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('inventory_batches')
         .select(
-          `id, batch_code, expiry_date, quantity, cumulative_quantity, average_cost_price, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name), locations(id, name)`,
+          `id, batch_code, expiry_date, quantity, cumulative_quantity, average_cost_price, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name, status), locations(id, name)`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -131,7 +133,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('products')
         .select(
-          `id, product_name, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name))`,
+          `id, product_name, status, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name))`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -186,6 +188,7 @@ export const createInventoryBatchRepository = (
         return {
           productId: product.id,
           productName: product.product_name ?? 'Không rõ',
+          status: product.status,
           totalQuantity,
           totalCumulativeQuantity,
           averageCostPrice,

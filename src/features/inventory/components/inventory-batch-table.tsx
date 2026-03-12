@@ -15,6 +15,7 @@ import {
   formatQuantity,
 } from '@/lib/utils'
 import { Pencil } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import {
   DataTableRowActions,
   type RowAction,
@@ -67,9 +68,10 @@ function createColumns(
       id: 'product_name',
       header: 'Sản phẩm',
       cell: ({ row }) => (
-        <span className='font-medium'>
-          {row.original.products?.product_name ?? 'Không rõ'}
-        </span>
+        <div className='flex space-x-2'>
+          <span className='truncate font-medium'>{row.original.products?.product_name ?? 'Không rõ'}</span>
+          {row.original.products?.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
+        </div>
       ),
     },
     {

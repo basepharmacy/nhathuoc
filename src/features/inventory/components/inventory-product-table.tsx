@@ -13,6 +13,7 @@ import {
   InventoryTable,
   type FilterOption,
 } from './inventory-tables'
+import { Badge } from '@/components/ui/badge'
 
 type Props = {
   rows: InventoryProductsListItem[]
@@ -49,7 +50,10 @@ const columns: ColumnDef<InventoryProductsListItem>[] = [
     accessorKey: 'productName',
     header: 'Sản phẩm',
     cell: ({ row }) => (
-      <span className='font-medium'>{row.original.productName}</span>
+      <div className='flex space-x-2'>
+        <span className='truncate font-medium'>{row.original.productName}</span>
+        {row.original.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
+      </div>
     ),
   },
   {

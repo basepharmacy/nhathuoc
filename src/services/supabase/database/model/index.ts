@@ -64,3 +64,5 @@ export type SaleOrderWithRelations = SaleOrder & {
 export type SaleOrderWithItems = SaleOrder & {
 	items?: SaleOrderItem[]
 }
+
+export type ProductStatus = Enums<'product_status'>
