@@ -80,12 +80,23 @@ export function SaleOrders() {
   )
 
   const handleOrderSaved = useCallback(
-    (tabId: string) => {
-      setTabs((prev) => {
-        if (prev.length <= 1) {
+    (tabId: string, savedOrderId: string, status: string) => {
+      if (tabs.length <= 1) {
+        if (status === '2_COMPLETE') {
+          navigate({
+            to: '/sale-orders/detail',
+            search: { orderId: savedOrderId },
+          })
+        } else {
+          // DRAFT: close current tab and create a new one
+          const newTab = createTab()
+          setTabs([newTab])
+          setActiveTabId(newTab.id)
           navigate({ search: {} })
-          return prev
         }
+        return
+      }
+      setTabs((prev) => {
         const idx = prev.findIndex((t) => t.id === tabId)
         const next = prev.filter((t) => t.id !== tabId)
         if (tabId === activeTabId) {
@@ -95,7 +106,7 @@ export function SaleOrders() {
         return next
       })
     },
-    [activeTabId, navigate]
+    [activeTabId, tabs.length, navigate]
   )
 
   // ── Shared queries (tenant-level) ──────────────────────────
@@ -189,7 +200,7 @@ export function SaleOrders() {
         const initialData = isFirstTab && editOrderData
           ? editOrderData
           : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')
-        const tabKey = isFirstTab && orderId ? `edit-${orderId}` : tab.id
+        const tabKey = isFirstTab && orderId ? `${tab.id}-edit-${orderId}` : tab.id
 
         return (
           <TabsContent
@@ -207,7 +218,7 @@ export function SaleOrders() {
               bankAccounts={bankAccounts}
               locations={locations}
               inventoryBatches={inventoryBatches}
-              onOrderCompleted={() => handleOrderSaved(tab.id)}
+              onOrderCompleted={(orderId, status) => handleOrderSaved(tab.id, orderId, status)}
               onAddTab={addTab}
               onCloseTab={() => closeTab(tab.id)}
               onCloseTabById={closeTab}

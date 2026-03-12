@@ -22,7 +22,7 @@ type UseSaleOrderParams = {
   userId: string
   initialData: SaleOrderInCreate
   inventoryBatches: InventoryBatch[]
-  onComplete?: (createdOrderId: string) => void
+  onComplete?: (createdOrderId: string, status: SaleOrder['status']) => void
 }
 
 export function useSaleOrder({
@@ -145,7 +145,7 @@ export function useSaleOrder({
       const isOfflineQueued = (order as SaleOrder & { _offline?: boolean })._offline
       if (isOfflineQueued) {
         toast.success('Đã lưu đơn hàng offline. Sẽ tự đồng bộ khi có mạng.')
-        onComplete?.(order.id)
+        onComplete?.(order.id, status)
         return
       }
 
@@ -161,7 +161,7 @@ export function useSaleOrder({
         })
       }
       toast.success('Đã tạo đơn bán hàng.')
-      onComplete?.(order.id)
+      onComplete?.(order.id, status)
     },
     onError: handleMutationError,
   })
@@ -203,7 +203,7 @@ export function useSaleOrder({
       }
 
       toast.success('Đã cập nhật đơn bán hàng.')
-      onComplete?.(initialData.id ?? '')
+      onComplete?.(initialData.id ?? '', status)
     },
     onError: handleMutationError,
   })

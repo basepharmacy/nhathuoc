@@ -89,7 +89,7 @@ export function SaleOrders() {
             <h2 className='text-2xl font-bold tracking-tight'>Thông tin đơn hàng</h2>
             {orderDetail?.status === '2_COMPLETE' && (
               <p className='text-sm text-muted-foreground'>
-                Bạn có thể chỉnh sửa hoặc huỷ đơn hàng
+                Bạn có thể sửa lại chiết khấu hoặc huỷ đơn hàng
               </p>
             )}
           </div>

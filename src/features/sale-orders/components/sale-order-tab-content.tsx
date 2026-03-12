@@ -28,7 +28,7 @@ type SaleOrderTabContentProps = {
   bankAccounts: BankAccount[]
   locations: Location[]
   inventoryBatches: InventoryBatch[]
-  onOrderCompleted?: () => void
+  onOrderCompleted?: (orderId: string, status: string) => void
   onAddTab?: () => void
   onCloseTab?: () => void
   onCloseTabById?: (tabId: string) => void
@@ -62,7 +62,7 @@ export function SaleOrderTabContent({
     initialData,
     inventoryBatches,
     onComplete: onOrderCompleted
-      ? () => onOrderCompleted()
+      ? (orderId, status) => onOrderCompleted(orderId, status)
       : undefined,
   })
 
