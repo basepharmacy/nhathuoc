@@ -57,7 +57,6 @@ export function SaleOrders() {
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
   }, [tabs])
-  //TODO: Bỏ update ngược tab label khi order code thay đổi, vì order code sẽ không thay đổi
   const updateTabLabel = useCallback((tabId: string, label: string) => {
     setTabs((prev) =>
       prev.map((t) => (t.id === tabId ? { ...t, label } : t))
@@ -121,9 +120,7 @@ export function SaleOrders() {
   })
 
   const {
-    data: bankAccounts = [],
-    isLoading: isBankAccountsLoading,
-    isError: isBankAccountsError
+    data: bankAccounts = []
   } = useQuery({
     ...getBankAccountsQueryOptions(tenantId),
     enabled: !!tenantId,
