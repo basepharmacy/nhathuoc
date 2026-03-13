@@ -83,7 +83,7 @@ export function SaleOrders() {
   const handleOrderSaved = useCallback(
     (tabId: string, savedOrderId: string, status: string) => {
       if (tabs.length <= 1) {
-        if (status === '2_COMPLETE') {
+        if (status === '2_COMPLETE' && !savedOrderId.includes('offline-')) {
           navigate({
             to: '/sale-orders/detail',
             search: { orderId: savedOrderId },

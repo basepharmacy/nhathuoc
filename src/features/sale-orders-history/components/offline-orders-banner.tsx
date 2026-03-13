@@ -247,14 +247,11 @@ function OfflineOrderDetailDialog({
   mutation,
   open,
   onOpenChange,
-  tenantId,
 }: {
   mutation: OfflineMutation
   open: boolean
   onOpenChange: (open: boolean) => void
-  tenantId: string
 }) {
-  const [printOpen, setPrintOpen] = useState(false)
   const payload = mutation.payload as OrderPayload
   const order = payload.order
   const items = payload.items ?? []
@@ -385,33 +382,15 @@ function OfflineOrderDetailDialog({
             )}
           </div>
 
-          <div className='flex justify-end'>
-            <Button
-              variant='outline'
-              className='gap-2'
-              onClick={() => setPrintOpen(true)}
-            >
-              <Printer className='size-4' />
-              In hoá đơn
-            </Button>
-          </div>
         </DialogContent>
       </Dialog>
-
-      <PrintPreviewDialog
-        open={printOpen}
-        onOpenChange={setPrintOpen}
-        title='In hoá đơn offline'
-        documentTitle={`Hoa don - ${order?.sale_order_code ?? ''}`}
-      >
-        <OfflineInvoice mutation={mutation} tenantId={tenantId} />
-      </PrintPreviewDialog>
     </>
   )
 }
 
 export function OfflineOrdersBanner({ mutations, tenantId }: OfflineOrdersBannerProps) {
   const [selectedMutation, setSelectedMutation] = useState<OfflineMutation | null>(null)
+  const [printMutation, setPrintMutation] = useState<OfflineMutation | null>(null)
 
   if (mutations.length === 0) return null
 
@@ -487,14 +466,24 @@ export function OfflineOrdersBanner({ mutations, tenantId }: OfflineOrdersBanner
                       {formatDate(mutation.createdAt)}
                     </TableCell>
                     <TableCell className='text-right'>
-                      <Button
-                        variant='ghost'
-                        size='icon'
-                        className='h-8 w-8 text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200'
-                        onClick={() => setSelectedMutation(mutation)}
-                      >
-                        <Eye className='h-4 w-4' />
-                      </Button>
+                      <div className='flex items-center justify-end gap-1'>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200'
+                          onClick={() => setSelectedMutation(mutation)}
+                        >
+                          <Eye className='h-4 w-4' />
+                        </Button>
+                        <Button
+                          variant='ghost'
+                          size='icon'
+                          className='h-8 w-8 text-amber-700 hover:text-amber-900 dark:text-amber-400 dark:hover:text-amber-200'
+                          onClick={() => setPrintMutation(mutation)}
+                        >
+                          <Printer className='h-4 w-4' />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 )
@@ -511,8 +500,20 @@ export function OfflineOrdersBanner({ mutations, tenantId }: OfflineOrdersBanner
           onOpenChange={(open) => {
             if (!open) setSelectedMutation(null)
           }}
-          tenantId={tenantId}
         />
+      )}
+
+      {printMutation && (
+        <PrintPreviewDialog
+          open={!!printMutation}
+          onOpenChange={(open) => {
+            if (!open) setPrintMutation(null)
+          }}
+          title='In hoá đơn offline'
+          documentTitle={`Hoa don - ${(printMutation.payload as OrderPayload).order?.sale_order_code ?? ''}`}
+        >
+          <OfflineInvoice mutation={printMutation} tenantId={tenantId} />
+        </PrintPreviewDialog>
       )}
     </>
   )
