@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -18,8 +18,8 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { formatCurrency, formatDateLabel } from '@/lib/utils'
-import { type SaleOrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase'
+import { useSaleOrderStore } from '../store/sale-order-context'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -112,11 +112,6 @@ function UnitPriceInput({
 }
 
 type SaleOrdersItemsProps = {
-  items: SaleOrderItem[]
-  onUpdateItem: (itemId: string, next: Partial<SaleOrderItem>) => void
-  onQuantityChange: (itemId: string, nextQuantity: number) => void
-  onUnitChange: (itemId: string, newUnitId: string) => void
-  onRemoveItem: (itemId: string) => void
   selectedItemIndex?: number
   onSelectedItemIndexChange?: (index: number) => void
   editingPriceItemId?: string | null
@@ -125,17 +120,18 @@ type SaleOrdersItemsProps = {
 
 const renderUnitLabel = (unit: ProductUnit) => `${unit.unit_name}`
 
-export function SaleOrdersItems({
-  items,
-  onUpdateItem,
-  onQuantityChange,
-  onUnitChange,
-  onRemoveItem,
+export const SaleOrdersItems = memo(function SaleOrdersItems({
   selectedItemIndex = -1,
   onSelectedItemIndexChange,
   editingPriceItemId,
   onEditingPriceItemIdChange,
 }: SaleOrdersItemsProps) {
+  const items = useSaleOrderStore((s) => s.items)
+  const onUpdateItem = useSaleOrderStore((s) => s.updateItem)
+  const onQuantityChange = useSaleOrderStore((s) => s.handleQuantityChange)
+  const onUnitChange = useSaleOrderStore((s) => s.handleUnitChange)
+  const onRemoveItem = useSaleOrderStore((s) => s.removeItem)
+
   return (
     <div className='flex h-full flex-col rounded-xl border bg-card shadow-sm'>
       <ScrollArea className='flex-1'>
@@ -250,4 +246,4 @@ export function SaleOrdersItems({
       </ScrollArea>
     </div>
   )
-}
+})

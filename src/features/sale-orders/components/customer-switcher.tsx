@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { memo, useMemo, useState } from 'react'
 import { ChevronDown, UserPlus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
@@ -20,7 +20,7 @@ type CustomerSwitcherProps = {
   disabled?: boolean
 }
 
-export function CustomerSwitcher({
+export const CustomerSwitcher = memo(function CustomerSwitcher({
   customers,
   selectedCustomerId,
   onChange,
@@ -125,4 +125,4 @@ export function CustomerSwitcher({
       </DropdownMenuContent>
     </DropdownMenu>
   )
-}
+})

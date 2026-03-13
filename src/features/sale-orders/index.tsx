@@ -119,7 +119,10 @@ export function SaleOrders() {
     enabled: !!tenantId,
   })
 
-  const activeProducts = products.filter((p) => p.status === '2_ACTIVE')
+  const activeProducts = useMemo(
+    () => products.filter((p) => p.status === '2_ACTIVE'),
+    [products]
+  )
 
   const {
     data: customers = [],
@@ -162,9 +165,6 @@ export function SaleOrders() {
 
   const isError = isProductsError || isCustomersError || isLocationsError || isOrderDetailError || isInventoryBatchesError
 
-  // TODO: xử lý lỗi cho trường hợp không get được bank accounts
-  // Có thể vẫn cho phép tạo đơn hàng nhưng sẽ không hiển thị được phần chọn tài khoản ngân hàng
-
   // ── Build SaleOrderInCreate for edit mode ─────────────────
   const editOrderData = useMemo(() => {
     if (!orderId || !orderWithItems) return undefined
@@ -183,8 +183,8 @@ export function SaleOrders() {
   return (
     <>
       <Tabs value={activeTabId} onValueChange={setActiveTabId} className='flex flex-1 flex-col'>
-        {tabs.map((tab) => {
-          const isFirstTab = tab === tabs[0]
+        {tabs.map((tab, tabIndex) => {
+          const isFirstTab = tabIndex === 0
           const initialData = isFirstTab && editOrderData
             ? editOrderData
             : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')

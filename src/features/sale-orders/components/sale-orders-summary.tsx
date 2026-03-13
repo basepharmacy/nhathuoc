@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
 import { CurrencyInput } from '@/components/ui/currency-input'
@@ -21,24 +21,12 @@ import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
 import type { Customer, BankAccount } from '@/services/supabase/'
 import { CustomerSwitcher } from './customer-switcher'
+import { useSaleOrderStore } from '../store/sale-order-context'
+import { selectSubtotal } from '../store/sale-order-selectors'
 
 type SaleOrdersSummaryProps = {
   customers: Customer[]
-  customerId: string
-  onCustomerChange: (customerId: string) => void
-  onAddCustomer: () => void
-  subtotal: number
-  orderDiscount: number
-  onOrderDiscountChange: (value: number) => void
-  paymentMethod: PaymentMethod
-  onPaymentMethodChange: (value: PaymentMethod) => void
-  cashReceived: number
-  onCashReceivedChange: (value: number) => void
   bankAccounts: BankAccount[]
-  bankAccountId: string
-  onBankAccountChange: (value: string) => void
-  notes: string
-  onNotesChange: (value: string) => void
   onSaveDraft: () => void
   onSubmit: () => void
   isSubmitting: boolean
@@ -62,27 +50,29 @@ function getCashPresets(total: number): number[] {
   return unique.slice(0, 6)
 }
 
-export function SaleOrdersSummary({
+export const SaleOrdersSummary = memo(function SaleOrdersSummary({
   customers,
-  customerId,
-  onCustomerChange,
-  onAddCustomer,
-  subtotal,
-  orderDiscount,
-  onOrderDiscountChange,
-  paymentMethod,
-  onPaymentMethodChange,
-  cashReceived,
-  onCashReceivedChange,
   bankAccounts,
-  bankAccountId,
-  onBankAccountChange,
-  notes,
-  onNotesChange,
   onSaveDraft,
   onSubmit,
   isSubmitting,
 }: SaleOrdersSummaryProps) {
+  // ── Store ──────────────────────────────────────────────────
+  const customerId = useSaleOrderStore((s) => s.customerId)
+  const setCustomerId = useSaleOrderStore((s) => s.setCustomerId)
+  const orderDiscount = useSaleOrderStore((s) => s.orderDiscount)
+  const setOrderDiscount = useSaleOrderStore((s) => s.setOrderDiscount)
+  const paymentMethod = useSaleOrderStore((s) => s.paymentMethod)
+  const setPaymentMethod = useSaleOrderStore((s) => s.setPaymentMethod)
+  const cashReceived = useSaleOrderStore((s) => s.cashReceived)
+  const setCashReceived = useSaleOrderStore((s) => s.setCashReceived)
+  const bankAccountId = useSaleOrderStore((s) => s.bankAccountId)
+  const setBankAccountId = useSaleOrderStore((s) => s.setBankAccountId)
+  const notes = useSaleOrderStore((s) => s.notes)
+  const setNotes = useSaleOrderStore((s) => s.setNotes)
+  const setIsAddCustomerOpen = useSaleOrderStore((s) => s.setIsAddCustomerOpen)
+  const subtotal = useSaleOrderStore(selectSubtotal)
+
   const [cashPopoverOpen, setCashPopoverOpen] = useState(false)
 
   const total = useMemo(
@@ -90,10 +80,11 @@ export function SaleOrdersSummary({
     [subtotal, orderDiscount]
   )
   const changeAmount = Math.max(0, cashReceived - subtotal)
+
   // tự động set lại orderDiscount về 0 nếu subtotal thay đổi và orderDiscount đang lớn hơn subtotal mới
   useEffect(() => {
     if (orderDiscount > subtotal) {
-      onOrderDiscountChange(0)
+      setOrderDiscount(0)
     }
   }, [subtotal])
 
@@ -101,7 +92,7 @@ export function SaleOrdersSummary({
     if (bankAccounts.length === 0) return
     const defaultAccount = bankAccounts.find((account) => account.is_default) ?? bankAccounts[0]
     if (defaultAccount) {
-      onBankAccountChange(defaultAccount.id)
+      setBankAccountId(defaultAccount.id)
     }
   }, [bankAccounts])
 
@@ -110,8 +101,8 @@ export function SaleOrdersSummary({
       <CustomerSwitcher
         customers={customers}
         selectedCustomerId={customerId}
-        onChange={onCustomerChange}
-        onAddCustomer={onAddCustomer}
+        onChange={setCustomerId}
+        onAddCustomer={() => setIsAddCustomerOpen(true)}
       />
 
       <Separator />
@@ -128,7 +119,7 @@ export function SaleOrdersSummary({
           <DiscountInput
             subtotal={subtotal}
             value={orderDiscount}
-            onChange={onOrderDiscountChange}
+            onChange={setOrderDiscount}
           />
         </div>
       </div>
@@ -155,7 +146,7 @@ export function SaleOrdersSummary({
                 'h-auto min-h-10 w-full rounded-full px-2 py-2 text-xs leading-4 whitespace-normal',
                 paymentMethod !== option.value && 'text-muted-foreground'
               )}
-              onClick={() => onPaymentMethodChange(option.value)}
+              onClick={() => setPaymentMethod(option.value)}
             >
               {option.label}
             </Button>
@@ -171,7 +162,7 @@ export function SaleOrdersSummary({
                   <div>
                     <CurrencyInput
                       value={cashReceived}
-                      onValueChange={onCashReceivedChange}
+                      onValueChange={setCashReceived}
                       onClick={() => setCashPopoverOpen(true)}
                       className='h-8 w-28 rounded-full text-right text-xs'
                     />
@@ -191,7 +182,7 @@ export function SaleOrdersSummary({
                         size='sm'
                         className='h-7 rounded-full px-2.5 text-xs'
                         onClick={() => {
-                          onCashReceivedChange(preset)
+                          setCashReceived(preset)
                           setCashPopoverOpen(false)
                         }}
                       >
@@ -215,7 +206,7 @@ export function SaleOrdersSummary({
               <span className='text-xs'>Tài khoản thanh toán</span>
               <Select
                 value={bankAccountId}
-                onValueChange={onBankAccountChange}
+                onValueChange={setBankAccountId}
                 disabled={bankAccounts.length === 0}
               >
                 <SelectTrigger className='h-9 rounded-full text-xs'>
@@ -266,10 +257,10 @@ export function SaleOrdersSummary({
 
       <Textarea
         value={notes}
-        onChange={(event) => onNotesChange(event.target.value)}
+        onChange={(event) => setNotes(event.target.value)}
         placeholder='Ghi chú đơn bán hàng'
         className='min-h-[120px] rounded-xl'
       />
     </div>
   )
-}
+})

@@ -172,7 +172,10 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
                     value={product.product_name}
                     onSelect={() => handleAddProduct(product)}
                     onMouseEnter={() => setActiveIndex(index)}
-                    className={cn('cursor-pointer', index === activeIndex && 'bg-accent')}
+                    className={cn(
+                      'cursor-pointer data-[selected=true]:bg-transparent data-[selected=true]:text-inherit',
+                      index === activeIndex && '!bg-accent !text-accent-foreground'
+                    )}
                   >
                     <div className='flex w-full flex-col'>
                       <span className='font-medium'>{product.product_name}</span>
