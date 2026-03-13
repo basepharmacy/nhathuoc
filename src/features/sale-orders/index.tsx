@@ -18,6 +18,7 @@ import { toast } from 'sonner'
 import { type InventoryBatch } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { createNewSaleOrder } from './data/types'
 import { mapOrderToSaleOrderInCreate } from './data/sale-order-helper'
+import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
 const EMPTY_BATCHES: InventoryBatch[] = []
@@ -194,42 +195,57 @@ export function SaleOrders() {
 
   // ── Render ──────────────────────────────────────────────────
   return (
-    <Tabs value={activeTabId} onValueChange={setActiveTabId} className='flex flex-1 flex-col'>
-      {tabs.map((tab) => {
-        const isFirstTab = tab === tabs[0]
-        const initialData = isFirstTab && editOrderData
-          ? editOrderData
-          : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')
-        const tabKey = isFirstTab && orderId ? `${tab.id}-edit-${orderId}` : tab.id
+    <>
+      <Tabs value={activeTabId} onValueChange={setActiveTabId} className='flex flex-1 flex-col'>
+        {tabs.map((tab) => {
+          const isFirstTab = tab === tabs[0]
+          const initialData = isFirstTab && editOrderData
+            ? editOrderData
+            : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')
+          const tabKey = isFirstTab && orderId ? `${tab.id}-edit-${orderId}` : tab.id
 
-        return (
-          <TabsContent
-            key={tabKey}
-            value={tab.id}
-            className='flex flex-1 flex-col data-[state=inactive]:hidden'
-            forceMount
-          >
-            <SaleOrderTabContent
-              initialData={initialData}
-              tenantId={tenantId}
-              userId={userId}
-              products={activeProducts}
-              customers={customers}
-              bankAccounts={bankAccounts}
-              locations={locations}
-              inventoryBatches={inventoryBatches}
-              onOrderCompleted={(orderId, status) => handleOrderSaved(tab.id, orderId, status)}
-              onAddTab={addTab}
-              onCloseTab={() => closeTab(tab.id)}
-              onCloseTabById={closeTab}
-              tabCount={tabs.length}
-              isActive={tab.id === activeTabId}
-              tabs={tabs}
-              onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
-            />
-          </TabsContent>
-        )
-      })}
-    </Tabs>
+          return (
+            <TabsContent
+              key={tabKey}
+              value={tab.id}
+              className='flex flex-1 flex-col data-[state=inactive]:hidden'
+              forceMount
+            >
+              <SaleOrderTabContent
+                initialData={initialData}
+                tenantId={tenantId}
+                userId={userId}
+                products={activeProducts}
+                customers={customers}
+                bankAccounts={bankAccounts}
+                locations={locations}
+                inventoryBatches={inventoryBatches}
+                onOrderCompleted={(orderId, status) => handleOrderSaved(tab.id, orderId, status)}
+                onAddTab={addTab}
+                onCloseTab={() => closeTab(tab.id)}
+                onCloseTabById={closeTab}
+                tabCount={tabs.length}
+                isActive={tab.id === activeTabId}
+                tabs={tabs}
+                onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
+              />
+            </TabsContent>
+          )
+        })}
+      </Tabs>
+      <OrderKeyboardFooter
+        shortcuts={[
+          { key: 'F1', label: 'Tạo đơn mới' },
+          { key: 'F3', label: 'Lưu nháp' },
+          { key: 'ESC', label: 'Huỷ đơn' },
+          { key: 'F6', label: 'In hoá đơn' },
+          { key: 'F8', label: 'Chỉnh đơn giá' },
+          { key: 'F9', label: 'Thanh toán' },
+          { key: '↑↓', label: 'Chọn sản phẩm' },
+          { key: '←→', label: 'Tăng giảm số lượng' },
+          { key: 'Del', label: 'Xoá sản phẩm' },
+        ]}
+      />
+    </>
   )
 }

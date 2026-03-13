@@ -64,6 +64,16 @@ export function useSaleOrderKeyboardShortcuts({
           onSetPrintOpen(true)
           break
         }
+        case 'F8': {
+          event.preventDefault()
+          if (selectedItemIndex >= 0 && selectedItemIndex < items.length) {
+            const item = items[selectedItemIndex]
+            setEditingPriceItemId(item.id)
+            const input = document.querySelector<HTMLInputElement>(`tr[data-item-id="${item.id}"] [data-currency-input]`)
+            input?.focus()
+          }
+          break
+        }
         case 'F9': {
           event.preventDefault()
           onSubmit()

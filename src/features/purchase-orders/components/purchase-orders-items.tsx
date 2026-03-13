@@ -28,6 +28,7 @@ import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
 import { BatchSelectDialog } from './batch-select-dialog'
+import { CurrencyInput } from '@/components/ui/currency-input'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -71,9 +72,9 @@ function UnitPriceInput({
               -{discountPercent}%
             </span>
           )}
-          <Input
-            value={formatCurrency(value)}
-            onChange={(e) => onChange(normalizeNumber(e.target.value))}
+          <CurrencyInput
+            value={value}
+            onValueChange={onChange}
             onClick={() => !disabled && handleOpenChange(true)}
             className='h-8 w-full rounded-full text-end text-xs'
             inputMode='numeric'

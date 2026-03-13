@@ -7,7 +7,6 @@ import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
-import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 import { CustomersActionDialog } from '@/features/customers/components/customers-action-dialog'
 import { type SaleOrderInCreate } from '../data/types'
 import { SaleOrdersItems } from './sale-orders-items'
@@ -276,19 +275,6 @@ export function SaleOrderTabContent({
           notes={order.notes}
         />
       </PrintPreviewDialog>
-
-      <OrderKeyboardFooter
-        shortcuts={[
-          { key: 'F1', label: 'Tạo đơn mới' },
-          { key: 'F3', label: 'Lưu nháp' },
-          { key: 'ESC', label: 'Huỷ đơn' },
-          { key: 'F6', label: 'In hoá đơn' },
-          { key: 'F9', label: 'Thanh toán' },
-          { key: '↑↓', label: 'Chọn sản phẩm' },
-          { key: '←→', label: 'Tăng giảm số lượng' },
-          { key: 'Del', label: 'Xoá sản phẩm' },
-        ]}
-      />
     </>
   )
 }

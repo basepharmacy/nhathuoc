@@ -1,12 +1,11 @@
 import { useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { formatCurrency, normalizeNumber } from '@/lib/utils'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -38,13 +37,12 @@ export function DiscountInput({
               -{percent}%
             </span>
           )}
-          <Input
+          <CurrencyInput
             ref={inputRef}
-            value={formatCurrency(value)}
-            onChange={(e) => onChange?.(normalizeNumber(e.target.value))}
+            value={value}
+            onValueChange={(v) => onChange?.(v)}
             onClick={() => !disabled && setOpen(true)}
             className='h-8 w-28 rounded-full text-right text-xs'
-            inputMode='numeric'
             disabled={disabled}
           />
         </div>

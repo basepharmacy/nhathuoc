@@ -10,7 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
-import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { type SaleOrderWithRelations } from '@/services/supabase/'
 
 type SaleOrdersHistoryTableProps = {
   table: ReactTable<SaleOrderWithRelations>

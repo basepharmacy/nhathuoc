@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { DiscountInput } from '@/components/discount-input'
-import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import { Separator } from '@/components/ui/separator'
 import {
   Popover,
@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
+import { cn, formatCurrency } from '@/lib/utils'
 import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
 import type { Customer, BankAccount } from '@/services/supabase/'
@@ -169,12 +169,11 @@ export function SaleOrdersSummary({
               <Popover open={cashPopoverOpen} onOpenChange={setCashPopoverOpen}>
                 <PopoverTrigger asChild>
                   <div>
-                    <Input
-                      value={formatCurrency(cashReceived)}
-                      onChange={(e) => onCashReceivedChange(normalizeNumber(e.target.value))}
+                    <CurrencyInput
+                      value={cashReceived}
+                      onValueChange={onCashReceivedChange}
                       onClick={() => setCashPopoverOpen(true)}
                       className='h-8 w-28 rounded-full text-right text-xs'
-                      inputMode='numeric'
                     />
                   </div>
                 </PopoverTrigger>

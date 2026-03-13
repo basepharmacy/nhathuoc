@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import {
   Popover,
   PopoverContent,
@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, normalizeNumber, formatDateLabel } from '@/lib/utils'
+import { formatCurrency, formatDateLabel } from '@/lib/utils'
 import { type SaleOrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase'
 
@@ -63,21 +63,11 @@ function UnitPriceInput({
               -{discountPercent}%
             </span>
           )}
-          <Input
-            value={formatCurrency(value)}
-            onChange={(e) => onChange(normalizeNumber(e.target.value))}
-            onKeyDown={(e) => {
-              if (e.key === 'ArrowUp') {
-                e.preventDefault()
-                onChange(value + 1000)
-              } else if (e.key === 'ArrowDown') {
-                e.preventDefault()
-                onChange(Math.max(0, value - 1000))
-              }
-            }}
+          <CurrencyInput
+            value={value}
+            onValueChange={onChange}
             onClick={() => !disabled && handleOpenChange(true)}
             className='h-8 w-full rounded-full text-end text-xs'
-            inputMode='numeric'
             disabled={disabled}
           />
         </div>
@@ -179,6 +169,7 @@ export function SaleOrdersItems({
                   return (
                     <TableRow
                       key={item.id}
+                      data-item-id={item.id}
                       className={isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : 'cursor-pointer'}
                       onClick={() => onSelectedItemIndexChange?.(index)}
                     >
