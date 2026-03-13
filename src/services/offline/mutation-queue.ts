@@ -4,8 +4,10 @@ const IDB_KEY = 'basepharmacy-offline-mutations'
 
 export type OfflineMutation = {
   id: string
-  type: 'create-sale-order'
+  type: 'create-sale-order' | 'update-sale-order'
   payload: unknown
+  /** Used to deduplicate update mutations for the same order */
+  orderId?: string
   createdAt: string
 }
 
@@ -16,7 +18,15 @@ export async function getOfflineMutations(): Promise<OfflineMutation[]> {
 export async function addOfflineMutation(
   mutation: Omit<OfflineMutation, 'id' | 'createdAt'>
 ): Promise<void> {
-  const queue = await getOfflineMutations()
+  let queue = await getOfflineMutations()
+
+  // Deduplicate: if updating the same order, keep only the latest
+  if (mutation.type === 'update-sale-order' && mutation.orderId) {
+    queue = queue.filter(
+      (m) => !(m.type === 'update-sale-order' && m.orderId === mutation.orderId)
+    )
+  }
+
   queue.push({
     ...mutation,
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,

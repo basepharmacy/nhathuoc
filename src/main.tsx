@@ -24,7 +24,7 @@ import './styles/index.css'
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      networkMode: 'always',
+      networkMode: 'offlineFirst',
       retry: (failureCount, error) => {
         // eslint-disable-next-line no-console
         if (import.meta.env.DEV) console.log({ failureCount, error })
@@ -42,6 +42,7 @@ const queryClient = new QueryClient({
       },
       refetchOnWindowFocus: import.meta.env.PROD,
       staleTime: 10 * 1000, // 10s
+      gcTime: Infinity, // Prevent GC before persister can restore — required by react-query-persist-client
     },
     mutations: {
       networkMode: 'offlineFirst',
@@ -62,23 +63,23 @@ const queryClient = new QueryClient({
   queryCache: new QueryCache({
     onError: (error) => {
       // Silently ignore network errors — app uses cached data when offline
-      if (isNetworkError(error)) return
+      if (isNetworkError(error) || !navigator.onLine) return
 
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast.error('Session expired!')
-          const redirect = `${router.history.location.href}`
-          router.navigate({ to: '/sign-in', search: { redirect } })
+          const redirect = `${router?.history?.location?.href ?? '/'}`
+          router?.navigate({ to: '/sign-in', search: { redirect } })
         }
         if (error.response?.status === 500) {
           toast.error('Internal Server Error!')
           // Only navigate to error page in production to avoid disrupting HMR in development
           if (import.meta.env.PROD) {
-            router.navigate({ to: '/500' })
+            router?.navigate({ to: '/500' })
           }
         }
         if (error.response?.status === 403) {
-          // router.navigate("/forbidden", { replace: true });
+          // router?.navigate("/forbidden", { replace: true });
         }
       }
     },
@@ -110,7 +111,7 @@ if (!rootElement.innerHTML) {
     <StrictMode>
       <PersistQueryClientProvider
         client={queryClient}
-        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 }}
+        persistOptions={{ persister, maxAge: 1000 * 60 * 60 * 24 * 7 }}
       >
         <AuthUserProvider>
           <LocationProvider>

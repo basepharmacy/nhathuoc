@@ -45,6 +45,7 @@ export const getProfilesQueryOptions = (userId: string) =>
       const profiles = await profilesRepo.getProfileByUserId(userId)
       return profiles
     },
+    staleTime: 10 * 60 * 1000, // 10 min — rarely changes, critical for app bootstrap
   })
 
 export const getStaffUsersQueryOptions = (tenantId: string) =>
@@ -72,6 +73,7 @@ export const getLocationsQueryOptions = (tenantId: string) =>
       const locations = await locationsRepo.getLocationsByTenantId(tenantId)
       return locations
     },
+    staleTime: 5 * 60 * 1000, // 5 min — stable data, critical for offline sale-order
   })
 
 export const getLocationQueryOptions = (locationId: string) =>
@@ -114,6 +116,7 @@ export const getBankAccountsQueryOptions = (tenantId: string) =>
   queryOptions({
     queryKey: ['bank-accounts', tenantId],
     queryFn: () => bankAccountsRepo.getBankAccountsByTenantId(tenantId),
+    staleTime: 5 * 60 * 1000, // 5 min — stable data, critical for offline sale-order
   })
 
 export const getSupplierBankAccountsQueryOptions = (supplierId: string) =>
@@ -148,6 +151,7 @@ export const getCustomersQueryOptions = (tenantId: string) =>
       const customers = await customersRepo.getAllCustomersByTenantId(tenantId)
       return customers
     },
+    staleTime: 5 * 60 * 1000, // 5 min — critical for offline sale-order
   })
 
 export const getCustomerDetailQueryOptions = (
@@ -175,6 +179,7 @@ export const getProductsQueryOptions = (tenantId: string) =>
       const products = await productsRepo.getAllProductsByTenantId(tenantId)
       return products
     },
+    staleTime: 5 * 60 * 1000, // 5 min — critical for offline sale-order
   })
 
 export const getPurchaseOrdersHistoryQueryOptions = (
@@ -387,6 +392,7 @@ export const getAllAvailableInventoryBatchesQueryOptions = (
       })
       return batches
     },
+    staleTime: 1 * 60 * 1000, // 1 min — critical for offline sale-order
   })
 
 export const getInventoryBatchesQueryOptions = (

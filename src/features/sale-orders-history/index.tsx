@@ -20,9 +20,11 @@ import {
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { useLocationContext } from '@/context/location-provider'
+import { useOfflineMutations } from '@/hooks/use-offline-mutations'
 import { type SaleOrderWithRelations } from '@/services/supabase'
 import { getSaleOrdersHistoryColumns } from './components/sale-orders-history-columns.tsx'
 import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.tsx'
+import { OfflineOrdersBanner } from './components/offline-orders-banner.tsx'
 
 export function SaleOrdersHistory() {
   const { user } = useUser()
@@ -30,6 +32,7 @@ export function SaleOrdersHistory() {
   const { selectedLocationId } = useLocationContext()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { mutations: offlineMutations } = useOfflineMutations()
 
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -294,6 +297,7 @@ export function SaleOrdersHistory() {
       </Header>
 
       <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+        <OfflineOrdersBanner mutations={offlineMutations} tenantId={tenantId} />
         <SaleOrdersHistoryTable
           table={table}
           isLoading={isLoading}

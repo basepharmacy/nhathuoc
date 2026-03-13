@@ -113,7 +113,7 @@ export function SaleOrders() {
   // ── Shared queries (tenant-level) ──────────────────────────
   const {
     data: products = [],
-    isError: isProductsError
+    //isError: isProductsError
   } = useQuery({
     ...getProductsQueryOptions(tenantId),
     enabled: !!tenantId,
@@ -126,7 +126,7 @@ export function SaleOrders() {
 
   const {
     data: customers = [],
-    isError: isCustomersError
+    //isError: isCustomersError
   } = useQuery({
     ...getCustomersQueryOptions(tenantId),
     enabled: !!tenantId,
@@ -141,7 +141,7 @@ export function SaleOrders() {
 
   const {
     data: locations = [],
-    isError: isLocationsError
+    //isError: isLocationsError
   } = useQuery({
     ...getLocationsQueryOptions(tenantId),
     enabled: !!tenantId,
@@ -149,7 +149,7 @@ export function SaleOrders() {
 
   const {
     data: orderWithItems,
-    isError: isOrderDetailError
+    //isError: isOrderDetailError
   } = useQuery({
     ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
     enabled: !!tenantId && !!orderId,
@@ -157,13 +157,13 @@ export function SaleOrders() {
 
   const {
     data: inventoryBatches = EMPTY_BATCHES,
-    isError: isInventoryBatchesError
+    //isError: isInventoryBatchesError
   } = useQuery({
     ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const isError = isProductsError || isCustomersError || isLocationsError || isOrderDetailError || isInventoryBatchesError
+  //const isError = isProductsError || isCustomersError || isLocationsError || isOrderDetailError || isInventoryBatchesError
 
   // ── Build SaleOrderInCreate for edit mode ─────────────────
   const editOrderData = useMemo(() => {
@@ -171,13 +171,13 @@ export function SaleOrders() {
     return mapOrderToSaleOrderInCreate(orderWithItems, products, inventoryBatches, sidebarLocationId)
   }, [orderId, orderWithItems, products, inventoryBatches, sidebarLocationId])
 
-  if (isError) {
-    return (
-      <div className='flex items-center justify-center py-10 text-muted-foreground'>
-        Đã có lỗi xảy ra. Vui lòng thử lại.
-      </div>
-    )
-  }
+  // if (isError) {
+  //   return (
+  //     <div className='flex items-center justify-center py-10 text-muted-foreground'>
+  //       Đã có lỗi xảy ra. Vui lòng thử lại.
+  //     </div>
+  //   )
+  // }
 
   // ── Render ──────────────────────────────────────────────────
   return (

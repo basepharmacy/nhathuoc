@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { saleOrdersRepo } from '@/client'
 import { getSaleOrdersHistoryQueryOptions } from '@/client/queries'
 import { SaleOrdersHistoryTable } from '@/features/sale-orders-history/components/sale-orders-history-table.tsx'
-import { type SaleOrderWithRelations } from '@/services/supabase/database/repo/saleOrdersRepo'
+import { type SaleOrderWithRelations } from '@/services/supabase/'
 import { getCustomerOrdersHistoryColumns } from './customer-orders-history-columns'
 
 type CustomerTabsProps = {

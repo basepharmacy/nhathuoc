@@ -11,12 +11,16 @@ import { selectTotal, selectIsEdit } from '../store/sale-order-selectors'
 type UseSaleOrderMutationsParams = {
   tenantId: string
   userId: string
+  customerName?: string
+  locationName?: string
   onComplete?: (orderId: string, status: SaleOrder['status']) => void
 }
 
 export function useSaleOrderMutations({
   tenantId,
   userId,
+  customerName,
+  locationName,
   onComplete,
 }: UseSaleOrderMutationsParams) {
   const queryClient = useQueryClient()
@@ -33,6 +37,13 @@ export function useSaleOrderMutations({
       unit_price: item.unitPrice,
       discount: item.discount,
       batch_id: item.batchId ?? null,
+      // Display-only fields for offline viewing
+      _display: {
+        productName: item.product.product_name,
+        unitName: item.product.product_units?.find((u) => u.id === item.productUnitId)?.unit_name ?? '',
+        batchCode: item.batchCode,
+        expiryDate: item.expiryDate,
+      },
     }))
   }
 
@@ -71,6 +82,10 @@ export function useSaleOrderMutations({
           notes: state.notes.trim().length > 0 ? state.notes.trim() : null,
         },
         items: buildOrderItems(),
+        _display: {
+          customerName: customerName ?? '',
+          locationName: locationName ?? '',
+        },
       }
 
       if (!isOnline) {
@@ -115,8 +130,7 @@ export function useSaleOrderMutations({
 
       const state = store.getState()
       const total = selectTotal(state)
-
-      await saleOrdersRepo.updateSaleOrderWithItems({
+      const payload = {
         orderId: initialData.id,
         tenantId,
         order: {
@@ -129,10 +143,37 @@ export function useSaleOrderMutations({
           notes: state.notes.trim().length > 0 ? state.notes.trim() : null,
         },
         items: buildOrderItems(),
-      })
+        _display: {
+          customerName: customerName ?? '',
+          locationName: locationName ?? '',
+        },
+      }
+
+      if (!isOnline) {
+        await addOfflineMutation({ type: 'update-sale-order', payload, orderId: initialData.id })
+        return { _offline: true }
+      }
+
+      try {
+        await saleOrdersRepo.updateSaleOrderWithItems(payload)
+      } catch (error) {
+        if (isNetworkError(error)) {
+          await addOfflineMutation({ type: 'update-sale-order', payload, orderId: initialData.id })
+          return { _offline: true }
+        }
+        throw error
+      }
     },
-    onSuccess: (_data, status) => {
+    onSuccess: (result, status) => {
       const { initialData } = store.getState()
+      const isOfflineQueued = result && typeof result === 'object' && '_offline' in result
+
+      if (isOfflineQueued) {
+        toast.success('Đã lưu cập nhật offline. Sẽ tự đồng bộ khi có mạng.')
+        onComplete?.(initialData.id ?? '', status)
+        return
+      }
+
       if (initialData.id) {
         queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail', initialData.id] })
       }

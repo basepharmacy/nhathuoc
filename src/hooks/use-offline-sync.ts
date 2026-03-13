@@ -18,6 +18,13 @@ async function replayMutation(mutation: OfflineMutation): Promise<void> {
       await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
       break
     }
+    case 'update-sale-order': {
+      const payload = mutation.payload as Parameters<
+        typeof saleOrdersRepo.updateSaleOrderWithItems
+      >[0]
+      await saleOrdersRepo.updateSaleOrderWithItems(payload)
+      break
+    }
   }
 }
 

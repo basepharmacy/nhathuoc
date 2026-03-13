@@ -6,7 +6,7 @@ import {
   type ReactNode,
 } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { isNetworkError } from '@/services/offline/mutation-queue'
 import { supabaseAuth } from '@/services/supabase'
 import { getProfilesQueryOptions } from './queries'
 import type {
@@ -93,13 +93,11 @@ export function AuthUserProvider({ children }: AuthUserProviderProps) {
 
   const profile = profileQuery.data ?? null
 
-  const navigate = useNavigate()
-
   useEffect(() => {
-    if (profileQuery.isError) {
-      navigate({ to: '/500' })
+    if (profileQuery.isError && !isNetworkError(profileQuery.error) && navigator.onLine) {
+      window.location.href = '/500'
     }
-  }, [profileQuery.isError, navigate])
+  }, [profileQuery.isError, profileQuery.error])
 
   const isLoading = profileQuery.isLoading
 

@@ -122,17 +122,29 @@ function SaleOrderTabContentInner({
     [onOrderCompleted]
   )
 
-  const { saveDraft, submit, isSubmitting } = useSaleOrderMutations({
-    tenantId,
-    userId,
-    onComplete: onOrderCompleted ? handleComplete : undefined,
-  })
-
   // ── Store: only subscribe to what this component actually needs ──
   const orderCode = useSaleOrderStore((s) => s.orderCode)
   const items = useSaleOrderStore((s) => s.items)
   const selectedLocationId = useSaleOrderStore((s) => s.selectedLocationId)
+  const customerId = useSaleOrderStore((s) => s.customerId)
   const isAddCustomerOpen = useSaleOrderStore((s) => s.isAddCustomerOpen)
+
+  const currentCustomerName = useMemo(
+    () => customers.find((c) => c.id === customerId)?.name ?? '',
+    [customers, customerId]
+  )
+  const currentLocationName = useMemo(
+    () => locations.find((l) => l.id === selectedLocationId)?.name ?? '',
+    [locations, selectedLocationId]
+  )
+
+  const { saveDraft, submit, isSubmitting } = useSaleOrderMutations({
+    tenantId,
+    userId,
+    customerName: currentCustomerName,
+    locationName: currentLocationName,
+    onComplete: onOrderCompleted ? handleComplete : undefined,
+  })
 
   const addProduct = useSaleOrderStore((s) => s.addProduct)
   const setSelectedLocationId = useSaleOrderStore((s) => s.setSelectedLocationId)
