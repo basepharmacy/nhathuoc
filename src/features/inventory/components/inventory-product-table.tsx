@@ -59,7 +59,11 @@ const columns: ColumnDef<InventoryProductsListItem>[] = [
   {
     accessorKey: 'totalQuantity',
     header: 'Tồn kho',
-    cell: ({ row }) => formatQuantity(row.original.totalQuantity),
+    cell: ({ row }) => (
+      <span className='tabular-nums'>
+        {formatQuantity(row.original.totalQuantity) + ' ' + row.original.base_unit_name}
+      </span>
+    ),
     meta: { className: 'text-end', thClassName: 'text-end' },
   },
   {

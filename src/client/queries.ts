@@ -425,9 +425,6 @@ export const getInventoryBatchesListQueryOptions = (
       },
     ],
     queryFn: async () => {
-      if (!params.tenantId) {
-        return { data: [], total: 0 }
-      }
       const result = await inventoryBatchesRepo.getInventoryBatchesList(params)
       return result
     },
@@ -449,9 +446,6 @@ export const getInventoryProductsListQueryOptions = (
       },
     ],
     queryFn: async () => {
-      if (!params.tenantId) {
-        return { data: [], total: 0 }
-      }
       const result = await inventoryBatchesRepo.getInventoryProductsList(params)
       return result
     },

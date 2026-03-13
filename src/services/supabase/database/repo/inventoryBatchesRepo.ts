@@ -4,7 +4,16 @@ import { ProductStatus } from '../model'
 
 export type InventoryBatch = Tables<'inventory_batches'>
 export type InventoryBatchWithRelations = InventoryBatch & {
-  products?: { id: string; product_name: string, status: ProductStatus } | null
+  products?: {
+    id: string
+    product_name: string
+    status: ProductStatus
+    product_units: {
+      unit_name: string
+      is_base_unit: boolean
+      conversion_factor: number
+    }[]
+  } | null
   locations?: { id: string; name: string } | null
 }
 
@@ -52,6 +61,7 @@ export type InventoryProductsListItem = {
   batchCount: number
   locations: string[]
   earliestExpiry: string | null
+  base_unit_name: string
 }
 
 export type InventoryProductsListQueryResult = {
@@ -89,6 +99,9 @@ export const createInventoryBatchRepository = (
     async getInventoryBatchesList(
       params: InventoryBatchesListQueryInput
     ): Promise<InventoryBatchesListQueryResult> {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
       const start = params.pageIndex * params.pageSize
       const end = start + params.pageSize - 1
       const searchValue = params.search?.trim()
@@ -96,7 +109,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('inventory_batches')
         .select(
-          `id, batch_code, expiry_date, quantity, cumulative_quantity, average_cost_price, product_id, location_id, tenant_id, updated_at, products!inner(id, product_name, status), locations(id, name)`,
+          `*, products!inner(id, product_name, status, product_units(unit_name, is_base_unit, conversion_factor)), locations(id, name)`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -110,7 +123,6 @@ export const createInventoryBatchRepository = (
       }
 
       const { data, error, count } = await query
-        .order('updated_at', { ascending: false })
         .order('batch_code', { ascending: true })
         .range(start, end)
 
@@ -119,13 +131,16 @@ export const createInventoryBatchRepository = (
       }
 
       return {
-        data: (data ?? []) as InventoryBatchWithRelations[],
+        data: data ?? [],
         total: count ?? 0,
       }
     },
     async getInventoryProductsList(
       params: InventoryProductsListQueryInput
     ): Promise<InventoryProductsListQueryResult> {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
       const start = params.pageIndex * params.pageSize
       const end = start + params.pageSize - 1
       const searchValue = params.search?.trim()
@@ -133,7 +148,7 @@ export const createInventoryBatchRepository = (
       let query = client
         .from('products')
         .select(
-          `id, product_name, status, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name))`,
+          `id, product_name, status, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name)), product_units(unit_name, is_base_unit, conversion_factor)`,
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
@@ -196,6 +211,7 @@ export const createInventoryBatchRepository = (
           batchCount: batches.length,
           locations: Array.from(locations),
           earliestExpiry,
+          base_unit_name: product.product_units?.find((unit) => unit.is_base_unit)?.unit_name ?? '',
         }
       })
 

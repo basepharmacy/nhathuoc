@@ -8,17 +8,15 @@ import {
 } from '@/components/ui/card'
 import { formatCurrency } from '@/lib/utils'
 
-export type InventorySummary = {
-  totalProducts: number
-  totalQuantity: number
-  totalValue: number
-}
-
 const formatQuantity = (value: number) =>
   new Intl.NumberFormat('vi-VN').format(value)
 
 type InventorySummaryCardsProps = {
-  summary: InventorySummary
+  summary: {
+    totalProducts: number
+    totalQuantity: number
+    totalValue: number
+  }
 }
 
 export function InventorySummaryCards({ summary }: InventorySummaryCardsProps) {
@@ -46,7 +44,7 @@ export function InventorySummaryCards({ summary }: InventorySummaryCardsProps) {
         <CardContent className='px-4 pt-0'>
           <div className='flex items-center gap-2 text-muted-foreground'>
             <Boxes className='size-4 text-indigo-500' />
-            <span className='text-sm'>Tổng số lượng đang có</span>
+            <span className='text-sm'>Tổng số lượng đang có theo đơn vị cơ bản</span>
           </div>
         </CardContent>
       </Card>

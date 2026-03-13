@@ -113,7 +113,6 @@ export function SaleOrders() {
   // ── Shared queries (tenant-level) ──────────────────────────
   const {
     data: products = [],
-    isLoading: isProductsLoading,
     isError: isProductsError
   } = useQuery({
     ...getProductsQueryOptions(tenantId),
@@ -124,7 +123,6 @@ export function SaleOrders() {
 
   const {
     data: customers = [],
-    isLoading: isCustomersLoading,
     isError: isCustomersError
   } = useQuery({
     ...getCustomersQueryOptions(tenantId),
@@ -140,7 +138,6 @@ export function SaleOrders() {
 
   const {
     data: locations = [],
-    isLoading: isLocationsLoading,
     isError: isLocationsError
   } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -149,7 +146,6 @@ export function SaleOrders() {
 
   const {
     data: orderWithItems,
-    isLoading: isOrderDetailLoading,
     isError: isOrderDetailError
   } = useQuery({
     ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
@@ -158,14 +154,12 @@ export function SaleOrders() {
 
   const {
     data: inventoryBatches = EMPTY_BATCHES,
-    isLoading: isInventoryBatchesLoading,
     isError: isInventoryBatchesError
   } = useQuery({
     ...getAllAvailableInventoryBatchesQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
-  const isLoading = isProductsLoading || isCustomersLoading || isLocationsLoading || isOrderDetailLoading || isInventoryBatchesLoading
   const isError = isProductsError || isCustomersError || isLocationsError || isOrderDetailError || isInventoryBatchesError
 
   // TODO: xử lý lỗi cho trường hợp không get được bank accounts
@@ -181,14 +175,6 @@ export function SaleOrders() {
     return (
       <div className='flex items-center justify-center py-10 text-muted-foreground'>
         Đã có lỗi xảy ra. Vui lòng thử lại.
-      </div>
-    )
-  }
-
-  if (isLoading) {
-    return (
-      <div className='flex items-center justify-center py-10 text-muted-foreground'>
-        Đang tải...
       </div>
     )
   }

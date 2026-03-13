@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SquarePen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Popover,
   PopoverContent,
@@ -24,7 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, normalizeNumber } from '@/lib/utils'
+import { formatCurrency } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
 import { BatchSelectDialog } from './batch-select-dialog'

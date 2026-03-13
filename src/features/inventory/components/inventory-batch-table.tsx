@@ -65,6 +65,10 @@ function createColumns(
       enableHiding: true,
     },
     {
+      accessorKey: 'batch_code',
+      header: 'Lô',
+    },
+    {
       id: 'product_name',
       header: 'Sản phẩm',
       cell: ({ row }) => (
@@ -75,10 +79,6 @@ function createColumns(
       ),
     },
     {
-      accessorKey: 'batch_code',
-      header: 'Lô',
-    },
-    {
       accessorKey: 'expiry_date',
       header: 'HSD',
       cell: ({ row }) => formatDateLabel(row.original.expiry_date),
@@ -86,7 +86,9 @@ function createColumns(
     {
       accessorKey: 'quantity',
       header: 'Tồn kho',
-      cell: ({ row }) => formatQuantity(row.original.quantity),
+      cell: ({ row }) => (
+        <span className='tabular-nums'>{formatQuantity(row.original.quantity) + ' ' + (row.original.products?.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}</span>
+      ),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
