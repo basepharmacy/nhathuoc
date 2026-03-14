@@ -4,6 +4,7 @@ import {
   DataTableRowActions as RowActions,
   type RowAction,
 } from '@/components/data-table-row-actions'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type ProductWithUnits } from '@/services/supabase'
 import { useProducts } from './products-provider'
 
@@ -13,7 +14,10 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useProducts()
+  const { canEdit } = usePermissions()
   const isDraft = row.original.status === '1_DRAFT'
+
+  if (!canEdit('products')) return null
 
   const actions: RowAction[] = [
     {

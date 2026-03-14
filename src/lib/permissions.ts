@@ -73,8 +73,16 @@ export function getFeatureFromPath(pathname: string): Feature | null {
   return ROUTE_FEATURE_MAP[prefix] ?? null
 }
 
+/** Routes that require edit permission (not just view) */
+const EDIT_ONLY_ROUTES = ['/inventory/adjustments']
+
 export function canAccessRoute(role: StaffRole, pathname: string): boolean {
   const feature = getFeatureFromPath(pathname)
   if (!feature) return true // unknown routes are allowed (e.g. /settings/appearance)
+
+  if (EDIT_ONLY_ROUTES.some((r) => pathname.startsWith(r))) {
+    return canEdit(role, feature)
+  }
+
   return canView(role, feature)
 }

@@ -6,6 +6,7 @@ import {
 } from '@/components/data-table-row-actions'
 import { type Category } from '../data/schema'
 import { useCategories } from './categories-provider'
+import { usePermissions } from '@/hooks/use-permissions'
 
 type DataTableRowActionsProps = {
   row: Row<Category>
@@ -13,7 +14,9 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useCategories()
+  const { canEdit } = usePermissions()
 
+  if (!canEdit('products')) return null
   const actions: RowAction[] = [
     {
       label: 'Chỉnh sửa',

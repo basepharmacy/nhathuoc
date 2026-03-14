@@ -20,6 +20,7 @@ import {
   DataTableRowActions,
   type RowAction,
 } from '@/components/data-table-row-actions'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type InventoryBatchWithRelations } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import {
   StockAdjustmentsActionDialog,
@@ -47,7 +48,8 @@ type Props = {
 }
 
 function createColumns(
-  onAdjust: (batch: InventoryBatchWithRelations) => void
+  onAdjust: (batch: InventoryBatchWithRelations) => void,
+  showActions: boolean
 ): ColumnDef<InventoryBatchWithRelations>[] {
   return [
     {
@@ -117,19 +119,23 @@ function createColumns(
       header: 'Cập nhật',
       cell: ({ row }) => formatDateTimeLabel(row.original.updated_at),
     },
-    {
-      id: 'actions',
-      cell: ({ row }) => {
-        const actions: RowAction[] = [
+    ...(showActions
+      ? [
           {
-            label: 'Điều chỉnh',
-            icon: Pencil,
-            onClick: () => onAdjust(row.original),
-          },
+            id: 'actions',
+            cell: ({ row }: { row: import('@tanstack/react-table').Row<InventoryBatchWithRelations> }) => {
+              const actions: RowAction[] = [
+                {
+                  label: 'Điều chỉnh',
+                  icon: Pencil,
+                  onClick: () => onAdjust(row.original),
+                },
+              ]
+              return <DataTableRowActions actions={actions} />
+            },
+          } satisfies ColumnDef<InventoryBatchWithRelations>,
         ]
-        return <DataTableRowActions actions={actions} />
-      },
-    },
+      : []),
   ]
 }
 
@@ -158,7 +164,9 @@ export function InventoryBatchTable({
     setAdjustDialogOpen(true)
   }
 
-  const columns = useMemo(() => createColumns(handleAdjust), [])
+  const { canEdit } = usePermissions()
+  const allowAdjust = canEdit('products')
+  const columns = useMemo(() => createColumns(handleAdjust, allowAdjust), [allowAdjust])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
