@@ -1,10 +1,4 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { LocationSelector } from '@/components/location-selector'
 import type { Location } from '@/services/supabase/database/repo/locationsRepo'
 
 type StockAdjustmentsAddMetaProps = {
@@ -25,18 +19,12 @@ export function StockAdjustmentsAddMeta({
       <div className='flex flex-wrap items-center gap-4 rounded-lg border bg-background p-2 text-sm'>
         <div className='flex items-center gap-2 text-muted-foreground'>
           Chi nhánh:
-          <Select value={locationId} onValueChange={onLocationChange}>
-            <SelectTrigger className='h-8 min-w-[180px] rounded-full' disabled={locationDisabled}>
-              <SelectValue placeholder='Chọn chi nhánh' />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((location) => (
-                <SelectItem key={location.id} value={location.id}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <LocationSelector
+            locations={locations}
+            locationId={locationId}
+            onLocationChange={onLocationChange}
+            disabled={locationDisabled}
+          />
         </div>
         <div className='flex items-center gap-2 text-muted-foreground'>
           {new Date().toLocaleDateString('vi-VN')}{' '}

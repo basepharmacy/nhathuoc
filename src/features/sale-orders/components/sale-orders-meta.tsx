@@ -1,11 +1,5 @@
 import { Badge } from '@/components/ui/badge'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { LocationSelector } from '@/components/location-selector'
 import { cn } from '@/lib/utils'
 import type { Location, SaleOrderStatus } from '@/services/supabase/'
 
@@ -20,12 +14,16 @@ type SaleOrdersMetaProps = {
 const statusLabels: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'Nháp',
   '2_COMPLETE': 'Hoàn tất',
+  '7_DAV_ERROR': 'Lỗi DAV',
+  '8_INSUFFICIENT_STOCK': 'Thiếu tồn kho',
   '9_CANCELLED': 'Đã hủy',
 }
 
 const statusColors: Record<SaleOrderStatus, string> = {
   '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
   '2_COMPLETE': 'bg-emerald-100/40 text-emerald-900 dark:text-emerald-200 border-emerald-200',
+  '7_DAV_ERROR': 'bg-yellow-100/40 text-yellow-900 dark:text-yellow-200 border-yellow-200',
+  '8_INSUFFICIENT_STOCK': 'bg-orange-100/40 text-orange-900 dark:text-orange-200 border-orange-200',
   '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
 }
 
@@ -41,18 +39,11 @@ export function SaleOrdersMeta({
       <div className='flex flex-wrap items-center gap-2 rounded-lg border bg-background p-2 text-sm'>
         <div className='flex items-center gap-2 text-muted-foreground'>
           Chi nhánh:
-          <Select value={locationId} onValueChange={onLocationChange}>
-            <SelectTrigger className='h-8 min-w-[180px] rounded-full'>
-              <SelectValue placeholder='Chọn chi nhánh' />
-            </SelectTrigger>
-            <SelectContent>
-              {locations.map((location) => (
-                <SelectItem key={location.id} value={location.id}>
-                  {location.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <LocationSelector
+            locations={locations}
+            locationId={locationId}
+            onLocationChange={onLocationChange}
+          />
         </div>
         <div className='flex items-center gap-2 text-muted-foreground'>
           Đơn bán hàng:

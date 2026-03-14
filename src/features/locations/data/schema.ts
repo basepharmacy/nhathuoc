@@ -1,7 +1,7 @@
 import { z } from 'zod'
 
 export const locationTypeValues = ['1_WAREHOUSE', '2_STORE', '9_OTHER'] as const
-export const locationStatusValues = ['1_ACTIVE', '2_INACTIVE', '3_CLOSED'] as const
+export const locationStatusValues = ['1_ACTIVE', '2_INACTIVE'] as const
 
 export const locationTypeLabels: Record<(typeof locationTypeValues)[number], string> = {
   '1_WAREHOUSE': 'Kho',
@@ -11,8 +11,7 @@ export const locationTypeLabels: Record<(typeof locationTypeValues)[number], str
 
 export const locationStatusLabels: Record<(typeof locationStatusValues)[number], string> = {
   '1_ACTIVE': 'Hoạt động',
-  '2_INACTIVE': 'Ngừng hoạt động',
-  '3_CLOSED': 'Đã đóng',
+  '2_INACTIVE': 'Ngừng hoạt động'
 }
 
 export const locationFormSchema = z.object({

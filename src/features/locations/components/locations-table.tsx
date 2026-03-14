@@ -44,7 +44,6 @@ export function LocationsTable({ data, isLoading }: LocationsTableProps) {
     () => [
       { label: 'Hoạt động', value: '1_ACTIVE' },
       { label: 'Ngừng hoạt động', value: '2_INACTIVE' },
-      { label: 'Đã đóng', value: '3_CLOSED' },
     ],
     []
   )

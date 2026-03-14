@@ -10,7 +10,6 @@ import { DataTableRowActions } from './data-table-row-actions'
 const locationStatusColors: Record<Location['status'], string> = {
   '1_ACTIVE': 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
   '2_INACTIVE': 'bg-amber-200/40 text-amber-900 dark:text-amber-100 border-amber-300',
-  '3_CLOSED': 'bg-slate-200/40 text-slate-900 dark:text-slate-100 border-slate-300',
 }
 
 export const getLocationsColumns = (): ColumnDef<Location>[] => [
