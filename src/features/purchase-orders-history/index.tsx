@@ -42,7 +42,7 @@ export function PurchaseOrdersHistory() {
     (order: PurchaseOrderWithRelations) => {
       navigate({
         to: '/purchase-orders',
-        search: { orderId: order.id },
+        search: { orderCode: order.purchase_order_code ?? '' },
       })
     },
     [navigate]

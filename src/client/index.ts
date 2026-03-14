@@ -16,6 +16,7 @@ import {
   createDashboardReportRepository,
   createUserAccountsRepository,
   createProductMasterRepository,
+  createActivityHistoryRepository,
 } from '@/services/supabase'
 
 import { supabaseAuth, supabaseClient } from '@/services/supabase'
@@ -38,4 +39,5 @@ export const stockAdjustmentsRepo = createStockAdjustmentRepository(supabaseClie
 export const dashboardReportRepo = createDashboardReportRepository(supabaseClient)
 export const userAccountsRepo = createUserAccountsRepository(supabaseClient)
 export const productMastersRepo = createProductMasterRepository(supabaseClient)
+export const activityHistoryRepo = createActivityHistoryRepository(supabaseClient)
 export const auth = supabaseAuth

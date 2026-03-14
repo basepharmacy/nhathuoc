@@ -88,12 +88,12 @@ export function SaleOrdersHistory() {
       if (order.status === '1_DRAFT') {
         navigate({
           to: '/sale-orders',
-          search: { orderId: order.id },
+          search: { orderCode: order.sale_order_code },
         })
       } else {
         navigate({
           to: '/sale-orders/detail',
-          search: { orderId: order.id },
+          search: { orderCode: order.sale_order_code },
         })
       }
     },

@@ -201,15 +201,15 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       return data as SaleOrderWithItems
     },
-    async getSaleOrderByIdWithItems(params: {
+    async getSaleOrderByCodeWithItems(params: {
       tenantId: string
-      orderId: string
+      orderCode: string
     }): Promise<SaleOrderWithItems | null> {
       const { data, error } = await client
         .from('sale_orders')
         .select('*, items:sale_order_items(*)')
         .eq('tenant_id', params.tenantId)
-        .eq('id', params.orderId)
+        .eq('sale_order_code', params.orderCode)
         .maybeSingle()
 
       if (error) {
@@ -218,9 +218,9 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       return (data ?? null) as SaleOrderWithItems | null
     },
-    async getSaleOrderByIdWithRelations(params: {
+    async getSaleOrderByCodeWithRelations(params: {
       tenantId: string
-      orderId: string
+      orderCode: string
     }): Promise<SaleOrderWithRelations | null> {
       const { data, error } = await client
         .from('sale_orders')
@@ -236,7 +236,7 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
           location:locations(id, name, address, phone),
           user:profiles(id, name)`)
         .eq('tenant_id', params.tenantId)
-        .eq('id', params.orderId)
+        .eq('sale_order_code', params.orderCode)
         .maybeSingle()
 
       if (error) {

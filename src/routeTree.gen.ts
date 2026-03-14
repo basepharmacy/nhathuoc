@@ -36,6 +36,7 @@ import { Route as AuthenticatedCategoriesIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedBankAccountsIndexRouteImport } from './routes/_authenticated/bank-accounts/index'
 import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedSuppliersSupplierIdRouteImport } from './routes/_authenticated/suppliers/$supplierId'
+import { Route as AuthenticatedStaffsStaffIdRouteImport } from './routes/_authenticated/staffs/$staffId'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedSaleOrdersHistoryRouteImport } from './routes/_authenticated/sale-orders/history'
 import { Route as AuthenticatedSaleOrdersDetailRouteImport } from './routes/_authenticated/sale-orders/detail'
@@ -194,6 +195,12 @@ const AuthenticatedSuppliersSupplierIdRoute =
     path: '/suppliers/$supplierId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedStaffsStaffIdRoute =
+  AuthenticatedStaffsStaffIdRouteImport.update({
+    id: '/staffs/$staffId',
+    path: '/staffs/$staffId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedSettingsAccountRoute =
   AuthenticatedSettingsAccountRouteImport.update({
     id: '/account',
@@ -260,6 +267,7 @@ export interface FileRoutesByFullPath {
   '/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/apps/': typeof AuthenticatedAppsIndexRoute
   '/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
@@ -295,6 +303,7 @@ export interface FileRoutesByTo {
   '/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/apps': typeof AuthenticatedAppsIndexRoute
   '/bank-accounts': typeof AuthenticatedBankAccountsIndexRoute
@@ -333,6 +342,7 @@ export interface FileRoutesById {
   '/_authenticated/sale-orders/detail': typeof AuthenticatedSaleOrdersDetailRoute
   '/_authenticated/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
+  '/_authenticated/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/_authenticated/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/sale-orders/detail'
     | '/sale-orders/history'
     | '/settings/account'
+    | '/staffs/$staffId'
     | '/suppliers/$supplierId'
     | '/apps/'
     | '/bank-accounts/'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/sale-orders/detail'
     | '/sale-orders/history'
     | '/settings/account'
+    | '/staffs/$staffId'
     | '/suppliers/$supplierId'
     | '/apps'
     | '/bank-accounts'
@@ -443,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sale-orders/detail'
     | '/_authenticated/sale-orders/history'
     | '/_authenticated/settings/account'
+    | '/_authenticated/staffs/$staffId'
     | '/_authenticated/suppliers/$supplierId'
     | '/_authenticated/apps/'
     | '/_authenticated/bank-accounts/'
@@ -666,6 +679,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuppliersSupplierIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/staffs/$staffId': {
+      id: '/_authenticated/staffs/$staffId'
+      path: '/staffs/$staffId'
+      fullPath: '/staffs/$staffId'
+      preLoaderRoute: typeof AuthenticatedStaffsStaffIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings/account': {
       id: '/_authenticated/settings/account'
       path: '/account'
@@ -749,6 +769,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedPurchaseOrdersHistoryRoute: typeof AuthenticatedPurchaseOrdersHistoryRoute
   AuthenticatedSaleOrdersDetailRoute: typeof AuthenticatedSaleOrdersDetailRoute
   AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
+  AuthenticatedStaffsStaffIdRoute: typeof AuthenticatedStaffsStaffIdRoute
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
   AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedBankAccountsIndexRoute: typeof AuthenticatedBankAccountsIndexRoute
@@ -777,6 +798,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedPurchaseOrdersHistoryRoute,
   AuthenticatedSaleOrdersDetailRoute: AuthenticatedSaleOrdersDetailRoute,
   AuthenticatedSaleOrdersHistoryRoute: AuthenticatedSaleOrdersHistoryRoute,
+  AuthenticatedStaffsStaffIdRoute: AuthenticatedStaffsStaffIdRoute,
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
   AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedBankAccountsIndexRoute: AuthenticatedBankAccountsIndexRoute,

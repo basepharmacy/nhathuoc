@@ -15,6 +15,7 @@ import {
   bankAccountsRepo,
   stockAdjustmentsRepo,
   dashboardReportRepo,
+  activityHistoryRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
@@ -27,6 +28,9 @@ import {
 import {
   type StockAdjustmentsListQueryInput,
 } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import {
+  type ActivityHistoryQueryInput,
+} from '@/services/supabase/database/repo/activityHistoryRepo'
 import { type SalesPeriod } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 export type VietQrBank = {
@@ -227,17 +231,17 @@ export const getPurchaseOrdersBySupplierIdQueryOptions = (
 
 export const getPurchaseOrderDetailQueryOptions = (
   tenantId: string,
-  orderId: string
+  orderCode: string
 ) =>
   queryOptions({
-    queryKey: ["purchase-orders", tenantId, "detail", orderId],
+    queryKey: ["purchase-orders", tenantId, "detail", orderCode],
     queryFn: async () => {
-      if (!tenantId || !orderId) {
+      if (!tenantId || !orderCode) {
         return null
       }
-      const order = await purchaseOrdersRepo.getPurchaseOrderByIdWithItems({
+      const order = await purchaseOrdersRepo.getPurchaseOrderByCodeWithItems({
         tenantId,
-        orderId,
+        orderCode,
       })
       return order
     },
@@ -245,17 +249,17 @@ export const getPurchaseOrderDetailQueryOptions = (
 
 export const getSaleOrderDetailQueryOptions = (
   tenantId: string,
-  orderId: string
+  orderCode: string
 ) =>
   queryOptions({
-    queryKey: ["sale-orders", tenantId, "detail", orderId],
+    queryKey: ["sale-orders", tenantId, "detail", orderCode],
     queryFn: async () => {
-      if (!tenantId || !orderId) {
+      if (!tenantId || !orderCode) {
         return null
       }
-      const order = await saleOrdersRepo.getSaleOrderByIdWithItems({
+      const order = await saleOrdersRepo.getSaleOrderByCodeWithItems({
         tenantId,
-        orderId,
+        orderCode,
       })
       return order
     },
@@ -263,17 +267,17 @@ export const getSaleOrderDetailQueryOptions = (
 
 export const getSaleOrderDetailWithRelationsQueryOptions = (
   tenantId: string,
-  orderId: string
+  orderCode: string
 ) =>
   queryOptions({
-    queryKey: ["sale-orders", tenantId, "detail-with-relations", orderId],
+    queryKey: ["sale-orders", tenantId, "detail-with-relations", orderCode],
     queryFn: async () => {
-      if (!tenantId || !orderId) {
+      if (!tenantId || !orderCode) {
         return null
       }
-      const order = await saleOrdersRepo.getSaleOrderByIdWithRelations({
+      const order = await saleOrdersRepo.getSaleOrderByCodeWithRelations({
         tenantId,
-        orderId,
+        orderCode,
       })
       return order
     },
@@ -527,6 +531,30 @@ export const getLowStockProductsQueryOptions = (params: {
       dashboardReportRepo.getLowStockProducts({
         locationId: params.locationId ?? undefined,
       }),
+  })
+
+export const getActivityHistoryQueryOptions = (
+  params: ActivityHistoryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'activity-history',
+      params.tenantId,
+      params.userId ?? 'all',
+      {
+        locationId: params.locationId ?? 'all',
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        fromDate: params.fromDate ?? null,
+        toDate: params.toDate ?? null,
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
+      return activityHistoryRepo.getActivityHistory(params)
+    },
   })
 
 export const getExpiredInventoryBatchesQueryOptions = (params: {

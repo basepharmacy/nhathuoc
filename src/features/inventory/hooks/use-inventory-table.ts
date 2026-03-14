@@ -60,7 +60,10 @@ export function useInventoryTable({
 
   useEffect(() => {
     if (!defaultLocationId) {
-      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
+      setColumnFilters((prev) => {
+        if (!prev.some((f) => f.id === 'location_id')) return prev
+        return prev.filter((filter) => filter.id !== 'location_id')
+      })
       return
     }
     if (locations.length > 0 && !locations.some((location) => location.id === defaultLocationId)) {
@@ -68,6 +71,15 @@ export function useInventoryTable({
     }
 
     setColumnFilters((prev) => {
+      const current = prev.find((f) => f.id === 'location_id')
+      if (
+        current &&
+        Array.isArray(current.value) &&
+        current.value.length === 1 &&
+        current.value[0] === defaultLocationId
+      ) {
+        return prev
+      }
       const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
       return [...withoutLocation, { id: 'location_id', value: [defaultLocationId] }]
     })

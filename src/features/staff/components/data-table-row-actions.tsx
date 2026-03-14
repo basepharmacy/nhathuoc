@@ -1,5 +1,6 @@
 import { type Row } from '@tanstack/react-table'
-import { Trash2, UserPen } from 'lucide-react'
+import { Eye, Trash2, UserPen } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -14,9 +15,17 @@ type DataTableRowActionsProps = {
 
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useStaff()
+  const navigate = useNavigate()
   const isOwner = row.original.role === 'OWNER'
 
   const actions: RowAction[] = [
+    {
+      label: 'Xem chi tiết',
+      icon: Eye,
+      onClick: () => {
+        navigate({ to: '/staffs/$staffId', params: { staffId: row.original.id } })
+      },
+    },
     {
       label: 'Chỉnh sửa',
       icon: UserPen,

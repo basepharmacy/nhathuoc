@@ -13,7 +13,7 @@ type UseSaleOrderMutationsParams = {
   userId: string
   customerName?: string
   locationName?: string
-  onComplete?: (orderId: string, status: SaleOrder['status']) => void
+  onComplete?: (orderCode: string, status: SaleOrder['status']) => void
 }
 
 export function useSaleOrderMutations({
@@ -107,7 +107,7 @@ export function useSaleOrderMutations({
       const isOfflineQueued = (order as SaleOrder & { _offline?: boolean })._offline
       if (isOfflineQueued) {
         toast.success('Đã lưu đơn hàng offline. Sẽ tự đồng bộ khi có mạng.')
-        onComplete?.(order.id, status)
+        onComplete?.(order.sale_order_code ?? order.id, status)
         return
       }
 
@@ -117,7 +117,7 @@ export function useSaleOrderMutations({
         queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'all', 'all-available'] })
       }
       toast.success('Đã tạo đơn bán hàng.')
-      onComplete?.(order.id, status)
+      onComplete?.(order.sale_order_code ?? '', status)
     },
     onError: handleMutationError,
   })
@@ -165,17 +165,17 @@ export function useSaleOrderMutations({
       }
     },
     onSuccess: (result, status) => {
-      const { initialData } = store.getState()
+      const state = store.getState()
       const isOfflineQueued = result && typeof result === 'object' && '_offline' in result
 
       if (isOfflineQueued) {
         toast.success('Đã lưu cập nhật offline. Sẽ tự đồng bộ khi có mạng.')
-        onComplete?.(initialData.id ?? '', status)
+        onComplete?.(state.orderCode ?? '', status)
         return
       }
 
-      if (initialData.id) {
-        queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail', initialData.id] })
+      if (state.orderCode) {
+        queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail', state.orderCode] })
       }
 
       if (status === '2_COMPLETE') {
@@ -184,7 +184,7 @@ export function useSaleOrderMutations({
       }
 
       toast.success('Đã cập nhật đơn bán hàng.')
-      onComplete?.(initialData.id ?? '', status)
+      onComplete?.(state.orderCode ?? '', status)
     },
     onError: handleMutationError,
   })

@@ -71,7 +71,7 @@ export function CustomerTabs({ tenantId, customerId }: CustomerTabsProps) {
       navigate({
         to: '/sale-orders',
         search: {
-          orderId: order.id,
+          orderCode: order.sale_order_code,
         },
       })
     },

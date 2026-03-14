@@ -24,14 +24,14 @@ import { BankAccount } from '../bank-accounts/data/schema'
 const route = getRouteApi('/_authenticated/sale-orders/detail')
 
 export function SaleOrders() {
-  const { orderId } = route.useSearch()
+  const { orderCode } = route.useSearch()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const [bankId, setBankId] = useState<string>('')
 
   const { data: orderDetail, isLoading, isError } = useQuery({
-    ...getSaleOrderDetailWithRelationsQueryOptions(tenantId, orderId ?? ''),
-    enabled: !!tenantId && !!orderId,
+    ...getSaleOrderDetailWithRelationsQueryOptions(tenantId, orderCode ?? ''),
+    enabled: !!tenantId && !!orderCode,
   })
 
   const { data: bankAccounts = [] } = useQuery({
@@ -64,7 +64,7 @@ export function SaleOrders() {
     },
     onSuccess: () => {
       toast.success('Huỷ đơn hàng thành công')
-      queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail-with-relations', orderId] })
+      queryClient.invalidateQueries({ queryKey: ['sale-orders', tenantId, 'detail-with-relations', orderCode] })
       setCancelConfirmOpen(false)
     },
     onError: (error) => {

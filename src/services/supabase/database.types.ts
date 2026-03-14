@@ -18,34 +18,50 @@ export type Database = {
         Row: {
           activity_type: Database["public"]["Enums"]["activity_type"]
           created_at: string
+          discount: number
           id: string
+          location_id: string | null
           metadata: Json | null
           reference_code: string | null
           reference_id: string | null
           tenant_id: string
+          total_amount: number
           user_id: string | null
         }
         Insert: {
           activity_type: Database["public"]["Enums"]["activity_type"]
           created_at?: string
+          discount?: number
           id?: string
+          location_id?: string | null
           metadata?: Json | null
           reference_code?: string | null
           reference_id?: string | null
           tenant_id: string
+          total_amount?: number
           user_id?: string | null
         }
         Update: {
           activity_type?: Database["public"]["Enums"]["activity_type"]
           created_at?: string
+          discount?: number
           id?: string
+          location_id?: string | null
           metadata?: Json | null
           reference_code?: string | null
           reference_id?: string | null
           tenant_id?: string
+          total_amount?: number
           user_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "activity_history_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "activity_history_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -1284,7 +1300,7 @@ export type Database = {
         | "STOCK_ADJUSTMENT_CREATED"
         | "SUPPLIER_PAYMENT_CREATED"
         | "SUPPLIER_PAYMENT_DELETED"
-      location_status: "1_ACTIVE" | "2_INACTIVE" | "3_CLOSED"
+      location_status: "1_ACTIVE" | "2_INACTIVE"
       location_type: "1_WAREHOUSE" | "2_STORE" | "9_OTHER"
       product_status: "1_DRAFT" | "2_ACTIVE" | "3_INACTIVE" | "4_ARCHIVED"
       product_type: "1_OTC" | "2_PRESCRIPTION_REQUIRED"
@@ -1301,7 +1317,12 @@ export type Database = {
         | "3_EXPIRED"
         | "4_LOST"
         | "9_OTHER"
-      sale_order_status: "1_DRAFT" | "2_COMPLETE" | "9_CANCELLED"
+      sale_order_status:
+        | "1_DRAFT"
+        | "2_COMPLETE"
+        | "9_CANCELLED"
+        | "7_DAV_ERROR"
+        | "8_INSUFFICIENT_STOCK"
       staff_role: "OWNER" | "MANAGER" | "STAFF"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
     }
@@ -1441,7 +1462,7 @@ export const Constants = {
         "SUPPLIER_PAYMENT_CREATED",
         "SUPPLIER_PAYMENT_DELETED",
       ],
-      location_status: ["1_ACTIVE", "2_INACTIVE", "3_CLOSED"],
+      location_status: ["1_ACTIVE", "2_INACTIVE"],
       location_type: ["1_WAREHOUSE", "2_STORE", "9_OTHER"],
       product_status: ["1_DRAFT", "2_ACTIVE", "3_INACTIVE", "4_ARCHIVED"],
       product_type: ["1_OTC", "2_PRESCRIPTION_REQUIRED"],
@@ -1460,7 +1481,13 @@ export const Constants = {
         "4_LOST",
         "9_OTHER",
       ],
-      sale_order_status: ["1_DRAFT", "2_COMPLETE", "9_CANCELLED"],
+      sale_order_status: [
+        "1_DRAFT",
+        "2_COMPLETE",
+        "9_CANCELLED",
+        "7_DAV_ERROR",
+        "8_INSUFFICIENT_STOCK",
+      ],
       staff_role: ["OWNER", "MANAGER", "STAFF"],
       tenant_status: ["1_ACTIVE", "2_LICENSE_EXPIRED", "3_CANCELLED"],
     },

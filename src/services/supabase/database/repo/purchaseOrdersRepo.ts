@@ -194,15 +194,15 @@ export const createPurchaseOrderRepository = (
 
       return order as PurchaseOrder
     },
-    async getPurchaseOrderByIdWithItems(params: {
+    async getPurchaseOrderByCodeWithItems(params: {
       tenantId: string
-      orderId: string
+      orderCode: string
     }): Promise<PurchaseOrderWithItems | null> {
       const { data, error } = await client
         .from('purchase_orders')
         .select('*, items:purchase_order_items(*)')
         .eq('tenant_id', params.tenantId)
-        .eq('id', params.orderId)
+        .eq('purchase_order_code', params.orderCode)
         .maybeSingle()
 
       if (error) {

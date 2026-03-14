@@ -89,6 +89,29 @@ export function formatShortCurrency(value: number) {
 }
 
 /**
+ * Identifies the order type from a reference code and returns the corresponding route info.
+ *
+ * Format:
+ * - Sale order:     {unique}S{3 digits}  e.g. "ABC123S001"
+ * - Purchase order: {unique}P{3 digits}  e.g. "ABC123P001"
+ *
+ * Returns null if the code does not match either format.
+ */
+export type OrderRouteInfo =
+  | { type: 'sale-order'; to: '/sale-orders/detail'; search: { orderCode: string } }
+  | { type: 'purchase-order'; to: '/purchase-orders'; search: { orderCode: string } }
+
+export function resolveOrderRoute(referenceCode: string): OrderRouteInfo | null {
+  if (/S\d{3}$/.test(referenceCode)) {
+    return { type: 'sale-order', to: '/sale-orders/detail', search: { orderCode: referenceCode } }
+  }
+  if (/P\d{3}$/.test(referenceCode)) {
+    return { type: 'purchase-order', to: '/purchase-orders', search: { orderCode: referenceCode } }
+  }
+  return null
+}
+
+/**
  * Generates page numbers for pagination with ellipsis
  * @param currentPage - Current page number (1-based)
  * @param totalPages - Total number of pages

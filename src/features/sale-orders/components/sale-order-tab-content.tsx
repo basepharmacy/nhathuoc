@@ -29,7 +29,7 @@ type SaleOrderTabContentProps = {
   bankAccounts: BankAccount[]
   locations: Location[]
   inventoryBatches: InventoryBatch[]
-  onOrderCompleted?: (orderId: string, status: string) => void
+  onOrderCompleted?: (orderCode: string, status: string) => void
   onAddTab?: () => void
   onCloseTab?: () => void
   onCloseTabById?: (tabId: string) => void
@@ -118,7 +118,7 @@ function SaleOrderTabContentInner({
   tabs,
 }: SaleOrderTabContentProps) {
   const handleComplete = useCallback(
-    (orderId: string, status: string) => onOrderCompleted?.(orderId, status),
+    (orderCode: string, status: string) => onOrderCompleted?.(orderCode, status),
     [onOrderCompleted]
   )
 

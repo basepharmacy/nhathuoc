@@ -9,7 +9,7 @@ import { type OrderItem, type PaymentStatus, getDefaultUnit } from '../data/type
 type UsePurchaseOrderParams = {
   tenantId: string
   userId: string
-  orderId?: string
+  orderCode?: string
   userLocationId: string | null
   orderDetail?: {
     id: string
@@ -22,19 +22,19 @@ type UsePurchaseOrderParams = {
     notes: string | null
     location_id: string | null
   }
-  navigate: (opts: { search?: { orderId: string }; to?: string }) => void
+  navigate: (opts: { search?: { orderCode: string }; to?: string }) => void
 }
 
 export function usePurchaseOrder({
   tenantId,
   userId,
-  orderId,
+  orderCode: orderCodeParam,
   userLocationId,
   orderDetail,
   navigate,
 }: UsePurchaseOrderParams) {
   const queryClient = useQueryClient()
-  const isEdit = Boolean(orderId)
+  const isEdit = Boolean(orderCodeParam)
 
   // ── Form state ──────────────────────────────────────────────
   const [items, setItems] = useState<OrderItem[]>([])
@@ -179,14 +179,14 @@ export function usePurchaseOrder({
     },
     onSuccess: (order) => {
       toast.success('Đã tạo đơn nhập hàng.')
-      navigate({ search: { orderId: order.id } })
+      navigate({ search: { orderCode: order.purchase_order_code ?? '' } })
     },
     onError: handleMutationError,
   })
 
   const updateMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED' | '4_STORED') => {
-      if (!orderId || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
+      if (!orderCodeParam || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
       validateOrder(status !== '1_DRAFT')
       const normalizedPaid = Math.min(paidAmount, totals.total)
 
@@ -330,13 +330,13 @@ export function usePurchaseOrder({
   }, [])
 
   // Reset form when navigating from edit to create
-  const prevOrderIdRef = useRef(orderId)
+  const prevOrderCodeRef = useRef(orderCodeParam)
   useEffect(() => {
-    if (prevOrderIdRef.current && !orderId) {
+    if (prevOrderCodeRef.current && !orderCodeParam) {
       resetOrder()
     }
-    prevOrderIdRef.current = orderId
-  }, [orderId, resetOrder])
+    prevOrderCodeRef.current = orderCodeParam
+  }, [orderCodeParam, resetOrder])
 
   return {
     // Data

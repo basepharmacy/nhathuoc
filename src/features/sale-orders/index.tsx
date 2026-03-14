@@ -31,7 +31,7 @@ function createTab(): Tab {
 }
 
 export function SaleOrders() {
-  const { orderId } = route.useSearch()
+  const { orderCode } = route.useSearch()
   const navigate = route.useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
@@ -81,12 +81,12 @@ export function SaleOrders() {
   )
 
   const handleOrderSaved = useCallback(
-    (tabId: string, savedOrderId: string, status: string) => {
+    (tabId: string, savedOrderCode: string, status: string) => {
       if (tabs.length <= 1) {
-        if (status === '2_COMPLETE' && !savedOrderId.includes('offline-')) {
+        if (status === '2_COMPLETE' && !savedOrderCode.includes('offline-')) {
           navigate({
             to: '/sale-orders/detail',
-            search: { orderId: savedOrderId },
+            search: { orderCode: savedOrderCode },
           })
         } else {
           // DRAFT: close current tab and create a new one
@@ -151,8 +151,8 @@ export function SaleOrders() {
     data: orderWithItems,
     //isError: isOrderDetailError
   } = useQuery({
-    ...getSaleOrderDetailQueryOptions(tenantId, orderId ?? ''),
-    enabled: !!tenantId && !!orderId,
+    ...getSaleOrderDetailQueryOptions(tenantId, orderCode ?? ''),
+    enabled: !!tenantId && !!orderCode,
   })
 
   const {
@@ -167,9 +167,9 @@ export function SaleOrders() {
 
   // ── Build SaleOrderInCreate for edit mode ─────────────────
   const editOrderData = useMemo(() => {
-    if (!orderId || !orderWithItems) return undefined
+    if (!orderCode || !orderWithItems) return undefined
     return mapOrderToSaleOrderInCreate(orderWithItems, products, inventoryBatches, sidebarLocationId)
-  }, [orderId, orderWithItems, products, inventoryBatches, sidebarLocationId])
+  }, [orderCode, orderWithItems, products, inventoryBatches, sidebarLocationId])
 
   // if (isError) {
   //   return (
@@ -188,7 +188,7 @@ export function SaleOrders() {
           const initialData = isFirstTab && editOrderData
             ? editOrderData
             : createNewSaleOrder(sidebarLocationId ?? locations[0]?.id ?? '')
-          const tabKey = isFirstTab && orderId ? `${tab.id}-edit-${orderId}` : tab.id
+          const tabKey = isFirstTab && orderCode ? `${tab.id}-edit-${orderCode}` : tab.id
 
           return (
             <TabsContent
@@ -206,7 +206,7 @@ export function SaleOrders() {
                 bankAccounts={bankAccounts}
                 locations={locations}
                 inventoryBatches={inventoryBatches}
-                onOrderCompleted={(orderId, status) => handleOrderSaved(tab.id, orderId, status)}
+                onOrderCompleted={(orderCode, status) => handleOrderSaved(tab.id, orderCode, status)}
                 onAddTab={addTab}
                 onCloseTab={() => closeTab(tab.id)}
                 onCloseTabById={closeTab}

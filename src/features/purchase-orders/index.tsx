@@ -29,7 +29,7 @@ import { usePurchaseOrder } from './hooks/use-purchase-order'
 const route = getRouteApi('/_authenticated/purchase-orders/')
 
 export function PurchaseOrders() {
-  const { orderId } = route.useSearch()
+  const { orderCode } = route.useSearch()
   const navigate = route.useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
@@ -39,8 +39,8 @@ export function PurchaseOrders() {
 
   // ── Queries ─────────────────────────────────────────────────
   const { data: orderDetail, isLoading: isOrderLoading } = useQuery({
-    ...getPurchaseOrderDetailQueryOptions(tenantId, orderId ?? ''),
-    enabled: !!tenantId && !!orderId,
+    ...getPurchaseOrderDetailQueryOptions(tenantId, orderCode ?? ''),
+    enabled: !!tenantId && !!orderCode,
   })
 
   const { data: products = [] } = useQuery({
@@ -67,7 +67,7 @@ export function PurchaseOrders() {
   const order = usePurchaseOrder({
     tenantId,
     userId,
-    orderId,
+    orderCode,
     userLocationId,
     orderDetail: orderDetail ?? undefined,
     navigate,
@@ -75,12 +75,12 @@ export function PurchaseOrders() {
 
   // ── Effects ─────────────────────────────────────────────────
   useEffect(() => {
-    if (!orderId || isOrderLoading) return
+    if (!orderCode || isOrderLoading) return
     if (!orderDetail) {
       toast.error('Không tìm thấy đơn nhập hàng.')
       navigate({ to: '/purchase-orders/history' })
     }
-  }, [orderDetail, orderId, isOrderLoading, navigate])
+  }, [orderDetail, orderCode, isOrderLoading, navigate])
 
   useEffect(() => {
     if (order.selectedLocationId || locations.length === 0) return
@@ -117,7 +117,7 @@ export function PurchaseOrders() {
       notes: orderDetail.notes ?? '',
       locationId: orderDetail.location_id ?? userLocationId,
     })
-  }, [orderDetail, order.hasInitialized, products, userLocationId, orderId])
+  }, [orderDetail, order.hasInitialized, products, userLocationId, orderCode])
 
   const [pendingBatchItemId, setPendingBatchItemId] = useState<string | null>(null)
 
@@ -303,7 +303,7 @@ export function PurchaseOrders() {
 
   // ── Render ──────────────────────────────────────────────────
   const isLoadingEditData =
-    Boolean(orderId) && (!orderDetail || !order.hasInitialized || isOrderLoading)
+    Boolean(orderCode) && (!orderDetail || !order.hasInitialized || isOrderLoading)
 
   return (
     <>
