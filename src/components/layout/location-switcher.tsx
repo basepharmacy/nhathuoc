@@ -80,6 +80,7 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                 {selectedLocation?.address ?? '—'}
               </span>
             </div>
+            {selectedLocation && <StatusDot status={selectedLocation.status} />}
           </SidebarMenuButton>
         </SidebarMenuItem>
       </SidebarMenu>
@@ -106,6 +107,7 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
                   {selectedLocation?.address ?? 'Tất cả chi nhánh'}
                 </span>
               </div>
+              {selectedLocation && <StatusDot status={selectedLocation.status} />}
               <ChevronsUpDown className='ms-auto' />
             </SidebarMenuButton>
           </DropdownMenuTrigger>

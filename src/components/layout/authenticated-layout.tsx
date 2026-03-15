@@ -7,6 +7,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { OfflineIndicator } from '@/components/offline-indicator'
 import { SkipToMain } from '@/components/skip-to-main'
+import { InactiveLocationIndicator } from '@/components/inactive-location-indicator'
 import { useOfflineSync } from '@/hooks/use-offline-sync'
 
 type AuthenticatedLayoutProps = {
@@ -36,6 +37,7 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
               'peer-data-[variant=inset]:has-data-[layout=fixed]:h-[calc(100svh-(var(--spacing)*4))]'
             )}
           >
+            <InactiveLocationIndicator />
             {children ?? <Outlet />}
           </SidebarInset>
           <OfflineIndicator />
