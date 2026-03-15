@@ -47,6 +47,18 @@ type Props = {
   filters: FilterOption[]
 }
 
+function getExpiryBadge(dateStr: string | null | undefined) {
+  if (!dateStr) return null
+  const now = new Date()
+  const expiry = new Date(dateStr)
+  const diffDays = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  if (diffDays < 0) return <Badge variant='destructive'>Hết hạn</Badge>
+  if (diffDays <= 7) return <Badge className='border-transparent bg-orange-500 text-white'>Còn 7 ngày</Badge>
+  if (diffDays <= 30) return <Badge className='border-transparent bg-amber-500 text-white'>Còn 1 tháng</Badge>
+  if (diffDays <= 90) return <Badge className='border-transparent bg-yellow-500 text-white'>Còn 3 tháng</Badge>
+  return null
+}
+
 function createColumns(
   onAdjust: (batch: InventoryBatchWithRelations) => void,
   showActions: boolean
@@ -81,12 +93,17 @@ function createColumns(
       ),
     },
     {
-      accessorKey: 'expiry_date',
+      accessorKey: 'Hạn sử dụng',
       header: 'HSD',
-      cell: ({ row }) => formatDateLabel(row.original.expiry_date),
+      cell: ({ row }) => (
+        <div className='flex items-center gap-2'>
+          <span>{formatDateLabel(row.original.expiry_date)}</span>
+          {getExpiryBadge(row.original.expiry_date)}
+        </div>
+      ),
     },
     {
-      accessorKey: 'quantity',
+      accessorKey: 'Tồn kho',
       header: 'Tồn kho',
       cell: ({ row }) => (
         <span className='tabular-nums'>{formatQuantity(row.original.quantity) + ' ' + (row.original.products?.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}</span>
@@ -94,13 +111,13 @@ function createColumns(
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
-      accessorKey: 'cumulative_quantity',
+      accessorKey: 'Tổng nhập kho',
       header: 'Tổng nhập',
       cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
-      accessorKey: 'average_cost_price',
+      accessorKey: 'Giá nhập TB',
       header: 'Giá nhập TB',
       cell: ({ row }) => (
         <span className='tabular-nums'>
@@ -110,31 +127,31 @@ function createColumns(
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
-      id: 'location_name',
+      id: 'Cửa hàng',
       header: 'Cửa hàng',
       cell: ({ row }) => row.original.locations?.name ?? '-',
     },
     {
-      accessorKey: 'updated_at',
+      accessorKey: 'Cập nhật',
       header: 'Cập nhật',
       cell: ({ row }) => formatDateTimeLabel(row.original.updated_at),
     },
     ...(showActions
       ? [
-          {
-            id: 'actions',
-            cell: ({ row }: { row: import('@tanstack/react-table').Row<InventoryBatchWithRelations> }) => {
-              const actions: RowAction[] = [
-                {
-                  label: 'Điều chỉnh',
-                  icon: Pencil,
-                  onClick: () => onAdjust(row.original),
-                },
-              ]
-              return <DataTableRowActions actions={actions} />
-            },
-          } satisfies ColumnDef<InventoryBatchWithRelations>,
-        ]
+        {
+          id: 'actions',
+          cell: ({ row }: { row: import('@tanstack/react-table').Row<InventoryBatchWithRelations> }) => {
+            const actions: RowAction[] = [
+              {
+                label: 'Điều chỉnh',
+                icon: Pencil,
+                onClick: () => onAdjust(row.original),
+              },
+            ]
+            return <DataTableRowActions actions={actions} />
+          },
+        } satisfies ColumnDef<InventoryBatchWithRelations>,
+      ]
       : []),
   ]
 }

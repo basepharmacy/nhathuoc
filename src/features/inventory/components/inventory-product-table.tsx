@@ -31,6 +31,18 @@ type Props = {
   filters: FilterOption[]
 }
 
+function getExpiryBadge(dateStr: string | null | undefined) {
+  if (!dateStr) return null
+  const now = new Date()
+  const expiry = new Date(dateStr)
+  const diffDays = (expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+  if (diffDays < 0) return <Badge variant='destructive'>Hết hạn</Badge>
+  if (diffDays <= 7) return <Badge className='border-transparent bg-orange-500 text-white'>Còn 7 ngày</Badge>
+  if (diffDays <= 30) return <Badge className='border-transparent bg-amber-500 text-white'>Còn 1 tháng</Badge>
+  if (diffDays <= 90) return <Badge className='border-transparent bg-yellow-500 text-white'>Còn 3 tháng</Badge>
+  return null
+}
+
 const columns: ColumnDef<InventoryProductsListItem>[] = [
   {
     id: 'search',
@@ -109,7 +121,12 @@ const columns: ColumnDef<InventoryProductsListItem>[] = [
   {
     accessorKey: 'earliestExpiry',
     header: 'HSD gần nhất',
-    cell: ({ row }) => formatDateLabel(row.original.earliestExpiry),
+    cell: ({ row }) => (
+      <div className='flex items-center gap-2'>
+        <span>{formatDateLabel(row.original.earliestExpiry)}</span>
+        {getExpiryBadge(row.original.earliestExpiry)}
+      </div>
+    ),
   },
 ]
 

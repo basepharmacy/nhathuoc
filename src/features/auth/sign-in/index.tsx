@@ -18,8 +18,7 @@ export function SignIn() {
         <CardHeader>
           <CardTitle className='text-lg tracking-tight'>Đăng nhập</CardTitle>
           <CardDescription>
-            Nhập tài khoản, mật khẩu và mã khách hàng của bạn bên dưới để <br />
-            đăng nhập vào tài khoản của bạn
+            Nhập tài khoản, mật khẩu và mã khách hàng của bạn
           </CardDescription>
         </CardHeader>
         <CardContent>
