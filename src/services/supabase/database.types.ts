@@ -692,6 +692,7 @@ export type Database = {
           paid_amount: number
           payment_status: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code: string
+          purchase_period_id: number | null
           status: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id: string | null
           tenant_id: string
@@ -709,6 +710,7 @@ export type Database = {
           paid_amount?: number
           payment_status?: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code: string
+          purchase_period_id?: number | null
           status?: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id?: string | null
           tenant_id: string
@@ -726,6 +728,7 @@ export type Database = {
           paid_amount?: number
           payment_status?: Database["public"]["Enums"]["purchase_order_payment_status"]
           purchase_order_code?: string
+          purchase_period_id?: number | null
           status?: Database["public"]["Enums"]["purchase_order_status"]
           supplier_id?: string | null
           tenant_id?: string
@@ -739,6 +742,13 @@ export type Database = {
             columns: ["location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_purchase_period_id_fkey"
+            columns: ["purchase_period_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_periods"
             referencedColumns: ["id"]
           },
           {
@@ -760,6 +770,47 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_periods: {
+        Row: {
+          created_at: string | null
+          from_date: string
+          id: number
+          name: string | null
+          number: number
+          tenant_id: string
+          to_date: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          from_date: string
+          id?: never
+          name?: string | null
+          number: number
+          tenant_id: string
+          to_date: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          from_date?: string
+          id?: never
+          name?: string | null
+          number?: number
+          tenant_id?: string
+          to_date?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_periods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1248,6 +1299,15 @@ export type Database = {
           total_value: number
         }[]
       }
+      get_inventory_statistics_v2: {
+        Args: { p_location_id?: string }
+        Returns: {
+          total_batches: number
+          total_products: number
+          total_quantity: number
+          total_value: number
+        }[]
+      }
       get_low_stock_products: {
         Args: { p_location_id?: string }
         Returns: Json
@@ -1258,6 +1318,15 @@ export type Database = {
           top_5_suppliers_by_debt: Json
           top_5_suppliers_by_order_amount: Json
           top_5_suppliers_by_orders: Json
+          total_debt: number
+          total_order_amount: number
+          total_orders: number
+          total_paid_amount: number
+        }[]
+      }
+      get_purchases_statistics_v2: {
+        Args: { p_location_id?: string; p_purchase_period_id?: number }
+        Returns: {
           total_debt: number
           total_order_amount: number
           total_orders: number
@@ -1290,6 +1359,27 @@ export type Database = {
           top_5_products_by_revenue: Json
         }[]
       }
+      get_sales_statistics_v2: {
+        Args: {
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+        }
+        Returns: {
+          current_completed_orders: number
+          current_period_end: string
+          current_period_start: string
+          current_total_loss: number
+          current_total_profit: number
+          current_total_revenue: number
+          previous_completed_orders: number
+          previous_period_end: string
+          previous_period_start: string
+          previous_total_loss: number
+          previous_total_profit: number
+          previous_total_revenue: number
+        }[]
+      }
       get_tenant_overview: {
         Args: { p_location_id?: string }
         Returns: {
@@ -1301,6 +1391,39 @@ export type Database = {
           total_staff: number
           total_suppliers_active: number
           total_suppliers_inactive: number
+        }[]
+      }
+      get_top_products: {
+        Args: {
+          p_limit?: number
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_type?: string
+        }
+        Returns: {
+          id: string
+          name: string
+          profit: number
+          quantity: number
+          revenue: number
+          unit_name: string
+        }[]
+      }
+      get_top_suppliers: {
+        Args: { p_limit?: number; p_location_id?: string; p_type: string }
+        Returns: {
+          address: string
+          created_at: string
+          description: string
+          is_active: boolean
+          name: string
+          phone: string
+          representative: string
+          stat_value: number
+          supplier_code: string
+          supplier_id: string
+          updated_at: string
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }

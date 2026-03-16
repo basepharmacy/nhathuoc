@@ -40,6 +40,7 @@ export type InventoryBatchesSummaryQueryInput = {
 }
 
 export type InventoryBatchesSummary = {
+  totalBatches: number
   totalProducts: number
   totalQuantity: number
   totalValue: number
@@ -83,7 +84,7 @@ export const createInventoryBatchRepository = (
         ? params.locationIds[0]
         : undefined
 
-      const { data, error } = await client.rpc('get_inventory_statistics', {
+      const { data, error } = await client.rpc('get_inventory_statistics_v2', {
         p_location_id: locationId,
       })
 
@@ -94,6 +95,7 @@ export const createInventoryBatchRepository = (
       const stats = data?.[0]
 
       return {
+        totalBatches: stats?.total_batches ?? 0,
         totalProducts: stats?.total_products ?? 0,
         totalQuantity: stats?.total_quantity ?? 0,
         totalValue: stats?.total_value ?? 0,

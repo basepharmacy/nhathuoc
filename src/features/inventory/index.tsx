@@ -73,10 +73,11 @@ export function Inventory() {
   const productRows = productListResult?.data ?? []
   const productTotal = productListResult?.total ?? 0
   const productPageCount = Math.max(1, Math.ceil(productTotal / listQueryParams.pageSize))
-  const summary = summaryResult ?? {
-    totalProducts: 0,
-    totalQuantity: 0,
-    totalValue: 0,
+  const summary = {
+    totalBatches: summaryResult?.totalBatches ?? 0,
+    totalProducts: summaryResult?.totalProducts ?? 0,
+    totalQuantity: summaryResult?.totalQuantity ?? 0,
+    totalValue: summaryResult?.totalValue ?? 0,
   }
 
   // Error toast

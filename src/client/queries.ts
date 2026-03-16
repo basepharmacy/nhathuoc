@@ -478,7 +478,7 @@ export const getInventoryBatchesSummaryQueryOptions = (
     ],
     queryFn: async () => {
       if (!params.tenantId) {
-        return { totalProducts: 0, totalQuantity: 0, totalValue: 0 }
+        return { totalBatches: 0, totalProducts: 0, totalQuantity: 0, totalValue: 0 }
       }
       const result = await inventoryBatchesRepo.getInventoryBatchesSummary(params)
       return result
