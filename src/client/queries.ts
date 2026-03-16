@@ -31,7 +31,7 @@ import {
 import {
   type ActivityHistoryQueryInput,
 } from '@/services/supabase/database/repo/activityHistoryRepo'
-import { type SalesPeriod } from '@/services/supabase/database/repo/dashboardReportRepo'
+import { type SalesPeriod, type TopProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 
 export type VietQrBank = {
@@ -521,6 +521,23 @@ export const getSalesStatisticsQueryOptions = (params: {
       dashboardReportRepo.getSalesStatistics({
         period: params.period,
         locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getTopProductsQueryOptions = (params: {
+  period: SalesPeriod
+  type: TopProductType
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-products', params.period, params.type, params.locationId ?? 'all', params.limit ?? 5],
+    queryFn: async () =>
+      dashboardReportRepo.getTopProducts({
+        period: params.period,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
       }),
   })
 

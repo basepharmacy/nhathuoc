@@ -6,8 +6,9 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
@@ -15,7 +16,9 @@ import {
   getExpiredInventoryBatchesQueryOptions,
   getLowStockProductsQueryOptions,
   getSalesStatisticsQueryOptions,
+  getTopProductsQueryOptions,
 } from '@/client/queries'
+import type { TopProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
 import {
   AlertTriangle,
   CalendarX,
@@ -27,27 +30,7 @@ import {
 } from 'lucide-react'
 import type { TimePeriod } from '..'
 
-type TopProduct = {
-  name: string
-  quantity: number
-  unitName: string
-  revenue: number
-  profit: number
-}
-
-type ReportMetrics = {
-  revenue: number
-  profit: number
-  orders: number
-  stockLossAmount: number
-  revenueChange: number
-  profitChange: number
-  ordersChange: number
-  stockLossChange: number
-  topProducts: TopProduct[]
-}
-
-const emptyMetrics: ReportMetrics = {
+const emptyMetrics = {
   revenue: 0,
   profit: 0,
   orders: 0,
@@ -56,7 +39,6 @@ const emptyMetrics: ReportMetrics = {
   profitChange: 0,
   ordersChange: 0,
   stockLossChange: 0,
-  topProducts: [],
 }
 
 const periodDescriptions: Record<TimePeriod, string> = {
@@ -100,9 +82,20 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
   const locationId = selectedLocationId ?? user?.location?.id ?? undefined
   const tenantId = user?.profile?.tenant_id ?? ''
 
+  const [topProductTab, setTopProductTab] = useState<TopProductType>('by_quantity')
+
   const { data: reportMetrics } = useQuery({
     ...getSalesStatisticsQueryOptions({
       period: timePeriod,
+      locationId,
+    }),
+    enabled: !!user,
+  })
+
+  const { data: topProducts = [] } = useQuery({
+    ...getTopProductsQueryOptions({
+      period: timePeriod,
+      type: topProductTab,
       locationId,
     }),
     enabled: !!user,
@@ -199,94 +192,51 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
 
       <div className='grid gap-4 lg:grid-cols-5'>
         <Card className='lg:col-span-3'>
-          <Tabs defaultValue='quantity' className='flex flex-1 flex-col'>
+          <Tabs
+            defaultValue='by_quantity'
+            value={topProductTab}
+            onValueChange={(v) => setTopProductTab(v as TopProductType)}
+            className='flex flex-1 flex-col'
+          >
             <CardHeader className='space-y-2'>
               <div className='flex items-center gap-4'>
                 <CardTitle>Top danh sách sản phẩm bán chạy</CardTitle>
                 <TabsList className='ml-auto shrink-0'>
-                  <TabsTrigger value='quantity'>Doanh số</TabsTrigger>
-                  <TabsTrigger value='revenue'>Doanh thu</TabsTrigger>
-                  <TabsTrigger value='profit'>Lợi nhuận</TabsTrigger>
+                  <TabsTrigger value='by_quantity'>Doanh số</TabsTrigger>
+                  <TabsTrigger value='by_revenue'>Doanh thu</TabsTrigger>
+                  <TabsTrigger value='by_profit'>Lợi nhuận</TabsTrigger>
                 </TabsList>
               </div>
               <CardDescription>{topProductDescriptions[timePeriod]}</CardDescription>
             </CardHeader>
             <CardContent className='flex flex-1 flex-col'>
-              <TabsContent value='quantity' className='mt-0 flex flex-1 flex-col'>
-                <div className='space-y-3'>
-                  {data.topProducts.map((product, index) => (
-                    <div
-                      key={`${product.name}-quantity`}
-                      className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2'
-                    >
-                      <div className='flex items-center gap-3'>
-                        <span className='flex size-6 items-center justify-center rounded-full bg-background text-xs font-medium'>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className='text-sm font-medium'>{product.name}</p>
-                          <p className='text-xs text-muted-foreground'>
-                            {formatQuantity(product.quantity)} {product.unitName}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='text-sm font-semibold'>
-                        {formatQuantity(product.quantity)} {product.unitName}
+              <div className='space-y-3'>
+                {topProducts.map((product, index) => (
+                  <div
+                    key={`${product.id ?? product.name}-${topProductTab}`}
+                    className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2'
+                  >
+                    <div className='flex items-center gap-3'>
+                      <span className='flex size-6 items-center justify-center rounded-full bg-background text-xs font-medium'>
+                        {index + 1}
+                      </span>
+                      <div>
+                        <p className='text-sm font-medium'>{product.name}</p>
+                        <p className='text-xs text-muted-foreground'>
+                          {formatQuantity(product.quantity)} {product.unitName}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-              <TabsContent value='revenue' className='mt-0 flex flex-1 flex-col'>
-                <div className='space-y-3'>
-                  {data.topProducts.map((product, index) => (
-                    <div
-                      key={`${product.name}-revenue`}
-                      className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2'
-                    >
-                      <div className='flex items-center gap-3'>
-                        <span className='flex size-6 items-center justify-center rounded-full bg-background text-xs font-medium'>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className='text-sm font-medium'>{product.name}</p>
-                          <p className='text-xs text-muted-foreground'>
-                            {formatQuantity(product.quantity)} {product.unitName}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='text-sm font-semibold'>
-                        {formatCurrency(product.revenue, { style: 'currency' })}
-                      </div>
+                    <div className='text-sm font-semibold'>
+                      {topProductTab === 'by_quantity'
+                        ? `${formatQuantity(product.quantity)} ${product.unitName}`
+                        : topProductTab === 'by_revenue'
+                          ? formatCurrency(product.revenue, { style: 'currency' })
+                          : formatCurrency(product.profit, { style: 'currency' })}
                     </div>
-                  ))}
-                </div>
-              </TabsContent>
-              <TabsContent value='profit' className='mt-0 flex flex-1 flex-col'>
-                <div className='space-y-3'>
-                  {data.topProducts.map((product, index) => (
-                    <div
-                      key={`${product.name}-profit`}
-                      className='flex flex-wrap items-center justify-between gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2'
-                    >
-                      <div className='flex items-center gap-3'>
-                        <span className='flex size-6 items-center justify-center rounded-full bg-background text-xs font-medium'>
-                          {index + 1}
-                        </span>
-                        <div>
-                          <p className='text-sm font-medium'>{product.name}</p>
-                          <p className='text-xs text-muted-foreground'>
-                            {formatQuantity(product.quantity)} {product.unitName}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='text-sm font-semibold'>
-                        {formatCurrency(product.profit, { style: 'currency' })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Tabs>
         </Card>

@@ -1,5 +1,4 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Json } from '../../database.types'
 
 export type SalesPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
 
@@ -39,8 +38,9 @@ export type SalesStatisticsResult = {
   profitChange: number
   ordersChange: number
   stockLossChange: number
-  topProducts: SalesTopProduct[]
 }
+
+export type TopProductType = 'by_quantity' | 'by_revenue' | 'by_profit'
 
 export type LowStockProduct = {
   name: string
@@ -59,7 +59,7 @@ export type ExpiredInventoryBatch = {
   unitName: string
 }
 
-type RpcSalesStatsRow = {
+type RpcSalesStatsV2Row = {
   current_completed_orders: number | null
   current_total_profit: number | null
   current_total_revenue: number | null
@@ -68,9 +68,6 @@ type RpcSalesStatsRow = {
   previous_total_profit: number | null
   previous_total_revenue: number | null
   previous_total_loss: number | null
-  top_5_products_by_profit?: Json | null
-  top_5_products_by_quantity?: Json | null
-  top_5_products_by_revenue?: Json | null
 }
 
 const toNumber = (value: unknown) => {
@@ -92,53 +89,6 @@ const parseJsonArray = (value: unknown): Record<string, unknown>[] => {
   return []
 }
 
-const normalizeTopProducts = (value: unknown): SalesTopProduct[] =>
-  parseJsonArray(value).map((item) => ({
-    id: (item.product_id ?? item.productId ?? item.id) as string | undefined,
-    name: String(item.product_name ?? item.name ?? 'Không rõ'),
-    unitName: String(item.unit_name ?? item.unitName ?? 'đv'),
-    quantity: toNumber(item.total_quantity ?? item.quantity ?? 0),
-    revenue: toNumber(item.total_revenue ?? item.revenue ?? 0),
-    profit: toNumber(item.total_profit ?? item.profit ?? 0),
-  }))
-
-const buildTopProducts = (stats: RpcSalesStatsRow): SalesTopProduct[] => {
-  const quantityList = normalizeTopProducts(stats.top_5_products_by_quantity)
-  const revenueList = normalizeTopProducts(stats.top_5_products_by_revenue)
-  const profitList = normalizeTopProducts(stats.top_5_products_by_profit)
-  const orderList =
-    quantityList.length > 0
-      ? quantityList
-      : revenueList.length > 0
-        ? revenueList
-        : profitList
-
-  const merged = new Map<string, SalesTopProduct>()
-
-  const upsert = (item: SalesTopProduct) => {
-    const key = item.id ?? item.name
-    const existing = merged.get(key)
-    if (!existing) {
-      merged.set(key, { ...item })
-      return
-    }
-    merged.set(key, {
-      ...existing,
-      name: item.name || existing.name,
-      unitName: item.unitName || existing.unitName,
-      quantity: item.quantity || existing.quantity,
-      revenue: item.revenue || existing.revenue,
-      profit: item.profit || existing.profit,
-    })
-  }
-
-  quantityList.forEach(upsert)
-  revenueList.forEach(upsert)
-  profitList.forEach(upsert)
-
-  return orderList.map((item) => merged.get(item.id ?? item.name) ?? item)
-}
-
 const calculateChange = (current: number, previous: number) => {
   if (previous === 0) {
     return current > 0 ? 100 : 0
@@ -154,7 +104,7 @@ export const createDashboardReportRepository = (
       period: SalesPeriod
       locationId?: string | null
     }): Promise<SalesStatisticsResult> {
-      const { data, error } = await client.rpc('get_sales_statistics', {
+      const { data, error } = await client.rpc('get_sales_statistics_v2', {
         p_period: params.period,
         p_location_id: params.locationId ?? undefined,
       })
@@ -163,7 +113,7 @@ export const createDashboardReportRepository = (
         throw error
       }
 
-      const stats = (data?.[0] ?? {}) as RpcSalesStatsRow
+      const stats = (data?.[0] ?? {}) as RpcSalesStatsV2Row
       const currentRevenue = toNumber(stats.current_total_revenue)
       const currentProfit = toNumber(stats.current_total_profit)
       const currentOrders = toNumber(stats.current_completed_orders)
@@ -182,8 +132,34 @@ export const createDashboardReportRepository = (
         profitChange: calculateChange(currentProfit, previousProfit),
         ordersChange: calculateChange(currentOrders, previousOrders),
         stockLossChange: calculateChange(currentLoss, previousLoss),
-        topProducts: buildTopProducts(stats),
       }
+    },
+
+    async getTopProducts(params: {
+      period: SalesPeriod
+      type: TopProductType
+      locationId?: string | null
+      limit?: number
+    }): Promise<SalesTopProduct[]> {
+      const { data, error } = await client.rpc('get_top_products', {
+        p_period: params.period,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+        p_limit: params.limit ?? 5,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name ?? 'Không rõ',
+        unitName: item.unit_name ?? 'đv',
+        quantity: toNumber(item.quantity),
+        revenue: toNumber(item.revenue),
+        profit: toNumber(item.profit),
+      }))
     },
 
     async getPurchasesStatistics(params: {
@@ -230,7 +206,7 @@ export const createDashboardReportRepository = (
     async getLowStockProducts(params: {
       locationId?: string | null
     }): Promise<LowStockProduct[]> {
-      const { data, error } = await client.rpc('get_low_stock_products', {
+      const { data, error } = await client.rpc('get_low_stock_products_v2', {
         p_location_id: params.locationId ?? undefined,
       })
 
@@ -238,16 +214,13 @@ export const createDashboardReportRepository = (
         throw error
       }
 
-      const list = parseJsonArray(data as unknown)
-
-      return list.map((item) => {
-        const stock = toNumber(item.total_quantity ?? item.quantity ?? item.stock ?? 0)
-        const minStock = toNumber(item.min_stock ?? item.minStock ?? 0)
+      return (data ?? []).map((item) => {
+        const stock = toNumber(item.stock)
         return {
-          name: String(item.product_name ?? item.name ?? 'Không rõ'),
+          name: item.product_name ?? 'Không rõ',
           stock,
-          unitName: String(item.unit_name ?? item.unitName ?? 'đv'),
-          minStock,
+          unitName: item.unit_name ?? 'đv',
+          minStock: toNumber(item.min_stock),
           status: stock <= 0 ? 'out' : 'low',
         }
       })

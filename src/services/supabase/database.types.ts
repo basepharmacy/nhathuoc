@@ -1312,6 +1312,16 @@ export type Database = {
         Args: { p_location_id?: string }
         Returns: Json
       }
+      get_low_stock_products_v2: {
+        Args: { p_location_id?: string }
+        Returns: {
+          id: string
+          min_stock: number
+          product_name: string
+          stock: number
+          unit_name: string
+        }[]
+      }
       get_purchases_statistics: {
         Args: { p_location_id?: string }
         Returns: {
