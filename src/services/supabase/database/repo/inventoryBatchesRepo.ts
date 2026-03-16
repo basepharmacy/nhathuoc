@@ -17,12 +17,15 @@ export type InventoryBatchWithRelations = InventoryBatch & {
   locations?: { id: string; name: string } | null
 }
 
+export type InventoryBatchStockStatus = 'in_stock' | 'out_of_stock'
+
 export type InventoryBatchesListQueryInput = {
   tenantId: string
   pageIndex: number
   pageSize: number
   search?: string
   locationIds?: string[]
+  stockStatus?: InventoryBatchStockStatus
 }
 
 export type InventoryBatchesListQueryResult = {
@@ -120,6 +123,12 @@ export const createInventoryBatchRepository = (
 
       if (searchValue) {
         query = query.ilike('products.product_name', `%${searchValue}%`)
+      }
+
+      if (params.stockStatus === 'in_stock') {
+        query = query.gt('quantity', 0)
+      } else if (params.stockStatus === 'out_of_stock') {
+        query = query.eq('quantity', 0)
       }
 
       const { data, error, count } = await query

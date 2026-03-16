@@ -3,6 +3,24 @@ import type { Json } from '../../database.types'
 
 export type SalesPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
 
+export type PurchaseTopSupplier = {
+  id?: string
+  name: string
+  orders: number
+  orderAmount: number
+  debt: number
+}
+
+export type PurchasesStatisticsResult = {
+  totalOrders: number
+  totalOrderAmount: number
+  totalPaidAmount: number
+  totalDebt: number
+  topSuppliersByOrders: PurchaseTopSupplier[]
+  topSuppliersByOrderAmount: PurchaseTopSupplier[]
+  topSuppliersByDebt: PurchaseTopSupplier[]
+}
+
 export type SalesTopProduct = {
   id?: string
   name: string
@@ -165,6 +183,47 @@ export const createDashboardReportRepository = (
         ordersChange: calculateChange(currentOrders, previousOrders),
         stockLossChange: calculateChange(currentLoss, previousLoss),
         topProducts: buildTopProducts(stats),
+      }
+    },
+
+    async getPurchasesStatistics(params: {
+      locationId?: string | null
+    }): Promise<PurchasesStatisticsResult> {
+      const { data, error } = await client.rpc('get_purchases_statistics', {
+        p_location_id: params.locationId ?? undefined,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      const stats = (data?.[0] ?? {}) as {
+        total_orders?: number | null
+        total_order_amount?: number | null
+        total_paid_amount?: number | null
+        total_debt?: number | null
+        top_5_suppliers_by_orders?: unknown
+        top_5_suppliers_by_order_amount?: unknown
+        top_5_suppliers_by_debt?: unknown
+      }
+
+      const normalizeSuppliers = (value: unknown): PurchaseTopSupplier[] =>
+        parseJsonArray(value).map((item) => ({
+          id: (item.supplier_id ?? item.id) as string | undefined,
+          name: String(item.supplier_name ?? item.name ?? 'Không rõ'),
+          orders: toNumber(item.total_orders ?? item.orders ?? 0),
+          orderAmount: toNumber(item.total_order_amount ?? item.order_amount ?? 0),
+          debt: toNumber(item.total_debt ?? item.debt ?? 0),
+        }))
+
+      return {
+        totalOrders: toNumber(stats.total_orders),
+        totalOrderAmount: toNumber(stats.total_order_amount),
+        totalPaidAmount: toNumber(stats.total_paid_amount),
+        totalDebt: toNumber(stats.total_debt),
+        topSuppliersByOrders: normalizeSuppliers(stats.top_5_suppliers_by_orders),
+        topSuppliersByOrderAmount: normalizeSuppliers(stats.top_5_suppliers_by_order_amount),
+        topSuppliersByDebt: normalizeSuppliers(stats.top_5_suppliers_by_debt),
       }
     },
 

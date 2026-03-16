@@ -33,6 +33,7 @@ import {
 } from '@/services/supabase/database/repo/activityHistoryRepo'
 import { type SalesPeriod } from '@/services/supabase/database/repo/dashboardReportRepo'
 
+
 export type VietQrBank = {
   id: number | string
   name: string
@@ -432,6 +433,7 @@ export const getInventoryBatchesListQueryOptions = (
         pageSize: params.pageSize,
         search: params.search ?? '',
         locationIds: params.locationIds ?? [],
+        stockStatus: params.stockStatus ?? '',
       },
     ],
     queryFn: async () => {
@@ -518,6 +520,17 @@ export const getSalesStatisticsQueryOptions = (params: {
     queryFn: async () =>
       dashboardReportRepo.getSalesStatistics({
         period: params.period,
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getPurchasesStatisticsQueryOptions = (params: {
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'purchases-statistics', params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getPurchasesStatistics({
         locationId: params.locationId ?? undefined,
       }),
   })

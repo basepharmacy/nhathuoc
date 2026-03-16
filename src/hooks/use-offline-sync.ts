@@ -15,14 +15,15 @@ async function replayMutation(mutation: OfflineMutation): Promise<void> {
       const payload = mutation.payload as Parameters<
         typeof saleOrdersRepo.createSaleOrderWithItemsV2
       >[0]
-      await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
+      await saleOrdersRepo.createSaleOrderWithItemsV2({ ...payload, isOffline: true })
       break
     }
     case 'update-sale-order': {
-      const payload = mutation.payload as Parameters<
-        typeof saleOrdersRepo.updateSaleOrderWithItems
+      const payload = mutation.payload as { orderId: string } & Parameters<
+        typeof saleOrdersRepo.createSaleOrderWithItemsV2
       >[0]
-      await saleOrdersRepo.updateSaleOrderWithItems(payload)
+      await saleOrdersRepo.deleteSaleOrder({ orderId: payload.orderId })
+      await saleOrdersRepo.createSaleOrderWithItemsV2({ ...payload, isOffline: true })
       break
     }
   }

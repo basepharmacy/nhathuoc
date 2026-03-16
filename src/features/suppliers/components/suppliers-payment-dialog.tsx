@@ -5,7 +5,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Plus, Sparkles } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { supplierBankAccountsRepo, supplierPaymentsRepo } from '@/client'
 import { getSupplierBankAccountsQueryOptions } from '@/client/queries'
@@ -52,6 +52,12 @@ const normalizeOptionalText = (value?: string) =>
   value && value.trim().length > 0 ? value.trim() : null
 
 const getTodayDate = () => new Date().toISOString().slice(0, 10)
+
+const generateReferenceCode = () => {
+  const encoded = Date.now().toString(36).toUpperCase()
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
+  return `${encoded}C${random}`
+}
 
 function AddBankAccountInline({
   supplierId,
@@ -186,7 +192,7 @@ export function SuppliersPaymentDialog({
     () => ({
       amount: '',
       payment_date: getTodayDate(),
-      reference_code: '',
+      reference_code: generateReferenceCode(),
       note: '',
     }),
     []
@@ -261,6 +267,7 @@ export function SuppliersPaymentDialog({
       form.reset({
         ...defaultValues,
         payment_date: getTodayDate(),
+        reference_code: generateReferenceCode(),
       })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -363,12 +370,23 @@ export function SuppliersPaymentDialog({
                   <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
                     <FormLabel className='col-span-2 text-end'>Mã tham chiếu</FormLabel>
                     <FormControl>
-                      <Input
-                        placeholder='Mã tham chiếu...'
-                        className='col-span-4'
-                        autoComplete='off'
-                        {...field}
-                      />
+                      <div className='col-span-4 relative flex items-center'>
+                        <Input
+                          placeholder='Mã tham chiếu...'
+                          className='pr-20'
+                          autoComplete='off'
+                          {...field}
+                        />
+                        <button
+                          type='button'
+                          title='Tự động generate mã tham chiếu'
+                          className='absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors'
+                          onClick={() => field.onChange(generateReferenceCode())}
+                        >
+                          <Sparkles className='size-4' />
+                          <span>Tự động</span>
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className='col-span-4 col-start-3' />
                   </FormItem>

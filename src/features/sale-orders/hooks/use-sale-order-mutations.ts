@@ -130,16 +130,18 @@ export function useSaleOrderMutations({
 
       const state = store.getState()
       const total = selectTotal(state)
-      const payload = {
-        orderId: initialData.id,
-        tenantId,
+      const createPayload = {
         order: {
+          sale_order_code: state.orderCode,
           customer_id: state.customerId || null,
+          tenant_id: tenantId,
+          user_id: userId,
+          location_id: state.selectedLocationId,
+          issued_at: new Date().toISOString(),
           status,
           customer_paid_amount: state.paymentMethod === 'CASH' ? state.cashReceived : 0,
           discount: state.orderDiscount,
           total_amount: total,
-          location_id: state.selectedLocationId,
           notes: state.notes.trim().length > 0 ? state.notes.trim() : null,
         },
         items: buildOrderItems(),
@@ -148,18 +150,20 @@ export function useSaleOrderMutations({
           locationName: locationName ?? '',
         },
       }
+      const offlinePayload = { orderId: initialData.id, ...createPayload }
 
       if (!isOnline) {
-        await addOfflineMutation({ type: 'update-sale-order', payload, orderId: initialData.id })
-        return { _offline: true }
+        await addOfflineMutation({ type: 'update-sale-order', payload: offlinePayload, orderId: initialData.id })
+        return { _offline: true } as { _offline: boolean }
       }
 
       try {
-        await saleOrdersRepo.updateSaleOrderWithItems(payload)
+        await saleOrdersRepo.deleteSaleOrder({ orderId: initialData.id })
+        return await saleOrdersRepo.createSaleOrderWithItemsV2({ ...createPayload, isOffline: false })
       } catch (error) {
         if (isNetworkError(error)) {
-          await addOfflineMutation({ type: 'update-sale-order', payload, orderId: initialData.id })
-          return { _offline: true }
+          await addOfflineMutation({ type: 'update-sale-order', payload: offlinePayload, orderId: initialData.id })
+          return { _offline: true } as { _offline: boolean }
         }
         throw error
       }
@@ -181,6 +185,7 @@ export function useSaleOrderMutations({
       if (status === '2_COMPLETE') {
         queryClient.invalidateQueries({ queryKey: ['dashboard-report', 'sales-statistics'] })
         queryClient.invalidateQueries({ queryKey: ['dashboard-report', 'low-stock-products'] })
+        queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'all', 'all-available'] })
       }
 
       toast.success('Đã cập nhật đơn bán hàng.')

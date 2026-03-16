@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import { Route } from '@/routes/_authenticated/index'
 import {
   Select,
   SelectContent,
@@ -11,6 +13,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { DatePicker } from '@/components/date-picker'
 import { ReportOverview } from './components/report-overview'
+import { PurchaseReport } from './components/purchase-report'
 import {
   ActivityHistoryTab,
   type ActivityTimePeriod,
@@ -18,7 +21,7 @@ import {
 } from './components/activity-history-tab'
 
 export type TimePeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
-type DashboardTab = 'report' | 'summary' | 'advanced' | 'activity-history'
+export type DashboardTab = 'report' | 'summary' | 'advanced' | 'activity-history'
 
 const timePeriodLabels: Record<TimePeriod, string> = {
   day: 'Ngày',
@@ -33,7 +36,12 @@ export function Dashboard() {
   const [activityTimePeriod, setActivityTimePeriod] = useState<ActivityTimePeriod>('month')
   const [activityFromDate, setActivityFromDate] = useState<Date | undefined>()
   const [activityToDate, setActivityToDate] = useState<Date | undefined>()
-  const [activeTab, setActiveTab] = useState<DashboardTab>('report')
+  const { tab: activeTab } = Route.useSearch()
+  const navigate = useNavigate({ from: '/' })
+
+  function setActiveTab(tab: DashboardTab) {
+    navigate({ search: { tab } })
+  }
 
   return (
     <>
@@ -53,7 +61,7 @@ export function Dashboard() {
             <div className='overflow-x-auto pb-2'>
               <TabsList>
                 <TabsTrigger value='report'>Báo cáo</TabsTrigger>
-                <TabsTrigger value='summary'>Tổng hợp</TabsTrigger>
+                <TabsTrigger value='summary'>Nhập hàng</TabsTrigger>
                 <TabsTrigger value='advanced'>Báo cáo nâng cao</TabsTrigger>
                 <TabsTrigger value='activity-history'>Lịch sử hoạt động</TabsTrigger>
               </TabsList>
@@ -123,9 +131,7 @@ export function Dashboard() {
           </TabsContent>
 
           <TabsContent value='summary'>
-            <div className='flex min-h-[320px] items-center justify-center rounded-lg border border-dashed bg-muted/20'>
-              <p className='text-sm text-muted-foreground'>Ra mắt sớm</p>
-            </div>
+            <PurchaseReport />
           </TabsContent>
 
           <TabsContent value='advanced'>

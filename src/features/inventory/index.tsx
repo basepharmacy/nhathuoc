@@ -23,7 +23,7 @@ export function Inventory() {
   const { user } = useUser()
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
   const tenantId = user?.profile?.tenant_id ?? ''
-  const [viewMode, setViewMode] = useState<InventoryViewMode>('product')
+  const [viewMode, setViewMode] = useState<InventoryViewMode>('batch')
 
   // Data queries
   const { data: locations = [], isError: isLocationsError } = useQuery({
@@ -111,8 +111,8 @@ export function Inventory() {
         <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as InventoryViewMode)}>
           <div className='flex flex-wrap items-center gap-2'>
             <TabsList>
-              <TabsTrigger value='product'>Theo sản phẩm</TabsTrigger>
               <TabsTrigger value='batch'>Theo lô</TabsTrigger>
+              <TabsTrigger value='product'>Theo sản phẩm</TabsTrigger>
             </TabsList>
           </div>
 

@@ -4,7 +4,7 @@ import {
   type PaginationState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchesListQueryInput, type InventoryBatchStockStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 type Location = { id: string; name: string }
 
@@ -23,6 +23,7 @@ export function useInventoryTable({
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
     ['search']: false,
     ['location_id']: false,
+    ['stock_status']: false,
   })
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
@@ -46,13 +47,24 @@ export function useInventoryTable({
       : []
   }, [columnFilters])
 
+  const stockStatus = useMemo(() => {
+    const stockFilter = columnFilters.find(
+      (filter) => filter.id === 'stock_status'
+    )
+    if (Array.isArray(stockFilter?.value) && stockFilter.value.length === 1) {
+      return stockFilter.value[0] as InventoryBatchStockStatus
+    }
+    return undefined
+  }, [columnFilters])
+
   const listQueryParams: InventoryBatchesListQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
     locationIds,
-  }), [tenantId, pagination, searchValue, locationIds])
+    stockStatus,
+  }), [tenantId, pagination, searchValue, locationIds, stockStatus])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -95,12 +107,22 @@ export function useInventoryTable({
     [locations]
   )
 
+  const stockStatusOptions = [
+    { label: 'Còn tồn kho', value: 'in_stock' },
+    { label: 'Hết tồn kho', value: 'out_of_stock' },
+  ]
+
   const filters = useMemo(
     () => [
       {
         columnId: 'location_id',
         title: 'Cửa hàng',
         options: locationOptions,
+      },
+      {
+        columnId: 'stock_status',
+        title: 'Trạng thái tồn kho',
+        options: stockStatusOptions,
       },
     ],
     [locationOptions]

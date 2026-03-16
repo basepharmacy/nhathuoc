@@ -11,6 +11,8 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as publicSupportRouteImport } from './routes/(public)/support'
+import { Route as publicPrivacyPolicyRouteImport } from './routes/(public)/privacy-policy'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -34,7 +36,6 @@ import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedCategoriesIndexRouteImport } from './routes/_authenticated/categories/index'
 import { Route as AuthenticatedBankAccountsIndexRouteImport } from './routes/_authenticated/bank-accounts/index'
-import { Route as AuthenticatedAppsIndexRouteImport } from './routes/_authenticated/apps/index'
 import { Route as AuthenticatedSuppliersSupplierIdRouteImport } from './routes/_authenticated/suppliers/$supplierId'
 import { Route as AuthenticatedStaffsStaffIdRouteImport } from './routes/_authenticated/staffs/$staffId'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
@@ -54,6 +55,16 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const publicSupportRoute = publicSupportRouteImport.update({
+  id: '/(public)/support',
+  path: '/support',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const publicPrivacyPolicyRoute = publicPrivacyPolicyRouteImport.update({
+  id: '/(public)/privacy-policy',
+  path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const errors503Route = errors503RouteImport.update({
   id: '/(errors)/503',
@@ -184,11 +195,6 @@ const AuthenticatedBankAccountsIndexRoute =
     path: '/bank-accounts/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedAppsIndexRoute = AuthenticatedAppsIndexRouteImport.update({
-  id: '/apps/',
-  path: '/apps/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedSuppliersSupplierIdRoute =
   AuthenticatedSuppliersSupplierIdRouteImport.update({
     id: '/suppliers/$supplierId',
@@ -261,6 +267,8 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/privacy-policy': typeof publicPrivacyPolicyRoute
+  '/support': typeof publicSupportRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
@@ -269,7 +277,6 @@ export interface FileRoutesByFullPath {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
-  '/apps/': typeof AuthenticatedAppsIndexRoute
   '/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/categories/': typeof AuthenticatedCategoriesIndexRoute
   '/chats/': typeof AuthenticatedChatsIndexRoute
@@ -296,6 +303,8 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/privacy-policy': typeof publicPrivacyPolicyRoute
+  '/support': typeof publicSupportRoute
   '/': typeof AuthenticatedIndexRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -305,7 +314,6 @@ export interface FileRoutesByTo {
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
-  '/apps': typeof AuthenticatedAppsIndexRoute
   '/bank-accounts': typeof AuthenticatedBankAccountsIndexRoute
   '/categories': typeof AuthenticatedCategoriesIndexRoute
   '/chats': typeof AuthenticatedChatsIndexRoute
@@ -335,6 +343,8 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/(public)/privacy-policy': typeof publicPrivacyPolicyRoute
+  '/(public)/support': typeof publicSupportRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -344,7 +354,6 @@ export interface FileRoutesById {
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
   '/_authenticated/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
-  '/_authenticated/apps/': typeof AuthenticatedAppsIndexRoute
   '/_authenticated/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/_authenticated/categories/': typeof AuthenticatedCategoriesIndexRoute
   '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
@@ -375,6 +384,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/privacy-policy'
+    | '/support'
     | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
@@ -383,7 +394,6 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/staffs/$staffId'
     | '/suppliers/$supplierId'
-    | '/apps/'
     | '/bank-accounts/'
     | '/categories/'
     | '/chats/'
@@ -410,6 +420,8 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/privacy-policy'
+    | '/support'
     | '/'
     | '/customers/$customerId'
     | '/errors/$error'
@@ -419,7 +431,6 @@ export interface FileRouteTypes {
     | '/settings/account'
     | '/staffs/$staffId'
     | '/suppliers/$supplierId'
-    | '/apps'
     | '/bank-accounts'
     | '/categories'
     | '/chats'
@@ -448,6 +459,8 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/(public)/privacy-policy'
+    | '/(public)/support'
     | '/_authenticated/'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/errors/$error'
@@ -457,7 +470,6 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/account'
     | '/_authenticated/staffs/$staffId'
     | '/_authenticated/suppliers/$supplierId'
-    | '/_authenticated/apps/'
     | '/_authenticated/bank-accounts/'
     | '/_authenticated/categories/'
     | '/_authenticated/chats/'
@@ -486,6 +498,8 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  publicPrivacyPolicyRoute: typeof publicPrivacyPolicyRoute
+  publicSupportRoute: typeof publicSupportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -503,6 +517,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/(public)/support': {
+      id: '/(public)/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof publicSupportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(public)/privacy-policy': {
+      id: '/(public)/privacy-policy'
+      path: '/privacy-policy'
+      fullPath: '/privacy-policy'
+      preLoaderRoute: typeof publicPrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/(errors)/503': {
       id: '/(errors)/503'
@@ -665,13 +693,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedBankAccountsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/apps/': {
-      id: '/_authenticated/apps/'
-      path: '/apps'
-      fullPath: '/apps/'
-      preLoaderRoute: typeof AuthenticatedAppsIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/suppliers/$supplierId': {
       id: '/_authenticated/suppliers/$supplierId'
       path: '/suppliers/$supplierId'
@@ -771,7 +792,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
   AuthenticatedStaffsStaffIdRoute: typeof AuthenticatedStaffsStaffIdRoute
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
-  AuthenticatedAppsIndexRoute: typeof AuthenticatedAppsIndexRoute
   AuthenticatedBankAccountsIndexRoute: typeof AuthenticatedBankAccountsIndexRoute
   AuthenticatedCategoriesIndexRoute: typeof AuthenticatedCategoriesIndexRoute
   AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
@@ -800,7 +820,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSaleOrdersHistoryRoute: AuthenticatedSaleOrdersHistoryRoute,
   AuthenticatedStaffsStaffIdRoute: AuthenticatedStaffsStaffIdRoute,
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
-  AuthenticatedAppsIndexRoute: AuthenticatedAppsIndexRoute,
   AuthenticatedBankAccountsIndexRoute: AuthenticatedBankAccountsIndexRoute,
   AuthenticatedCategoriesIndexRoute: AuthenticatedCategoriesIndexRoute,
   AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
@@ -833,6 +852,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  publicPrivacyPolicyRoute: publicPrivacyPolicyRoute,
+  publicSupportRoute: publicSupportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

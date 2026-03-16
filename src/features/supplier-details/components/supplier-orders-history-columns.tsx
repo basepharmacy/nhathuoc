@@ -5,34 +5,12 @@ import { LongText } from '@/components/long-text'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
-
-const paymentStatusLabels: Record<PurchaseOrderWithRelations['payment_status'], string> = {
-  '1_UNPAID': 'Chưa thanh toán',
-  '2_PARTIALLY_PAID': 'Thanh toán một phần',
-  '3_PAID': 'Đã thanh toán',
-}
-
-const paymentStatusColors: Record<PurchaseOrderWithRelations['payment_status'], string> = {
-  '1_UNPAID': 'bg-amber-200/40 text-amber-900 dark:text-amber-100 border-amber-300',
-  '2_PARTIALLY_PAID': 'bg-blue-100/40 text-blue-900 dark:text-blue-200 border-blue-200',
-  '3_PAID': 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
-}
-
-const orderStatusLabels: Record<PurchaseOrderWithRelations['status'], string> = {
-  '1_DRAFT': 'Nháp',
-  '2_ORDERED': 'Đã đặt',
-  '3_CHECKING': 'Đang kiểm',
-  '4_STORED': 'Đã nhập kho',
-  '9_CANCELLED': 'Đã hủy',
-}
-
-const orderStatusColors: Record<PurchaseOrderWithRelations['status'], string> = {
-  '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
-  '2_ORDERED': 'bg-blue-100/40 text-blue-900 dark:text-blue-200 border-blue-200',
-  '3_CHECKING': 'bg-amber-200/40 text-amber-900 dark:text-amber-100 border-amber-300',
-  '4_STORED': 'bg-teal-100/30 text-teal-900 dark:text-teal-200 border-teal-200',
-  '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
-}
+import {
+  purchaseOrderStatusLabels,
+  purchaseOrderStatusColors,
+  purchasePaymentStatusLabels,
+  purchasePaymentStatusColors,
+} from '@/features/purchase-orders-history/purchase-order-status'
 
 const formatIssuedDate = (value?: string | null) => {
   if (!value) return '—'
@@ -107,8 +85,8 @@ export const supplierOrdersHistoryColumns: ColumnDef<PurchaseOrderWithRelations>
     cell: ({ row }) => {
       const status = row.getValue('payment_status') as PurchaseOrderWithRelations['payment_status']
       return (
-        <Badge variant='outline' className={cn('text-sm font-medium', paymentStatusColors[status])}>
-          {paymentStatusLabels[status]}
+        <Badge variant='outline' className={cn('text-sm font-medium', purchasePaymentStatusColors[status])}>
+          {purchasePaymentStatusLabels[status]}
         </Badge>
       )
     },
@@ -124,8 +102,8 @@ export const supplierOrdersHistoryColumns: ColumnDef<PurchaseOrderWithRelations>
     cell: ({ row }) => {
       const status = row.getValue('status') as PurchaseOrderWithRelations['status']
       return (
-        <Badge variant='outline' className={cn('text-sm font-medium', orderStatusColors[status])}>
-          {orderStatusLabels[status]}
+        <Badge variant='outline' className={cn('text-sm font-medium', purchaseOrderStatusColors[status])}>
+          {purchaseOrderStatusLabels[status]}
         </Badge>
       )
     },

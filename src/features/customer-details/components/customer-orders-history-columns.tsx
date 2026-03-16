@@ -6,22 +6,7 @@ import { type SaleOrderWithRelations } from '@/services/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'
 import { SaleOrdersHistoryRowActions } from '@/features/sale-orders-history/components/sale-orders-history-row-actions.tsx'
-
-const orderStatusLabels: Record<SaleOrderWithRelations['status'], string> = {
-  '1_DRAFT': 'Nháp',
-  '2_COMPLETE': 'Hoàn tất',
-  '7_DAV_ERROR': 'Lỗi DAV',
-  '8_INSUFFICIENT_STOCK': 'Thiếu tồn kho',
-  '9_CANCELLED': 'Đã hủy',
-}
-
-const orderStatusColors: Record<SaleOrderWithRelations['status'], string> = {
-  '1_DRAFT': 'bg-neutral-200/60 text-foreground border-neutral-300',
-  '2_COMPLETE': 'bg-emerald-100/40 text-emerald-900 dark:text-emerald-200 border-emerald-200',
-  '7_DAV_ERROR': 'bg-yellow-100/40 text-yellow-900 dark:text-yellow-200 border-yellow-200',
-  '8_INSUFFICIENT_STOCK': 'bg-orange-100/40 text-orange-900 dark:text-orange-200 border-orange-200',
-  '9_CANCELLED': 'bg-rose-200/40 text-rose-900 dark:text-rose-100 border-rose-300',
-}
+import { saleOrderStatusLabels, saleOrderStatusColors } from '@/features/sale-orders-history/sale-order-status'
 
 const formatIssuedDate = (value?: string | null) => {
   if (!value) return '—'
@@ -105,9 +90,9 @@ export const getCustomerOrdersHistoryColumns = (
         return (
           <Badge
             variant='outline'
-            className={cn('text-sm font-medium', orderStatusColors[status])}
+            className={cn('text-sm font-medium', saleOrderStatusColors[status])}
           >
-            {orderStatusLabels[status]}
+            {saleOrderStatusLabels[status]}
           </Badge>
         )
       },

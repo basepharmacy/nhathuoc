@@ -21,7 +21,6 @@ import type { Location } from '@/services/supabase/database/model'
 const statusColorMap: Record<Location['status'], string> = {
   '1_ACTIVE': 'bg-green-500',
   '2_INACTIVE': 'bg-red-500',
-  '3_CLOSED': 'bg-gray-400',
 }
 
 function StatusDot({ status }: { status: Location['status'] }) {

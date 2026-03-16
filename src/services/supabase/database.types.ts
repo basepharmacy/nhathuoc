@@ -846,6 +846,7 @@ export type Database = {
           customer_paid_amount: number
           discount: number
           id: string
+          is_offline: boolean
           issued_at: string | null
           location_id: string | null
           notes: string | null
@@ -862,6 +863,7 @@ export type Database = {
           customer_paid_amount?: number
           discount?: number
           id?: string
+          is_offline?: boolean
           issued_at?: string | null
           location_id?: string | null
           notes?: string | null
@@ -878,6 +880,7 @@ export type Database = {
           customer_paid_amount?: number
           discount?: number
           id?: string
+          is_offline?: boolean
           issued_at?: string | null
           location_id?: string | null
           notes?: string | null
@@ -1226,6 +1229,7 @@ export type Database = {
           p_customer_id?: string
           p_customer_paid_amount?: number
           p_discount?: number
+          p_is_offline?: boolean
           p_issued_at?: string
           p_items?: Json
           p_location_id?: string
@@ -1247,6 +1251,18 @@ export type Database = {
       get_low_stock_products: {
         Args: { p_location_id?: string }
         Returns: Json
+      }
+      get_purchases_statistics: {
+        Args: { p_location_id?: string }
+        Returns: {
+          top_5_suppliers_by_debt: Json
+          top_5_suppliers_by_order_amount: Json
+          top_5_suppliers_by_orders: Json
+          total_debt: number
+          total_order_amount: number
+          total_orders: number
+          total_paid_amount: number
+        }[]
       }
       get_sales_statistics: {
         Args: {
@@ -1279,7 +1295,6 @@ export type Database = {
         Returns: {
           total_customers: number
           total_locations_active: number
-          total_locations_closed: number
           total_locations_inactive: number
           total_products_active: number
           total_products_inactive: number

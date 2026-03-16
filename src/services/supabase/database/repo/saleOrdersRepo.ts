@@ -164,12 +164,14 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
     async createSaleOrderWithItemsV2(params: {
       order: SaleOrderInsert
       items: Array<Omit<SaleOrderItemInsert, 'sale_order_id'>>
+      isOffline?: boolean
     }): Promise<SaleOrderWithItems> {
       const { data: orderId, error: rpcError } = await client.rpc('create_sale_order', {
         p_customer_id: params.order.customer_id ?? undefined,
         p_customer_paid_amount: params.order.customer_paid_amount ?? 0,
         p_discount: params.order.discount ?? 0,
         p_issued_at: params.order.issued_at ?? undefined,
+        p_is_offline: params.isOffline ?? false,
         p_items: params.items.map((item) => ({
           product_id: item.product_id,
           product_unit_id: item.product_unit_id ?? null,
