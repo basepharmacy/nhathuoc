@@ -3,11 +3,9 @@ import { BasePharmacySupabaseClient } from '../../client'
 export type SalesPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
 
 export type PurchaseTopSupplier = {
-  id?: string
+  id: string
   name: string
-  orders: number
-  orderAmount: number
-  debt: number
+  statValue: number
 }
 
 export type PurchasesStatisticsResult = {
@@ -15,9 +13,23 @@ export type PurchasesStatisticsResult = {
   totalOrderAmount: number
   totalPaidAmount: number
   totalDebt: number
-  topSuppliersByOrders: PurchaseTopSupplier[]
-  topSuppliersByOrderAmount: PurchaseTopSupplier[]
-  topSuppliersByDebt: PurchaseTopSupplier[]
+}
+
+export type PurchasesStatisticsV2Result = {
+  totalOrders: number
+  totalOrderAmount: number
+  totalPaidAmount: number
+  totalDebt: number
+}
+
+export type TopSupplierType = 'by_orders' | 'by_order_amount' | 'by_debt'
+
+export type TopPurchasedProductType = 'by_orders' | 'by_order_amount'
+
+export type PurchaseTopProduct = {
+  id?: string
+  name: string
+  statValue: number
 }
 
 export type SalesTopProduct = {
@@ -73,20 +85,6 @@ type RpcSalesStatsV2Row = {
 const toNumber = (value: unknown) => {
   const parsed = typeof value === 'number' ? value : Number(value)
   return Number.isFinite(parsed) ? parsed : 0
-}
-
-const parseJsonArray = (value: unknown): Record<string, unknown>[] => {
-  if (!value) return []
-  if (Array.isArray(value)) return value as Record<string, unknown>[]
-  if (typeof value === 'string') {
-    try {
-      const parsed = JSON.parse(value)
-      return Array.isArray(parsed) ? (parsed as Record<string, unknown>[]) : []
-    } catch {
-      return []
-    }
-  }
-  return []
 }
 
 const calculateChange = (current: number, previous: number) => {
@@ -161,11 +159,10 @@ export const createDashboardReportRepository = (
         profit: toNumber(item.profit),
       }))
     },
-
-    async getPurchasesStatistics(params: {
+    async getPurchasesStatisticsV2(params: {
       locationId?: string | null
-    }): Promise<PurchasesStatisticsResult> {
-      const { data, error } = await client.rpc('get_purchases_statistics', {
+    }): Promise<PurchasesStatisticsV2Result> {
+      const { data, error } = await client.rpc('get_purchases_statistics_v2', {
         p_location_id: params.locationId ?? undefined,
       })
 
@@ -178,29 +175,54 @@ export const createDashboardReportRepository = (
         total_order_amount?: number | null
         total_paid_amount?: number | null
         total_debt?: number | null
-        top_5_suppliers_by_orders?: unknown
-        top_5_suppliers_by_order_amount?: unknown
-        top_5_suppliers_by_debt?: unknown
       }
-
-      const normalizeSuppliers = (value: unknown): PurchaseTopSupplier[] =>
-        parseJsonArray(value).map((item) => ({
-          id: (item.supplier_id ?? item.id) as string | undefined,
-          name: String(item.supplier_name ?? item.name ?? 'Không rõ'),
-          orders: toNumber(item.total_orders ?? item.orders ?? 0),
-          orderAmount: toNumber(item.total_order_amount ?? item.order_amount ?? 0),
-          debt: toNumber(item.total_debt ?? item.debt ?? 0),
-        }))
 
       return {
         totalOrders: toNumber(stats.total_orders),
         totalOrderAmount: toNumber(stats.total_order_amount),
         totalPaidAmount: toNumber(stats.total_paid_amount),
         totalDebt: toNumber(stats.total_debt),
-        topSuppliersByOrders: normalizeSuppliers(stats.top_5_suppliers_by_orders),
-        topSuppliersByOrderAmount: normalizeSuppliers(stats.top_5_suppliers_by_order_amount),
-        topSuppliersByDebt: normalizeSuppliers(stats.top_5_suppliers_by_debt),
       }
+    },
+
+    async getTopSuppliers(params: {
+      locationId?: string | null
+      type: TopSupplierType
+    }): Promise<PurchaseTopSupplier[]> {
+      const { data, error } = await client.rpc('get_top_suppliers', {
+        p_location_id: params.locationId ?? undefined,
+        p_type: params.type,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []).map((item: Record<string, unknown>) => ({
+        id: (item.supplier_id) as string,
+        name: String(item.name),
+        statValue: toNumber(item.stat_value)
+      }))
+    },
+
+    async getTopPurchasedProducts(params: {
+      locationId?: string | null
+      type: TopPurchasedProductType
+    }): Promise<PurchaseTopProduct[]> {
+      const { data, error } = await client.rpc('get_top_purchased_products', {
+        p_location_id: params.locationId ?? undefined,
+        p_type: params.type,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []).map((item: Record<string, unknown>) => ({
+        id: (item.product_id) as string | undefined,
+        name: String(item.product_name ?? 'Không rõ'),
+        statValue: toNumber(item.stat_value)
+      }))
     },
 
     async getLowStockProducts(params: {

@@ -31,7 +31,7 @@ import {
 import {
   type ActivityHistoryQueryInput,
 } from '@/services/supabase/database/repo/activityHistoryRepo'
-import { type SalesPeriod, type TopProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
+import { type SalesPeriod, type TopProductType, type TopSupplierType, type TopPurchasedProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 
 export type VietQrBank = {
@@ -541,14 +541,40 @@ export const getTopProductsQueryOptions = (params: {
       }),
   })
 
-export const getPurchasesStatisticsQueryOptions = (params: {
+export const getPurchasesStatisticsV2QueryOptions = (params: {
   locationId?: string | null
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'purchases-statistics', params.locationId ?? 'all'],
+    queryKey: ['dashboard-report', 'purchases-statistics-v2', params.locationId ?? 'all'],
     queryFn: async () =>
-      dashboardReportRepo.getPurchasesStatistics({
+      dashboardReportRepo.getPurchasesStatisticsV2({
         locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getTopSuppliersQueryOptions = (params: {
+  locationId?: string | null
+  type: TopSupplierType
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-suppliers', params.type, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getTopSuppliers({
+        locationId: params.locationId ?? undefined,
+        type: params.type,
+      }),
+  })
+
+export const getTopPurchasedProductsQueryOptions = (params: {
+  locationId?: string | null
+  type: TopPurchasedProductType
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-purchased-products', params.type, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getTopPurchasedProducts({
+        locationId: params.locationId ?? undefined,
+        type: params.type,
       }),
   })
 

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import {
   type ColumnDef,
   type ColumnFiltersState,
@@ -7,13 +8,20 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { useNavigate } from '@tanstack/react-router'
+import { Pencil } from 'lucide-react'
 import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
 import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { Badge } from '@/components/ui/badge'
+import {
+  DataTableRowActions,
+  type RowAction,
+} from '@/components/data-table-row-actions'
+import { usePermissions } from '@/hooks/use-permissions'
 import {
   InventoryTable,
   type FilterOption,
 } from './inventory-tables'
-import { Badge } from '@/components/ui/badge'
 
 type Props = {
   rows: InventoryProductsListItem[]
@@ -43,92 +51,114 @@ function getExpiryBadge(dateStr: string | null | undefined) {
   return null
 }
 
-const columns: ColumnDef<InventoryProductsListItem>[] = [
-  {
-    id: 'search',
-    accessorFn: (row) => row.productName,
-    header: () => null,
-    cell: () => null,
-    enableHiding: true,
-  },
-  {
-    id: 'location_id',
-    accessorFn: () => '',
-    header: () => null,
-    cell: () => null,
-    enableHiding: true,
-  },
-  {
-    accessorKey: 'productName',
-    header: 'Sản phẩm',
-    cell: ({ row }) => (
-      <div className='flex space-x-2'>
-        <span className='truncate font-medium'>{row.original.productName}</span>
-        {row.original.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
-      </div>
-    ),
-  },
-  {
-    accessorKey: 'totalQuantity',
-    header: 'Tồn kho',
-    cell: ({ row }) => (
-      <span className='tabular-nums'>
-        {formatQuantity(row.original.totalQuantity) + ' ' + row.original.base_unit_name}
-      </span>
-    ),
-    meta: { className: 'text-end', thClassName: 'text-end' },
-  },
-  {
-    accessorKey: 'totalCumulativeQuantity',
-    header: 'Tổng nhập',
-    cell: ({ row }) => formatQuantity(row.original.totalCumulativeQuantity),
-    meta: { className: 'text-end', thClassName: 'text-end' },
-  },
-  {
-    accessorKey: 'averageCostPrice',
-    header: 'Giá nhập TB',
-    cell: ({ row }) => (
-      <span className='tabular-nums'>
-        {formatCurrency(row.original.averageCostPrice, { fallback: '0' })}đ
-      </span>
-    ),
-    meta: { className: 'text-end', thClassName: 'text-end' },
-  },
-  {
-    accessorKey: 'totalValue',
-    header: 'Giá trị tồn kho',
-    cell: ({ row }) => (
-      <span className='tabular-nums'>
-        {formatCurrency(
-          row.original.averageCostPrice * row.original.totalQuantity,
-          { fallback: '0' }
-        )}đ
-      </span>
-    ),
-    meta: { className: 'text-end', thClassName: 'text-end' },
-  },
-  {
-    accessorKey: 'batchCount',
-    header: 'Số lô',
-    cell: ({ row }) => row.original.batchCount,
-    meta: { className: 'text-end', thClassName: 'text-end' },
-  },
-  {
-    accessorKey: 'locations',
-    header: 'Cửa hàng',
-    cell: ({ row }) => row.original.locations.join(', ') || '-',
-  },
-  {
-    accessorKey: 'earliestExpiry',
-    header: 'HSD gần nhất',
-    cell: ({ row }) => (
-      <div className='flex items-center gap-2'>
-        <span>{formatDateLabel(row.original.earliestExpiry)}</span>
-        {getExpiryBadge(row.original.earliestExpiry)}
-      </div>
-    ),
-  },
-]
+function createColumns(
+  onAdjust: (row: InventoryProductsListItem) => void,
+  showActions: boolean
+): ColumnDef<InventoryProductsListItem>[] {
+  return [
+    {
+      id: 'search',
+      accessorFn: (row) => row.productName,
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+    },
+    {
+      id: 'location_id',
+      accessorFn: () => '',
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+    },
+    {
+      accessorKey: 'productName',
+      header: 'Sản phẩm',
+      cell: ({ row }) => (
+        <div className='flex space-x-2'>
+          <span className='truncate font-medium'>{row.original.productName}</span>
+          {row.original.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'totalQuantity',
+      header: 'Tồn kho',
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatQuantity(row.original.totalQuantity) + ' ' + row.original.base_unit_name}
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'totalCumulativeQuantity',
+      header: 'Tổng nhập',
+      cell: ({ row }) => formatQuantity(row.original.totalCumulativeQuantity),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'averageCostPrice',
+      header: 'Giá nhập TB',
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatCurrency(row.original.averageCostPrice, { fallback: '0' })}đ
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'totalValue',
+      header: 'Giá trị tồn kho',
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatCurrency(
+            row.original.averageCostPrice * row.original.totalQuantity,
+            { fallback: '0' }
+          )}đ
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'batchCount',
+      header: 'Số lô',
+      cell: ({ row }) => row.original.batchCount,
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'locations',
+      header: 'Cửa hàng',
+      cell: ({ row }) => row.original.locations.join(', ') || '-',
+    },
+    {
+      accessorKey: 'earliestExpiry',
+      header: 'HSD gần nhất',
+      cell: ({ row }) => (
+        <div className='flex items-center gap-2'>
+          <span>{formatDateLabel(row.original.earliestExpiry)}</span>
+          {getExpiryBadge(row.original.earliestExpiry)}
+        </div>
+      ),
+    },
+    ...(showActions
+      ? [
+        {
+          id: 'actions',
+          cell: ({ row }: { row: import('@tanstack/react-table').Row<InventoryProductsListItem> }) => {
+            const actions: RowAction[] = [
+              {
+                label: 'Điều chỉnh',
+                icon: Pencil,
+                onClick: () => onAdjust(row.original),
+              },
+            ]
+            return <DataTableRowActions actions={actions} />
+          },
+        } satisfies ColumnDef<InventoryProductsListItem>,
+      ]
+      : []),
+  ]
+}
 
 export function InventoryProductTable({
   rows,
@@ -138,6 +168,19 @@ export function InventoryProductTable({
   isLoading,
   filters,
 }: Props) {
+  const navigate = useNavigate()
+
+  const handleAdjust = (row: InventoryProductsListItem) => {
+    navigate({
+      to: '/inventory/adjustments/new',
+      search: { productId: row.productId },
+    })
+  }
+
+  const { canEdit } = usePermissions()
+  const allowAdjust = canEdit('products')
+  const columns = useMemo(() => createColumns(handleAdjust, allowAdjust), [allowAdjust])
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: rows,

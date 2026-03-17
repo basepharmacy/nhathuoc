@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useNavigate } from '@tanstack/react-router'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { Save, ArrowLeft } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
@@ -17,8 +17,11 @@ import { StockAdjustmentsAddMeta } from '../components/stock-adjustments-add-met
 import { StockAdjustmentsAddItems } from '../components/stock-adjustments-add-items'
 import { useStockAdjustment } from '../hooks/use-stock-adjustment'
 
+const routeApi = getRouteApi('/_authenticated/inventory/adjustments/new')
+
 export function StockAdjustmentsAddNew() {
   const navigate = useNavigate()
+  const { productId: initialProductId } = routeApi.useSearch()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
@@ -29,8 +32,6 @@ export function StockAdjustmentsAddNew() {
     ...getProductsQueryOptions(tenantId),
     enabled: !!tenantId,
   })
-
-  const activeProducts = products.filter((p) => p.status === '2_ACTIVE')
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -49,6 +50,21 @@ export function StockAdjustmentsAddNew() {
   }, [adjustment.selectedLocationId, locations, sidebarLocationId, adjustment.setSelectedLocationId])
 
   const [pendingBatchItemId, setPendingBatchItemId] = useState<string | null>(null)
+  const [autoAdded, setAutoAdded] = useState(false)
+
+  // Auto-add product from URL search param
+  useEffect(() => {
+    if (!initialProductId || autoAdded) return
+    if (!adjustment.selectedLocationId) return
+    if (products.length === 0) return
+
+    const product = products.find((p) => p.id === initialProductId)
+    if (!product) return
+
+    const newItemId = adjustment.addProduct(product)
+    if (newItemId) setPendingBatchItemId(newItemId)
+    setAutoAdded(true)
+  }, [initialProductId, autoAdded, adjustment.selectedLocationId, products, adjustment.addProduct])
 
   const handleAddProduct = (product: Parameters<typeof adjustment.addProduct>[0]) => {
     const newItemId = adjustment.addProduct(product)
@@ -109,7 +125,7 @@ export function StockAdjustmentsAddNew() {
             Quay lại
           </Button>
           <StockAdjustmentsAddSearch
-            products={activeProducts}
+            products={products}
             onAddProduct={handleAddProduct}
           />
           <Button

@@ -1403,6 +1403,17 @@ export type Database = {
           total_suppliers_inactive: number
         }[]
       }
+      get_tenant_overview_v2: {
+        Args: { p_location_id?: string }
+        Returns: {
+          total_customers: number
+          total_products_active: number
+          total_products_inactive: number
+          total_staff: number
+          total_suppliers_active: number
+          total_suppliers_inactive: number
+        }[]
+      }
       get_top_products: {
         Args: {
           p_limit?: number
@@ -1420,8 +1431,28 @@ export type Database = {
           unit_name: string
         }[]
       }
+      get_top_purchased_products: {
+        Args: {
+          p_limit?: number
+          p_location_id?: string
+          p_purchase_period_id?: number
+          p_type: string
+        }
+        Returns: {
+          active_ingredient: string
+          product_id: string
+          product_name: string
+          stat_value: number
+          unit_name: string
+        }[]
+      }
       get_top_suppliers: {
-        Args: { p_limit?: number; p_location_id?: string; p_type: string }
+        Args: {
+          p_limit?: number
+          p_location_id?: string
+          p_purchase_period_id?: number
+          p_type: string
+        }
         Returns: {
           address: string
           created_at: string
