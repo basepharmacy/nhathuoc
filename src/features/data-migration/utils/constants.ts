@@ -25,4 +25,15 @@ export const defaultFileUploadState = {
   file: null,
   fileName: '',
   rowCount: null,
+  error: null,
 } as const
+
+/**
+ * Required columns for each migration type (KiotViet format).
+ * These are the minimum columns the file must have.
+ */
+export const REQUIRED_COLUMNS: Record<string, string[]> = {
+  products: ['Tên hàng', 'ĐVT', 'Giá vốn', 'Giá bán', 'Quy đổi'],
+  suppliers: ['Tên nhà cung cấp'],
+  customers: ['Tên khách hàng'],
+}

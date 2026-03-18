@@ -12,9 +12,18 @@ import type { StockAdjustmentInsert } from '@/services/supabase/database/repo/st
 import type { ProcessLog } from '../../utils/types'
 import { parseFile } from '../../utils/file-parser'
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    return String((error as { message: string }).message)
+  }
+  return String(error)
+}
+
 function parseKiotVietNumber(value: string): number {
   if (!value) return 0
-  return parseFloat(value.replace(/,/g, '')) || 0
+  const num = parseFloat(value.replace(/,/g, ''))
+  return Number.isNaN(num) ? 0 : num
 }
 
 function parseKiotVietDate(value: string): string | null {
@@ -29,6 +38,7 @@ function parseKiotVietDate(value: string): string | null {
 interface GroupedProduct {
   baseRow: Record<string, string>
   allRows: Record<string, string>[]
+  hasBaseUnit: boolean
 }
 
 export async function migrateProducts(
@@ -82,7 +92,7 @@ export async function migrateProducts(
         createdCategories++
       } catch (error) {
         addLog({
-          message: `Lỗi tạo danh mục "${catName}": ${error instanceof Error ? error.message : 'Không xác định'}`,
+          message: `Lỗi tạo danh mục "${catName}": ${getErrorMessage(error)}`,
           type: 'error',
         })
       }
@@ -108,14 +118,16 @@ export async function migrateProducts(
 
     if (!existing) {
       productGroups.set(productName, {
-        baseRow: conversionFactor === 1.0 ? row : row,
+        baseRow: row,
         allRows: [row],
+        hasBaseUnit: conversionFactor === 1.0,
       })
     } else {
       existing.allRows.push(row)
       // Prefer the row with conversion factor = 1.0 as base
-      if (conversionFactor === 1.0) {
+      if (conversionFactor === 1.0 && !existing.hasBaseUnit) {
         existing.baseRow = row
+        existing.hasBaseUnit = true
       }
     }
   }
@@ -185,7 +197,7 @@ export async function migrateProducts(
       product_type: '1_OTC',
       status: isActive ? '2_ACTIVE' : '3_INACTIVE',
       category_id: categoryId,
-      min_stock: parseKiotVietNumber(baseRow['Tồn nhỏ nhất']) || null,
+      min_stock: parseKiotVietNumber(baseRow['Tồn nhỏ nhất']) > 0 ? parseKiotVietNumber(baseRow['Tồn nhỏ nhất']) : null,
       active_ingredient: baseRow['Hoạt chất'] || null,
       regis_number: baseRow['Số đăng ký'] || null,
       jan_code: baseRow['Mã hàng'] || null,
@@ -200,21 +212,22 @@ export async function migrateProducts(
         tenant_id: tenantId,
         unit_name: row['ĐVT']?.trim() || 'Đơn vị',
         conversion_factor: conversionFactor || 1,
-        cost_price: parseKiotVietNumber(row['Giá vốn']),
-        sell_price: parseKiotVietNumber(row['Giá bán']),
+        cost_price: Math.round(parseKiotVietNumber(row['Giá vốn'])),
+        sell_price: Math.round(parseKiotVietNumber(row['Giá bán'])),
         is_base_unit: conversionFactor === 1.0,
       })
     }
 
-    const baseConversion = parseKiotVietNumber(baseRow['Quy đổi'])
-    if (baseConversion === 1.0) {
+    // Tạo stock adjustments từ baseRow (dù baseRow có conversion != 1, vẫn đọc batch data)
+    {
       for (let batchIdx = 1; batchIdx <= 30; batchIdx++) {
         const batchCode = baseRow[`Lô ${batchIdx}`]?.trim()
         const expiryDateStr = baseRow[`Hạn sử dụng ${batchIdx}`]?.trim()
         const quantity = parseKiotVietNumber(baseRow[`Tồn ${batchIdx}`])
 
-        if (!batchCode && !expiryDateStr) break
+        if (!batchCode && !expiryDateStr) continue
         if (!batchCode) continue
+        if (quantity <= 0) continue
 
         allAdjustments.push({
           tenant_id: tenantId,
@@ -222,7 +235,7 @@ export async function migrateProducts(
           batch_code: batchCode,
           expiry_date: parseKiotVietDate(expiryDateStr),
           quantity,
-          cost_price: parseKiotVietNumber(baseRow['Giá vốn']),
+          cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
           location_id: locationId,
           reason_code: '1_FIRST_STOCK',
           reason: 'Nhập tồn đầu kỳ từ KiotViet',
@@ -242,16 +255,20 @@ export async function migrateProducts(
   let success = 0
   let failed = 0
   const BATCH_SIZE = 50
+  const successProductIds = new Set<string>()
 
   for (let i = 0; i < allProducts.length; i += BATCH_SIZE) {
     const batch = allProducts.slice(i, i + BATCH_SIZE)
     try {
       const created = await productsRepo.createBatchProducts(batch)
       success += created.length
+      for (const p of created) {
+        successProductIds.add(p.id)
+      }
     } catch (error) {
       failed += batch.length
       addLog({
-        message: `Lỗi nhập sản phẩm batch ${i + 1}-${i + batch.length}: ${error instanceof Error ? error.message : 'Không xác định'}`,
+        message: `Lỗi nhập sản phẩm batch ${i + 1}-${i + batch.length}: ${getErrorMessage(error)}`,
         type: 'error',
       })
     }
@@ -261,40 +278,42 @@ export async function migrateProducts(
     })
   }
 
-  // Step 6: Batch insert product units
-  addLog({ message: 'Đang nhập đơn vị tính...', type: 'info' })
+  // Step 6: Batch insert product units (only for successfully created products)
+  const validUnits = allUnits.filter((u) => successProductIds.has(u.product_id))
+  addLog({ message: `Đang nhập ${validUnits.length} đơn vị tính...`, type: 'info' })
 
-  for (let i = 0; i < allUnits.length; i += BATCH_SIZE) {
-    const batch = allUnits.slice(i, i + BATCH_SIZE)
+  for (let i = 0; i < validUnits.length; i += BATCH_SIZE) {
+    const batch = validUnits.slice(i, i + BATCH_SIZE)
     try {
       await productsRepo.createBatchProductUnits(batch)
     } catch (error) {
       addLog({
-        message: `Lỗi nhập đơn vị batch ${i + 1}-${i + batch.length}: ${error instanceof Error ? error.message : 'Không xác định'}`,
+        message: `Lỗi nhập đơn vị batch ${i + 1}-${i + batch.length}: ${getErrorMessage(error)}`,
         type: 'error',
       })
     }
   }
 
   addLog({
-    message: `Đã nhập ${allUnits.length} đơn vị tính`,
+    message: `Đã nhập ${validUnits.length} đơn vị tính`,
     type: 'success',
   })
 
-  // Step 7: Batch insert stock adjustments
+  // Step 7: Batch insert stock adjustments (only for successfully created products)
+  const validAdjustments = allAdjustments.filter((a) => successProductIds.has(a.product_id))
   let adjustmentsCreated = 0
 
-  if (allAdjustments.length > 0) {
+  if (validAdjustments.length > 0) {
     addLog({ message: 'Đang tạo phiếu điều chỉnh tồn kho...', type: 'info' })
 
-    for (let i = 0; i < allAdjustments.length; i += BATCH_SIZE) {
-      const batch = allAdjustments.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < validAdjustments.length; i += BATCH_SIZE) {
+      const batch = validAdjustments.slice(i, i + BATCH_SIZE)
       try {
         const created = await stockAdjustmentsRepo.createBatchStockAdjustments(batch)
         adjustmentsCreated += created.length
       } catch (error) {
         addLog({
-          message: `Lỗi tạo phiếu điều chỉnh batch ${i + 1}-${i + batch.length}: ${error instanceof Error ? error.message : 'Không xác định'}`,
+          message: `Lỗi tạo phiếu điều chỉnh batch ${i + 1}-${i + batch.length}: ${getErrorMessage(error)}`,
           type: 'error',
         })
       }

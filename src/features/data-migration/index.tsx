@@ -3,6 +3,13 @@ import { Database } from 'lucide-react'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { useUser } from '@/client/provider'
+import { useQueryClient } from '@tanstack/react-query'
+import {
+  getProductsQueryOptions,
+  getCategoriesQueryOptions,
+  getCustomersQueryOptions,
+  getSuppliersQueryOptions,
+} from '@/client/queries'
 import { Stepper } from './components/stepper'
 import { StepContent } from './components/step-content'
 import { ProcessArea } from './components/process-area'
@@ -22,6 +29,7 @@ import type { FileUploadState, ProcessLog } from './utils/types'
 
 export function DataMigration() {
   const { user } = useUser()
+  const queryClient = useQueryClient()
   const tenantId = user?.profile?.tenant_id ?? ''
 
   const [currentStep, setCurrentStep] = useState(0)
@@ -39,7 +47,7 @@ export function DataMigration() {
   const setterMap = { products: setProducts, suppliers: setSuppliers, customers: setCustomers }
 
   const handleFileSelect = (type: 'products' | 'suppliers' | 'customers') =>
-    createFileSelectHandler(setterMap[type])
+    createFileSelectHandler(setterMap[type], type)
 
   const handleFileRemove = (type: 'products' | 'suppliers' | 'customers') =>
     createFileRemoveHandler(setterMap[type])
@@ -93,6 +101,14 @@ export function DataMigration() {
 
       addLog({ message: 'Chuyển đổi dữ liệu hoàn tất!', type: 'success' })
       setProgress(100)
+
+      // Invalidate queries to refresh data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: getProductsQueryOptions(tenantId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: getCategoriesQueryOptions(tenantId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: getCustomersQueryOptions(tenantId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: getSuppliersQueryOptions(tenantId).queryKey }),
+      ])
     } catch (error) {
       addLog({
         message: `Lỗi: ${error instanceof Error ? error.message : 'Không xác định'}`,

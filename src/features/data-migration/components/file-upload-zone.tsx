@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { FileSpreadsheet, Upload, X } from 'lucide-react'
+import { AlertCircle, FileSpreadsheet, Upload, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import type { FileUploadState } from '../utils/types'
 import { isSupportedFile } from '../utils/file-parser'
@@ -30,6 +30,31 @@ export function FileUploadZone({
     if (file) {
       onFileSelect(file)
     }
+  }
+
+  if (state.error) {
+    return (
+      <div className='space-y-3'>
+        <div className='flex items-center justify-between rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950'>
+          <div className='flex items-center gap-3'>
+            <div className='flex size-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900'>
+              <AlertCircle className='size-5 text-red-600 dark:text-red-400' />
+            </div>
+            <div>
+              <p className='text-sm font-medium text-red-700 dark:text-red-300'>
+                File không hợp lệ
+              </p>
+              <p className='text-xs text-red-600 dark:text-red-400'>
+                {state.error}
+              </p>
+            </div>
+          </div>
+          <Button variant='ghost' size='icon' onClick={onRemove}>
+            <X className='size-4' />
+          </Button>
+        </div>
+      </div>
+    )
   }
 
   if (state.file) {
