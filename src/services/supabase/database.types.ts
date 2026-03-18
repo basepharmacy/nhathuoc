@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.4"
   }
   public: {
     Tables: {
@@ -23,7 +23,6 @@ export type Database = {
           location_id: string | null
           metadata: Json | null
           reference_code: string | null
-          reference_id: string | null
           tenant_id: string
           total_amount: number
           user_id: string | null
@@ -36,7 +35,6 @@ export type Database = {
           location_id?: string | null
           metadata?: Json | null
           reference_code?: string | null
-          reference_id?: string | null
           tenant_id: string
           total_amount?: number
           user_id?: string | null
@@ -49,7 +47,6 @@ export type Database = {
           location_id?: string | null
           metadata?: Json | null
           reference_code?: string | null
-          reference_id?: string | null
           tenant_id?: string
           total_amount?: number
           user_id?: string | null
@@ -165,6 +162,7 @@ export type Database = {
           phone: string | null
           tenant_id: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -176,6 +174,7 @@ export type Database = {
           phone?: string | null
           tenant_id: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -187,6 +186,7 @@ export type Database = {
           phone?: string | null
           tenant_id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: [
           {
@@ -201,6 +201,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -560,7 +567,7 @@ export type Database = {
           description: string | null
           id: string
           location_id: string | null
-          login_id: string | null
+          login_id: string
           name: string
           phone: string | null
           role: Database["public"]["Enums"]["staff_role"]
@@ -573,7 +580,7 @@ export type Database = {
           description?: string | null
           id?: string
           location_id?: string | null
-          login_id?: string | null
+          login_id: string
           name: string
           phone?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
@@ -586,7 +593,7 @@ export type Database = {
           description?: string | null
           id?: string
           location_id?: string | null
-          login_id?: string | null
+          login_id?: string
           name?: string
           phone?: string | null
           role?: Database["public"]["Enums"]["staff_role"]
@@ -979,8 +986,7 @@ export type Database = {
       stock_adjustments: {
         Row: {
           batch_code: string | null
-          batch_id: string | null
-          cost_price: number
+          cost_price: number | null
           created_at: string | null
           expiry_date: string | null
           id: string
@@ -994,8 +1000,7 @@ export type Database = {
         }
         Insert: {
           batch_code?: string | null
-          batch_id?: string | null
-          cost_price?: number
+          cost_price?: number | null
           created_at?: string | null
           expiry_date?: string | null
           id?: string
@@ -1009,8 +1014,7 @@ export type Database = {
         }
         Update: {
           batch_code?: string | null
-          batch_id?: string | null
-          cost_price?: number
+          cost_price?: number | null
           created_at?: string | null
           expiry_date?: string | null
           id?: string
@@ -1023,13 +1027,6 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "stock_adjustments_batch_id_fkey"
-            columns: ["batch_id"]
-            isOneToOne: false
-            referencedRelation: "inventory_batches"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "stock_adjustments_location_id_fkey"
             columns: ["location_id"]
@@ -1116,7 +1113,6 @@ export type Database = {
           amount: number
           created_at: string | null
           id: string
-          is_payment_on_purchase_order: boolean
           note: string | null
           payment_date: string | null
           purchase_order_id: string | null
@@ -1128,7 +1124,6 @@ export type Database = {
           amount: number
           created_at?: string | null
           id?: string
-          is_payment_on_purchase_order?: boolean
           note?: string | null
           payment_date?: string | null
           purchase_order_id?: string | null
@@ -1140,7 +1135,6 @@ export type Database = {
           amount?: number
           created_at?: string | null
           id?: string
-          is_payment_on_purchase_order?: boolean
           note?: string | null
           payment_date?: string | null
           purchase_order_id?: string | null
@@ -1236,7 +1230,7 @@ export type Database = {
           representative: string | null
           staff_license: number
           status: Database["public"]["Enums"]["tenant_status"]
-          tenant_code: string | null
+          tenant_code: string
           type: Database["public"]["Enums"]["tenant_type"]
           updated_at: string | null
         }
@@ -1253,7 +1247,7 @@ export type Database = {
           representative?: string | null
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
-          tenant_code?: string | null
+          tenant_code: string
           type?: Database["public"]["Enums"]["tenant_type"]
           updated_at?: string | null
         }
@@ -1270,7 +1264,7 @@ export type Database = {
           representative?: string | null
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
-          tenant_code?: string | null
+          tenant_code?: string
           type?: Database["public"]["Enums"]["tenant_type"]
           updated_at?: string | null
         }
@@ -1298,14 +1292,6 @@ export type Database = {
         }
         Returns: string
       }
-      get_inventory_statistics: {
-        Args: { p_location_id?: string }
-        Returns: {
-          total_products: number
-          total_quantity: number
-          total_value: number
-        }[]
-      }
       get_inventory_statistics_v2: {
         Args: { p_location_id?: string }
         Returns: {
@@ -1315,10 +1301,6 @@ export type Database = {
           total_value: number
         }[]
       }
-      get_low_stock_products: {
-        Args: { p_location_id?: string }
-        Returns: Json
-      }
       get_low_stock_products_v2: {
         Args: { p_location_id?: string }
         Returns: {
@@ -1327,18 +1309,6 @@ export type Database = {
           product_name: string
           stock: number
           unit_name: string
-        }[]
-      }
-      get_purchases_statistics: {
-        Args: { p_location_id?: string }
-        Returns: {
-          top_5_suppliers_by_debt: Json
-          top_5_suppliers_by_order_amount: Json
-          top_5_suppliers_by_orders: Json
-          total_debt: number
-          total_order_amount: number
-          total_orders: number
-          total_paid_amount: number
         }[]
       }
       get_purchases_statistics_v2: {
@@ -1354,37 +1324,12 @@ export type Database = {
           total_paid_amount: number
         }[]
       }
-      get_sales_statistics: {
-        Args: {
-          p_location_id?: string
-          p_period?: string
-          p_reference_date?: string
-        }
-        Returns: {
-          current_completed_orders: number
-          current_new_customers: number
-          current_period_end: string
-          current_period_start: string
-          current_total_loss: number
-          current_total_profit: number
-          current_total_revenue: number
-          previous_completed_orders: number
-          previous_new_customers: number
-          previous_period_end: string
-          previous_period_start: string
-          previous_total_loss: number
-          previous_total_profit: number
-          previous_total_revenue: number
-          top_5_products_by_profit: Json
-          top_5_products_by_quantity: Json
-          top_5_products_by_revenue: Json
-        }[]
-      }
       get_sales_statistics_v2: {
         Args: {
           p_location_id?: string
           p_period?: string
           p_reference_date?: string
+          p_timezone?: string
         }
         Returns: {
           current_completed_orders: number
@@ -1399,19 +1344,6 @@ export type Database = {
           previous_total_loss: number
           previous_total_profit: number
           previous_total_revenue: number
-        }[]
-      }
-      get_tenant_overview: {
-        Args: { p_location_id?: string }
-        Returns: {
-          total_customers: number
-          total_locations_active: number
-          total_locations_inactive: number
-          total_products_active: number
-          total_products_inactive: number
-          total_staff: number
-          total_suppliers_active: number
-          total_suppliers_inactive: number
         }[]
       }
       get_tenant_overview_v2: {
@@ -1431,6 +1363,7 @@ export type Database = {
           p_location_id?: string
           p_period?: string
           p_reference_date?: string
+          p_timezone?: string
           p_type?: string
         }
         Returns: {
@@ -1494,7 +1427,7 @@ export type Database = {
       location_type: "1_WAREHOUSE" | "2_STORE" | "9_OTHER"
       payment_method: "1_CASH" | "2_BANK_TRANSFER"
       product_status: "1_DRAFT" | "2_ACTIVE" | "3_INACTIVE" | "4_ARCHIVED"
-      product_type: "1_OTC" | "2_PRESCRIPTION_REQUIRED"
+      product_type: "1_OTC" | "2_PRESCRIPTION_REQUIRED" | "9_OTHERS"
       purchase_order_payment_status: "1_UNPAID" | "2_PARTIALLY_PAID" | "3_PAID"
       purchase_order_status:
         | "1_DRAFT"
@@ -1511,9 +1444,9 @@ export type Database = {
       sale_order_status:
         | "1_DRAFT"
         | "2_COMPLETE"
-        | "9_CANCELLED"
         | "7_DAV_ERROR"
         | "8_INSUFFICIENT_STOCK"
+        | "9_CANCELLED"
       staff_role: "OWNER" | "MANAGER" | "STAFF"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
       tenant_type: "1_NORMAL" | "2_PRO" | "3_ENTERPRISE"
@@ -1658,7 +1591,7 @@ export const Constants = {
       location_type: ["1_WAREHOUSE", "2_STORE", "9_OTHER"],
       payment_method: ["1_CASH", "2_BANK_TRANSFER"],
       product_status: ["1_DRAFT", "2_ACTIVE", "3_INACTIVE", "4_ARCHIVED"],
-      product_type: ["1_OTC", "2_PRESCRIPTION_REQUIRED"],
+      product_type: ["1_OTC", "2_PRESCRIPTION_REQUIRED", "9_OTHERS"],
       purchase_order_payment_status: ["1_UNPAID", "2_PARTIALLY_PAID", "3_PAID"],
       purchase_order_status: [
         "1_DRAFT",
@@ -1677,9 +1610,9 @@ export const Constants = {
       sale_order_status: [
         "1_DRAFT",
         "2_COMPLETE",
-        "9_CANCELLED",
         "7_DAV_ERROR",
         "8_INSUFFICIENT_STOCK",
+        "9_CANCELLED",
       ],
       staff_role: ["OWNER", "MANAGER", "STAFF"],
       tenant_status: ["1_ACTIVE", "2_LICENSE_EXPIRED", "3_CANCELLED"],
