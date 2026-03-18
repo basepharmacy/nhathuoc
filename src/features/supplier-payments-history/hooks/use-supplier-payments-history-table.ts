@@ -8,6 +8,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
 import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 import { type AllSupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 
@@ -54,22 +55,14 @@ export function useSupplierPaymentsHistoryTable({
       : []
   }, [columnFilters])
 
-  const formatDateParam = (date: Date | undefined) => {
-    if (!date) return undefined
-    const year = date.getFullYear()
-    const month = String(date.getMonth() + 1).padStart(2, '0')
-    const day = String(date.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
   const queryParams: AllSupplierPaymentsHistoryQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
     supplierIds,
-    fromDate: formatDateParam(fromDate),
-    toDate: formatDateParam(toDate),
+    fromDate: formatFromDateParam(fromDate),
+    toDate: formatToDateParam(toDate),
     sorting,
   }), [tenantId, pagination, searchValue, supplierIds, fromDate, toDate, sorting])
 

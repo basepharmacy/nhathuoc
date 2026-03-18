@@ -62,6 +62,20 @@ export const normalizeNumber = (value: string) => {
   return normalized ? Number(normalized) : 0
 }
 
+export const formatFromDateParam = (date: Date | undefined) => {
+  if (!date) return undefined
+  const start = new Date(date)
+  start.setHours(0, 0, 0, 0)
+  return start.toISOString()
+}
+
+export const formatToDateParam = (date: Date | undefined) => {
+  if (!date) return undefined
+  const end = new Date(date)
+  end.setHours(23, 59, 59, 999)
+  return end.toISOString()
+}
+
 export const formatDateLabel = (value?: string | null) => {
   if (!value) return '-'
   const date = new Date(value)

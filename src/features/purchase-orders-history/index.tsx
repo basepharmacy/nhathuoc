@@ -54,7 +54,7 @@ export function PurchaseOrdersHistory() {
   )
 
   // Table state + filters
-  const { table, filters, queryParams } = usePurchaseOrdersHistoryTable({
+  const { table, filters, queryParams, fromDate, setFromDate, toDate, setToDate } = usePurchaseOrdersHistoryTable({
     tenantId,
     columns,
     suppliers,
@@ -104,6 +104,10 @@ export function PurchaseOrdersHistory() {
           isLoading={isLoading}
           searchKey='purchase_order_code'
           filters={filters}
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
           deleteState={deleteState}
         />
       </Main>

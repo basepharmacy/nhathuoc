@@ -17,6 +17,7 @@ import {
   getLocationsQueryOptions,
   getSaleOrdersHistoryQueryOptions,
 } from '@/client/queries'
+import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { useLocationContext } from '@/context/location-provider'
@@ -51,6 +52,8 @@ export function SaleOrdersHistory() {
     pageIndex: 0,
     pageSize: 10,
   })
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
+  const [toDate, setToDate] = useState<Date | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = useState<SaleOrderWithRelations | null>(
     null
   )
@@ -203,6 +206,8 @@ export function SaleOrdersHistory() {
       customerIds,
       locationIds,
       statuses: statusFilters,
+      fromDate: formatFromDateParam(fromDate),
+      toDate: formatToDateParam(toDate),
       sorting,
     }),
     enabled: !!tenantId,
@@ -217,7 +222,7 @@ export function SaleOrdersHistory() {
       ...prev,
       pageIndex: 0,
     }))
-  }, [columnFilters, sorting])
+  }, [columnFilters, sorting, fromDate, toDate])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
@@ -303,6 +308,10 @@ export function SaleOrdersHistory() {
           isLoading={isLoading}
           searchKey='sale_order_code'
           filters={filters}
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
           deleteState={deleteState}
         />
       </Main>

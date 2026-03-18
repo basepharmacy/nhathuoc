@@ -8,6 +8,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
 import { type PurchaseOrderWithRelations } from '@/services/supabase'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
@@ -48,6 +49,8 @@ export function usePurchaseOrdersHistoryTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
+  const [toDate, setToDate] = useState<Date | undefined>(undefined)
 
   // Extract filter values from columnFilters for server-side query
   const searchValue = useMemo(() => {
@@ -100,8 +103,10 @@ export function usePurchaseOrdersHistoryTable({
     locationIds,
     statuses: statusFilters,
     paymentStatuses: paymentStatusFilters,
+    fromDate: formatFromDateParam(fromDate),
+    toDate: formatToDateParam(toDate),
     sorting,
-  }), [tenantId, pagination, searchValue, supplierIds, locationIds, statusFilters, paymentStatusFilters, sorting])
+  }), [tenantId, pagination, searchValue, supplierIds, locationIds, statusFilters, paymentStatusFilters, fromDate, toDate, sorting])
 
   useEffect(() => {
     if (!selectedLocationId) {
@@ -119,7 +124,7 @@ export function usePurchaseOrdersHistoryTable({
       ...prev,
       pageIndex: 0,
     }))
-  }, [columnFilters, sorting])
+  }, [columnFilters, sorting, fromDate, toDate])
 
   // Filter options
   const supplierOptions: FilterOption[] = useMemo(
@@ -210,5 +215,5 @@ export function usePurchaseOrdersHistoryTable({
     rowCount: 0,
   })
 
-  return { table, filters, queryParams }
+  return { table, filters, queryParams, fromDate, setFromDate, toDate, setToDate }
 }

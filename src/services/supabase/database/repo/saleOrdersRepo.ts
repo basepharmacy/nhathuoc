@@ -17,6 +17,8 @@ export type SaleOrdersHistoryQueryInput = {
   customerIds?: string[]
   locationIds?: string[]
   statuses?: Array<SaleOrder['status']>
+  fromDate?: string
+  toDate?: string
   sorting?: Array<{ id: string; desc: boolean }>
 }
 
@@ -56,6 +58,14 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
 
       if (params.statuses?.length) {
         query = query.in('status', params.statuses)
+      }
+
+      if (params.fromDate) {
+        query = query.gte('issued_at', params.fromDate)
+      }
+
+      if (params.toDate) {
+        query = query.lte('issued_at', params.toDate)
       }
 
       const sort = params.sorting?.[0]

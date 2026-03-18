@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { Calendar as CalendarIcon } from 'lucide-react'
@@ -30,11 +31,12 @@ export function DatePicker({
   toYear,
   disablePastDates = true,
 }: DatePickerProps) {
+  const [open, setOpen] = useState(false)
   const currentYear = new Date().getFullYear()
   const resolvedFromYear = fromYear ?? (disablePastDates ? currentYear : currentYear - 10)
   const resolvedToYear = toYear ?? currentYear + 100
   return (
-    <Popover>
+    <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
           variant='outline'
@@ -74,6 +76,21 @@ export function DatePicker({
             return target.getFullYear() > resolvedToYear || target.getFullYear() < resolvedFromYear
           }}
         />
+        {selected && (
+          <div className='border-t p-2'>
+            <Button
+              variant='ghost'
+              size='sm'
+              className='w-full text-muted-foreground'
+              onClick={() => {
+                onSelect(undefined)
+                setOpen(false)
+              }}
+            >
+              Xóa ngày
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   )
