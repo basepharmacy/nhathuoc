@@ -371,6 +371,8 @@ export const getSupplierPaymentsHistoryQueryOptions = (
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         search: params.search ?? '',
+        fromDate: params.fromDate ?? '',
+        toDate: params.toDate ?? '',
         sorting: params.sorting ?? [],
       },
     ],

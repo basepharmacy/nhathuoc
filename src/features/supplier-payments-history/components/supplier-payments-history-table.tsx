@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { type Table as ReactTable, flexRender } from '@tanstack/react-table'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { cn } from '@/lib/utils'
+import { ConfirmDialog } from '@/components/confirm-dialog'
 import {
   Table,
   TableBody,
@@ -16,46 +17,63 @@ import { DataTablePagination, DataTableSkeletonRows, DataTableFacetedFilter } fr
 
 import { DatePicker } from '@/components/date-picker'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
-import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 
-type SupplierPaymentsHistoryTableProps = {
-  table: ReactTable<SupplierPaymentWithSupplier>
+type DeleteState = {
+  target: unknown
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  disabled?: boolean
+  onConfirm: () => void
+  title?: string
+  desc?: string | React.ReactElement
+}
+
+type SupplierPaymentsHistoryTableProps<TData> = {
+  table: ReactTable<TData>
   isLoading: boolean
-  searchKey: string
-  filters: {
+  searchKey?: string
+  searchPlaceholder?: string
+  filters?: {
     columnId: string
     title: string
     options: { label: string; value: string }[]
   }[]
-  fromDate: Date | undefined
-  toDate: Date | undefined
-  onFromDateChange: (date: Date | undefined) => void
-  onToDateChange: (date: Date | undefined) => void
+  fromDate?: Date | undefined
+  toDate?: Date | undefined
+  onFromDateChange?: (date: Date | undefined) => void
+  onToDateChange?: (date: Date | undefined) => void
+  deleteState?: DeleteState | null
 }
 
-export function SupplierPaymentsHistoryTable({
+export function SupplierPaymentsHistoryTable<TData>({
   table,
   isLoading,
   searchKey,
-  filters,
+  searchPlaceholder = 'Tìm mã đơn, ghi chú...',
+  filters = [],
   fromDate,
   toDate,
   onFromDateChange,
   onToDateChange,
-}: SupplierPaymentsHistoryTableProps) {
-  const searchPlaceholder = 'Tìm mã đơn, ghi chú...'
-
-  const filterValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
+  deleteState,
+}: SupplierPaymentsHistoryTableProps<TData>) {
+  const filterValue = searchKey
+    ? (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
+    : ''
   const [localValue, setLocalValue] = useState(filterValue)
   const debouncedValue = useDebouncedValue(localValue, 300)
 
   useEffect(() => {
-    table.getColumn(searchKey)?.setFilterValue(debouncedValue)
+    if (searchKey) {
+      table.getColumn(searchKey)?.setFilterValue(debouncedValue)
+    }
   }, [debouncedValue, table, searchKey])
 
   useEffect(() => {
     setLocalValue(filterValue)
   }, [filterValue])
+
+  const hasDateFilter = onFromDateChange && onToDateChange
 
   const isFiltered =
     localValue.length > 0 ||
@@ -67,8 +85,8 @@ export function SupplierPaymentsHistoryTable({
     setLocalValue('')
     table.resetColumnFilters()
     table.setGlobalFilter('')
-    onFromDateChange(undefined)
-    onToDateChange(undefined)
+    onFromDateChange?.(undefined)
+    onToDateChange?.(undefined)
   }
 
   return (
@@ -76,12 +94,14 @@ export function SupplierPaymentsHistoryTable({
       {/* Toolbar */}
       <div className='flex items-center justify-between'>
         <div className='flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2'>
-          <Input
-            placeholder={searchPlaceholder}
-            value={localValue}
-            onChange={(event) => setLocalValue(event.target.value)}
-            className='h-8 w-[150px] lg:w-[250px]'
-          />
+          {searchKey && (
+            <Input
+              placeholder={searchPlaceholder}
+              value={localValue}
+              onChange={(event) => setLocalValue(event.target.value)}
+              className='h-8 w-[150px] lg:w-[250px]'
+            />
+          )}
           <div className='flex gap-x-2'>
             {filters.map((filter) => {
               const column = table.getColumn(filter.columnId)
@@ -107,23 +127,25 @@ export function SupplierPaymentsHistoryTable({
             </Button>
           )}
         </div>
-        <div className='flex items-center gap-x-2'>
-          <DatePicker
-            selected={fromDate}
-            onSelect={onFromDateChange}
-            placeholder='Từ ngày'
-            disablePastDates={false}
-            className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
-          />
-          <span className='text-sm text-muted-foreground'>-</span>
-          <DatePicker
-            selected={toDate}
-            onSelect={onToDateChange}
-            placeholder='Đến ngày'
-            disablePastDates={false}
-            className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
-          />
-        </div>
+        {hasDateFilter && (
+          <div className='flex items-center gap-x-2'>
+            <DatePicker
+              selected={fromDate}
+              onSelect={onFromDateChange}
+              placeholder='Từ ngày'
+              disablePastDates={false}
+              className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
+            />
+            <span className='text-sm text-muted-foreground'>-</span>
+            <DatePicker
+              selected={toDate}
+              onSelect={onToDateChange}
+              placeholder='Đến ngày'
+              disablePastDates={false}
+              className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
+            />
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -191,6 +213,18 @@ export function SupplierPaymentsHistoryTable({
         </Table>
       </div>
       <DataTablePagination table={table} className='mt-auto' />
+      {deleteState?.target != null && (
+        <ConfirmDialog
+          open={deleteState.open}
+          onOpenChange={deleteState.onOpenChange}
+          destructive
+          disabled={deleteState.disabled}
+          title={deleteState.title ?? 'Xóa phiếu thanh toán'}
+          desc={deleteState.desc ?? (<>Bạn có chắc chắn muốn xóa phiếu thanh toán này?</>)}
+          confirmText='Xóa'
+          handleConfirm={deleteState.onConfirm}
+        />
+      )}
     </div>
   )
 }

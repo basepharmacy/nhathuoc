@@ -11,11 +11,13 @@ export type SupplierPaymentsHistoryQueryInput = {
   pageIndex: number
   pageSize: number
   search?: string
+  fromDate?: string
+  toDate?: string
   sorting?: Array<{ id: string; desc: boolean }>
 }
 
 export type SupplierPaymentsHistoryQueryResult = {
-  data: SupplierPayment[]
+  data: SupplierPaymentWithSupplier[]
   total: number
 }
 
@@ -95,12 +97,20 @@ export const createSupplierPaymentRepository = (
 
       let query = client
         .from('supplier_payments')
-        .select('*', { count: 'exact' })
+        .select('*, supplier:suppliers!supplier_payments_supplier_id_fkey(id, name)', { count: 'exact' })
         .eq('tenant_id', params.tenantId)
         .eq('supplier_id', params.supplierId)
 
       if (searchValue) {
-        query = query.ilike('note', `%${searchValue}%`)
+        query = query.or(`reference_code.ilike.%${searchValue}%,note.ilike.%${searchValue}%`)
+      }
+
+      if (params.fromDate) {
+        query = query.gte('payment_date', params.fromDate)
+      }
+
+      if (params.toDate) {
+        query = query.lte('payment_date', params.toDate)
       }
 
       const sort = params.sorting?.[0]
@@ -108,6 +118,7 @@ export const createSupplierPaymentRepository = (
         payment_date: 'payment_date',
         amount: 'amount',
         created_at: 'created_at',
+        reference_code: 'reference_code',
       }
       const sortColumn = sort ? sortColumnMap[sort.id] : undefined
 
@@ -124,7 +135,7 @@ export const createSupplierPaymentRepository = (
       }
 
       return {
-        data: (data ?? []) as SupplierPayment[],
+        data: (data ?? []) as SupplierPaymentWithSupplier[],
         total: count ?? 0,
       }
     },

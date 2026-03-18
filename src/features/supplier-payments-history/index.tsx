@@ -1,20 +1,27 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import {
   getAllSupplierPaymentsHistoryQueryOptions,
+  getLocationsQueryOptions,
   getSuppliersQueryOptions,
 } from '@/client/queries'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { PrintPreviewDialog } from '@/components/print-preview-dialog'
+import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { SupplierPaymentInvoice } from './components/supplier-payment-invoice'
 import { getSupplierPaymentsHistoryColumns } from './components/supplier-payments-history-columns'
 import { SupplierPaymentsHistoryTable } from './components/supplier-payments-history-table'
 import { useSupplierPaymentsHistoryTable } from './hooks/use-supplier-payments-history-table'
+import { useDeleteSupplierPayment } from './hooks/use-delete-supplier-payment'
 
 export function SupplierPaymentsHistory() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
+  const { selectedLocationId } = useLocationContext()
 
   // Data queries
   const { data: suppliers = [], isError: isSuppliersError } = useQuery({
@@ -22,9 +29,30 @@ export function SupplierPaymentsHistory() {
     enabled: !!tenantId,
   })
 
+  const { data: locations = [] } = useQuery({
+    ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+  const selectedLocation = useMemo(
+    () => locations.find((l) => l.id === selectedLocationId),
+    [locations, selectedLocationId]
+  )
+
+  // Actions
+  const { deleteState, handleDelete } = useDeleteSupplierPayment(tenantId)
+
+  const [printTarget, setPrintTarget] = useState<SupplierPaymentWithSupplier | null>(null)
+  const [printOpen, setPrintOpen] = useState(false)
+
+  const handlePrint = useCallback((payment: SupplierPaymentWithSupplier) => {
+    setPrintTarget(payment)
+    setPrintOpen(true)
+  }, [])
+
   const columns = useMemo(
-    () => getSupplierPaymentsHistoryColumns(),
-    []
+    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: handleDelete }),
+    [handlePrint, handleDelete]
   )
 
   // Table state + filters
@@ -81,8 +109,46 @@ export function SupplierPaymentsHistory() {
           toDate={toDate}
           onFromDateChange={setFromDate}
           onToDateChange={setToDate}
+          deleteState={deleteState ? {
+            ...deleteState,
+            desc: (
+              <>
+                Bạn có chắc chắn muốn xóa phiếu thanh toán{' '}
+                <span className='font-bold'>
+                  {deleteState.target?.reference_code}
+                </span>
+                ?
+              </>
+            ),
+          } : null}
         />
       </Main>
+
+      {printTarget && (
+        <PrintPreviewDialog
+          open={printOpen}
+          onOpenChange={(open) => {
+            setPrintOpen(open)
+            if (!open) setPrintTarget(null)
+          }}
+          title='In phiếu thanh toán NCC'
+          documentTitle={`Phieu thanh toan - ${printTarget.reference_code}`}
+        >
+          <SupplierPaymentInvoice
+            referenceCode={printTarget.reference_code ?? ''}
+            tenantName={user?.tenant?.name}
+            tenantAddress={user?.tenant?.address ?? undefined}
+            tenantPhone={user?.tenant?.phone ?? undefined}
+            storeName={selectedLocation?.name}
+            storeAddress={selectedLocation?.address ?? undefined}
+            storePhone={selectedLocation?.phone ?? undefined}
+            supplierName={printTarget.supplier?.name}
+            amount={printTarget.amount ?? 0}
+            paymentDate={printTarget.payment_date}
+            note={printTarget.note}
+          />
+        </PrintPreviewDialog>
+      )}
     </>
   )
 }

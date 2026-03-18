@@ -6,24 +6,27 @@ import {
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { toast } from 'sonner'
+import { useQuery } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { ConfirmDialog } from '@/components/confirm-dialog'
+import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
 import { useSuppliers } from '@/features/suppliers/components/suppliers-provider'
 import { type Supplier } from '@/features/suppliers/data/schema'
 import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
-import { type SupplierPayment } from '@/services/supabase/database/repo/supplierPaymentsRepo'
-import { supplierPaymentsRepo } from '@/client'
+import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 import {
+  getLocationsQueryOptions,
   getPurchaseOrdersHistoryQueryOptions,
   getSupplierPaymentsHistoryQueryOptions,
 } from '@/client/queries'
+import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { PurchaseOrdersHistoryTable } from '@/features/purchase-orders-history/components/purchase-orders-history-table'
-import { getSupplierPaymentsColumns } from './supplier-payments-columns'
-import { SupplierPaymentsTable } from './supplier-payments-table'
+import { SupplierPaymentsHistoryTable } from '@/features/supplier-payments-history/components/supplier-payments-history-table'
+import { getSupplierPaymentsHistoryColumns } from '@/features/supplier-payments-history/components/supplier-payments-history-columns'
+import { useDeleteSupplierPayment } from '@/features/supplier-payments-history/hooks/use-delete-supplier-payment'
+import { SupplierPaymentInvoice } from '@/features/supplier-payments-history/components/supplier-payment-invoice'
 import { supplierOrdersHistoryColumns } from './supplier-orders-history-columns'
 
 type SupplierTabsProps = {
@@ -34,7 +37,34 @@ type SupplierTabsProps = {
 
 export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsProps) {
   const { setCurrentRow, setOpen } = useSuppliers()
-  const queryClient = useQueryClient()
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+
+  const { data: locations = [] } = useQuery({
+    ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+  const selectedLocation = useMemo(
+    () => locations.find((l) => l.id === selectedLocationId),
+    [locations, selectedLocationId]
+  )
+
+  // Payment delete
+  const { deleteState, handleDelete } = useDeleteSupplierPayment<SupplierPaymentWithSupplier>(tenantId, {
+    additionalQueryKeys: [['suppliers']],
+  })
+
+  // Payment print
+  const [printTarget, setPrintTarget] = useState<SupplierPaymentWithSupplier | null>(null)
+  const [printOpen, setPrintOpen] = useState(false)
+
+  const handlePrint = useCallback((payment: SupplierPaymentWithSupplier) => {
+    setPrintTarget(payment)
+    setPrintOpen(true)
+  }, [])
+
+  // Payment table state
   const [paymentFilters, setPaymentFilters] = useState<ColumnFiltersState>([])
   const [paymentSorting, setPaymentSorting] = useState<SortingState>([
     { id: 'created_at', desc: true },
@@ -43,46 +73,21 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
     pageIndex: 0,
     pageSize: 10,
   })
-  const [deleteTarget, setDeleteTarget] = useState<SupplierPayment | null>(null)
-  const [deleteOpen, setDeleteOpen] = useState(false)
-
-  const deleteMutation = useMutation({
-    mutationFn: async () => {
-      if (!deleteTarget) throw new Error('Thiếu thông tin thanh toán.')
-      await supplierPaymentsRepo.deleteSupplierPayment(deleteTarget.id)
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['supplier-payments'] })
-      queryClient.invalidateQueries({ queryKey: ['suppliers'] })
-      setDeleteOpen(false)
-      setDeleteTarget(null)
-      toast.success('Đã xóa thanh toán.')
-    },
-    onError: (error) => {
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Đã xảy ra lỗi, vui lòng thử lại.'
-      toast.error(message)
-    },
-  })
-
-  const handleDeletePayment = useCallback((payment: SupplierPayment) => {
-    setDeleteTarget(payment)
-    setDeleteOpen(true)
-  }, [])
-
-  const [orderFilters, setOrderFilters] = useState<ColumnFiltersState>([])
-  const [orderSorting, setOrderSorting] = useState<SortingState>([])
-  const [orderPagination, setOrderPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
+  const [paymentFromDate, setPaymentFromDate] = useState<Date | undefined>(undefined)
+  const [paymentToDate, setPaymentToDate] = useState<Date | undefined>(undefined)
 
   const paymentSearchValue = useMemo(() => {
-    const searchFilter = paymentFilters.find((filter) => filter.id === 'note')
+    const searchFilter = paymentFilters.find((filter) => filter.id === 'reference_code')
     return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
   }, [paymentFilters])
+
+  const formatDateParam = (date: Date | undefined) => {
+    if (!date) return undefined
+    const year = date.getFullYear()
+    const month = String(date.getMonth() + 1).padStart(2, '0')
+    const day = String(date.getDate()).padStart(2, '0')
+    return `${year}-${month}-${day}`
+  }
 
   const { data: paymentsResult, isLoading: isPaymentsLoading } = useQuery({
     ...getSupplierPaymentsHistoryQueryOptions({
@@ -91,6 +96,8 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       pageIndex: paymentPagination.pageIndex,
       pageSize: paymentPagination.pageSize,
       search: paymentSearchValue,
+      fromDate: formatDateParam(paymentFromDate),
+      toDate: formatDateParam(paymentToDate),
       sorting: paymentSorting,
     }),
     enabled: !!tenantId && !!supplierId,
@@ -108,13 +115,13 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
   }, [paymentFilters, paymentSorting])
 
   const supplierPaymentsColumns = useMemo(
-    () => getSupplierPaymentsColumns({ onDelete: handleDeletePayment }),
-    [handleDeletePayment]
+    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: handleDelete, hideSupplier: true }),
+    [handlePrint, handleDelete]
   )
 
   // eslint-disable-next-line react-hooks/incompatible-library
-  const paymentsTable = useReactTable<SupplierPayment>({
-    data: payments,
+  const paymentsTable = useReactTable<SupplierPaymentWithSupplier>({
+    data: payments as SupplierPaymentWithSupplier[],
     columns: supplierPaymentsColumns,
     state: {
       pagination: paymentPagination,
@@ -130,6 +137,14 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
     manualSorting: true,
     pageCount: paymentsPageCount,
     rowCount: paymentsTotal,
+  })
+
+  // Orders table state
+  const [orderFilters, setOrderFilters] = useState<ColumnFiltersState>([])
+  const [orderSorting, setOrderSorting] = useState<SortingState>([])
+  const [orderPagination, setOrderPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
   })
 
   const orderSearchValue = useMemo(() => {
@@ -227,6 +242,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
   )
 
   return (
+    <>
     <Tabs defaultValue='payments' className='gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <TabsList>
@@ -249,7 +265,33 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       <TabsContent value='payments'>
         <Card className='py-4'>
           <CardContent className='px-4'>
-            <SupplierPaymentsTable table={paymentsTable} isLoading={isPaymentsLoading} />
+            <SupplierPaymentsHistoryTable
+              table={paymentsTable}
+              isLoading={isPaymentsLoading}
+              searchKey='reference_code'
+              searchPlaceholder='Tìm mã đơn, ghi chú...'
+              fromDate={paymentFromDate}
+              toDate={paymentToDate}
+              onFromDateChange={setPaymentFromDate}
+              onToDateChange={setPaymentToDate}
+              deleteState={deleteState ? {
+                ...deleteState,
+                title: 'Xóa thanh toán',
+                desc: (
+                  <>
+                    Bạn có chắc chắn muốn xóa thanh toán
+                    {deleteState.target?.reference_code ? (
+                      <> mã <span className='font-bold'>{deleteState.target.reference_code}</span></>
+                    ) : null}
+                    ?
+                    <br />
+                    Số tiền sẽ tự động được hoàn lại vào công nợ của nhà cung cấp.
+                    <br />
+                    Các đơn hàng liên quan sẽ được cập nhật lại trạng thái thanh toán.
+                  </>
+                ),
+              } : null}
+            />
           </CardContent>
         </Card>
       </TabsContent>
@@ -266,34 +308,33 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
           </CardContent>
         </Card>
       </TabsContent>
-
-      {deleteTarget && (
-        <ConfirmDialog
-          open={deleteOpen}
-          onOpenChange={(open) => {
-            setDeleteOpen(open)
-            if (!open) setDeleteTarget(null)
-          }}
-          destructive
-          disabled={deleteMutation.isPending}
-          title='Xóa thanh toán'
-          desc={
-            <>
-              Bạn có chắc chắn muốn xóa thanh toán
-              {deleteTarget.reference_code ? (
-                <> mã <span className='font-bold'>{deleteTarget.reference_code}</span></>
-              ) : null}
-              ?
-              <br />
-              Số tiền sẽ tự động được hoàn lại vào công nợ của nhà cung cấp.
-              <br />
-              Các đơn hàng liên quan sẽ được cập nhật lại trạng thái thanh toán.
-            </>
-          }
-          confirmText='Xóa'
-          handleConfirm={() => deleteMutation.mutate()}
-        />
-      )}
     </Tabs>
+
+      {printTarget && (
+        <PrintPreviewDialog
+          open={printOpen}
+          onOpenChange={(open) => {
+            setPrintOpen(open)
+            if (!open) setPrintTarget(null)
+          }}
+          title='In phiếu thanh toán NCC'
+          documentTitle={`Phieu thanh toan - ${printTarget!.reference_code}`}
+        >
+          <SupplierPaymentInvoice
+            referenceCode={printTarget!.reference_code ?? ''}
+            tenantName={user?.tenant?.name}
+            tenantAddress={user?.tenant?.address ?? undefined}
+            tenantPhone={user?.tenant?.phone ?? undefined}
+            storeName={selectedLocation?.name}
+            storeAddress={selectedLocation?.address ?? undefined}
+            storePhone={selectedLocation?.phone ?? undefined}
+            supplierName={supplier?.name}
+            amount={printTarget!.amount ?? 0}
+            paymentDate={printTarget!.payment_date}
+            note={printTarget!.note}
+          />
+        </PrintPreviewDialog>
+      )}
+    </>
   )
 }
