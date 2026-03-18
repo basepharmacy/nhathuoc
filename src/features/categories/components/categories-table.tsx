@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -29,7 +28,6 @@ type CategoriesTableProps = {
 
 export function CategoriesTable({ data, isLoading }: CategoriesTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -40,14 +38,12 @@ export function CategoriesTable({ data, isLoading }: CategoriesTableProps) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -59,6 +55,7 @@ export function CategoriesTable({ data, isLoading }: CategoriesTableProps) {
         table={table}
         searchPlaceholder='Tìm danh mục...'
         searchKey='name'
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>
@@ -78,9 +75,9 @@ export function CategoriesTable({ data, isLoading }: CategoriesTableProps) {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>

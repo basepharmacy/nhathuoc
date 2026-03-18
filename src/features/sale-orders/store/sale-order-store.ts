@@ -236,7 +236,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
         items: [],
         customerId: '',
         orderDiscount: 0,
-        paymentMethod: 'CASH',
+        paymentMethod: '1_CASH',
         cashReceived: 0,
         notes: '',
         orderCode: generateOrderCode(),

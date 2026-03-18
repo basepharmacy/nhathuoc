@@ -1,6 +1,6 @@
 import { type ProductWithUnits, SaleOrderStatus } from '@/services/supabase/'
 import { generateOrderCode } from '../data/sale-order-helper'
-export type PaymentMethod = 'CASH' | 'TRANSFER'
+export type PaymentMethod = '1_CASH' | '2_BANK_TRANSFER'
 
 export type SaleOrderItem = {
   id: string
@@ -35,7 +35,7 @@ export function createNewSaleOrder(locationId: string): SaleOrderInCreate {
   return {
     orderCode: generateOrderCode(),
     customerId: '',
-    paymentMethod: 'CASH',
+    paymentMethod: '1_CASH',
     subTotal: 0,
     orderDiscount: 0,
     totalAmount: 0,

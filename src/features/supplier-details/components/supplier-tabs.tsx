@@ -7,6 +7,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -23,11 +24,12 @@ import {
 } from '@/client/queries'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { PurchaseOrdersHistoryTable } from '@/features/purchase-orders-history/components/purchase-orders-history-table'
+import { getPurchaseOrdersHistoryColumns } from '@/features/purchase-orders-history/components/purchase-orders-history-columns'
+import { useDeletePurchaseOrder } from '@/features/purchase-orders-history/hooks/use-delete-purchase-order'
 import { SupplierPaymentsHistoryTable } from '@/features/supplier-payments-history/components/supplier-payments-history-table'
 import { getSupplierPaymentsHistoryColumns } from '@/features/supplier-payments-history/components/supplier-payments-history-columns'
 import { useDeleteSupplierPayment } from '@/features/supplier-payments-history/hooks/use-delete-supplier-payment'
 import { SupplierPaymentInvoice } from '@/features/supplier-payments-history/components/supplier-payment-invoice'
-import { supplierOrdersHistoryColumns } from './supplier-orders-history-columns'
 
 type SupplierTabsProps = {
   tenantId: string
@@ -39,6 +41,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
   const { setCurrentRow, setOpen } = useSuppliers()
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
+  const navigate = useNavigate()
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -139,6 +142,24 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
     rowCount: paymentsTotal,
   })
 
+  // Orders actions
+  const { deleteState: orderDeleteState, handleDelete: handleDeleteOrder } = useDeletePurchaseOrder(tenantId)
+
+  const handleEditOrder = useCallback(
+    (order: PurchaseOrderWithRelations) => {
+      navigate({
+        to: '/purchase-orders',
+        search: { orderCode: order.purchase_order_code ?? '' },
+      })
+    },
+    [navigate]
+  )
+
+  const orderColumns = useMemo(
+    () => getPurchaseOrdersHistoryColumns({ onEdit: handleEditOrder, onDelete: handleDeleteOrder }),
+    [handleEditOrder, handleDeleteOrder]
+  )
+
   // Orders table state
   const [orderFilters, setOrderFilters] = useState<ColumnFiltersState>([])
   const [orderSorting, setOrderSorting] = useState<SortingState>([])
@@ -146,6 +167,8 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
     pageIndex: 0,
     pageSize: 10,
   })
+  const [orderFromDate, setOrderFromDate] = useState<Date | undefined>(undefined)
+  const [orderToDate, setOrderToDate] = useState<Date | undefined>(undefined)
 
   const orderSearchValue = useMemo(() => {
     const searchFilter = orderFilters.find(
@@ -179,6 +202,8 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       supplierIds: supplierId ? [supplierId] : [],
       statuses: statusFilters,
       paymentStatuses: paymentStatusFilters,
+      fromDate: formatDateParam(orderFromDate),
+      toDate: formatDateParam(orderToDate),
       sorting: orderSorting,
     }),
     enabled: !!tenantId && !!supplierId,
@@ -193,16 +218,17 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       ...prev,
       pageIndex: 0,
     }))
-  }, [orderFilters, orderSorting])
+  }, [orderFilters, orderSorting, orderFromDate, orderToDate])
 
   // eslint-disable-next-line react-hooks/incompatible-library
   const ordersTable = useReactTable<PurchaseOrderWithRelations>({
     data: orders,
-    columns: supplierOrdersHistoryColumns,
+    columns: orderColumns,
     state: {
       pagination: orderPagination,
       columnFilters: orderFilters,
       sorting: orderSorting,
+      columnVisibility: { supplier_name: false },
     },
     onPaginationChange: setOrderPagination,
     onColumnFiltersChange: setOrderFilters,
@@ -304,6 +330,11 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
               isLoading={isOrdersLoading}
               searchKey='purchase_order_code'
               filters={orderFiltersConfig}
+              fromDate={orderFromDate}
+              toDate={orderToDate}
+              onFromDateChange={setOrderFromDate}
+              onToDateChange={setOrderToDate}
+              deleteState={orderDeleteState}
             />
           </CardContent>
         </Card>

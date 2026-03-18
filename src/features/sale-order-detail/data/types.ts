@@ -1,6 +1,6 @@
 import { type ProductWithUnits, SaleOrderStatus } from '@/services/supabase/'
 
-export type PaymentMethod = 'CASH' | 'TRANSFER'
+export type PaymentMethod = '1_CASH' | '2_BANK_TRANSFER'
 
 export type SaleOrderItem = {
   id: string

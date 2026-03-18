@@ -167,7 +167,7 @@ export function SaleOrders() {
             total={orderDetail.total_amount}
             orderDiscount={orderDetail.discount}
             customerName={orderDetail.customer?.name ?? 'Khách lẻ'}
-            paymentMethod={orderDetail.customer_paid_amount ? 'CASH' : 'TRANSFER'}
+            paymentMethod={orderDetail.payment_method ?? '1_CASH'}
             cashReceived={orderDetail.customer_paid_amount}
             changeAmount={Math.max((orderDetail.customer_paid_amount ?? 0) - orderDetail.total_amount, 0)}
             bankAccount={bankAccounts.find((account) => account.id === bankId) as BankAccount}

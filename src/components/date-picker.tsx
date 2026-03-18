@@ -63,7 +63,10 @@ export function DatePicker({
           fromYear={resolvedFromYear}
           toYear={resolvedToYear}
           selected={selected}
-          onSelect={onSelect}
+          onSelect={(date) => {
+            onSelect(date)
+            setOpen(false)
+          }}
           disabled={(date: Date) => {
             if (disabled) return true
             const target = new Date(date)

@@ -12,6 +12,7 @@ type DataTableToolbarProps<TData> = {
   searchPlaceholder?: string
   searchKey?: string
   searchDebounceMs?: number
+  hideViewOptions?: boolean
   filters?: {
     columnId: string
     title: string
@@ -57,6 +58,7 @@ export function DataTableToolbar<TData>({
   searchPlaceholder = 'Filter...',
   searchKey,
   searchDebounceMs = 300,
+  hideViewOptions = false,
   filters = [],
 }: DataTableToolbarProps<TData>) {
   const { localValue, setLocalValue } = useDebouncedSearch(
@@ -108,7 +110,7 @@ export function DataTableToolbar<TData>({
           </Button>
         )}
       </div>
-      <DataTableViewOptions table={table} />
+      {!hideViewOptions && <DataTableViewOptions table={table} />}
     </div>
   )
 }

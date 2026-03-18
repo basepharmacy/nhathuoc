@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -32,7 +31,6 @@ type BankAccountsTableProps = {
 
 export function BankAccountsTable({ data, isLoading }: BankAccountsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -53,14 +51,12 @@ export function BankAccountsTable({ data, isLoading }: BankAccountsTableProps) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     globalFilterFn: (row, _columnId, filterValue) => {
       const q = String(filterValue ?? '')
       const bin = row.original.bank_bin
@@ -91,6 +87,7 @@ export function BankAccountsTable({ data, isLoading }: BankAccountsTableProps) {
             options: bankFilterOptions,
           },
         ]}
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>
@@ -110,9 +107,9 @@ export function BankAccountsTable({ data, isLoading }: BankAccountsTableProps) {
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
+                        header.column.columnDef.header,
+                        header.getContext()
+                      )}
                   </TableHead>
                 ))}
               </TableRow>

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -31,7 +30,6 @@ type SuppliersTableProps = {
 
 export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     { id: 'is_active', value: ['true'] },
   ])
@@ -52,14 +50,12 @@ export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
@@ -80,6 +76,7 @@ export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
             options: statusOptions,
           },
         ]}
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

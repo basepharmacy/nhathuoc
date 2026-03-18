@@ -533,6 +533,8 @@ export const getStockAdjustmentsListQueryOptions = (
         locationIds: params.locationIds ?? [],
         reasonCodes: params.reasonCodes ?? [],
         adjustmentTypes: params.adjustmentTypes ?? [],
+        fromDate: params.fromDate ?? '',
+        toDate: params.toDate ?? '',
       },
     ],
     queryFn: async () => {
@@ -576,12 +578,14 @@ export const getTopProductsQueryOptions = (params: {
 
 export const getPurchasesStatisticsV2QueryOptions = (params: {
   locationId?: string | null
+  supplierId?: string
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'purchases-statistics-v2', params.locationId ?? 'all'],
+    queryKey: ['dashboard-report', 'purchases-statistics-v2', params.locationId ?? 'all', params.supplierId ?? 'supplier-all'],
     queryFn: async () =>
       dashboardReportRepo.getPurchasesStatisticsV2({
         locationId: params.locationId ?? undefined,
+        supplierId: params.supplierId ?? undefined,
       }),
   })
 

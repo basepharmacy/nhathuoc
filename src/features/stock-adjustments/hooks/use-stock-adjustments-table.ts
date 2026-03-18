@@ -4,6 +4,7 @@ import {
   type PaginationState,
   type VisibilityState,
 } from '@tanstack/react-table'
+import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
 import { type StockAdjustmentsListQueryInput } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import { ALL_REASON_CODE_OPTIONS } from '../data/reason-code'
 
@@ -39,6 +40,8 @@ export function useStockAdjustmentsTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined)
+  const [toDate, setToDate] = useState<Date | undefined>(undefined)
 
   const searchValue = useMemo(() => {
     const searchFilter = columnFilters.find(
@@ -82,7 +85,9 @@ export function useStockAdjustmentsTable({
     locationIds,
     reasonCodes,
     adjustmentTypes,
-  }), [tenantId, pagination, searchValue, locationIds, reasonCodes, adjustmentTypes])
+    fromDate: formatFromDateParam(fromDate),
+    toDate: formatToDateParam(toDate),
+  }), [tenantId, pagination, searchValue, locationIds, reasonCodes, adjustmentTypes, fromDate, toDate])
 
   useEffect(() => {
     if (!selectedLocationId) {
@@ -97,7 +102,7 @@ export function useStockAdjustmentsTable({
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
-  }, [columnFilters])
+  }, [columnFilters, fromDate, toDate])
 
   const locationOptions = useMemo(
     () =>
@@ -141,5 +146,5 @@ export function useStockAdjustmentsTable({
     onColumnVisibilityChange: setColumnVisibility,
   }
 
-  return { tableState, filters, listQueryParams }
+  return { tableState, filters, listQueryParams, fromDate, setFromDate, toDate, setToDate }
 }

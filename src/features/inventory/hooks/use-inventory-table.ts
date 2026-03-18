@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type PaginationState,
-  type VisibilityState,
 } from '@tanstack/react-table'
 import { type InventoryBatchesListQueryInput, type InventoryBatchStockStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
@@ -20,11 +19,6 @@ export function useInventoryTable({
   defaultLocationId,
 }: UseInventoryTableInput) {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
-    ['search']: false,
-    ['location_id']: false,
-    ['stock_status']: false,
-  })
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -131,10 +125,8 @@ export function useInventoryTable({
   const tableState = {
     pagination,
     columnFilters,
-    columnVisibility,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
   }
 
   return { tableState, filters, listQueryParams }

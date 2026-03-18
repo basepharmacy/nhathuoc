@@ -4,7 +4,6 @@ import {
   type ColumnFiltersState,
   type OnChangeFn,
   type PaginationState,
-  type VisibilityState,
   getCoreRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -36,10 +35,8 @@ type Props = {
   tableState: {
     pagination: PaginationState
     columnFilters: ColumnFiltersState
-    columnVisibility: VisibilityState
     onPaginationChange: OnChangeFn<PaginationState>
     onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
-    onColumnVisibilityChange: OnChangeFn<VisibilityState>
   }
   pageCount: number
   total: number
@@ -199,11 +196,9 @@ export function InventoryBatchTable({
     state: {
       pagination: tableState.pagination,
       columnFilters: tableState.columnFilters,
-      columnVisibility: tableState.columnVisibility,
     },
     onPaginationChange: tableState.onPaginationChange,
     onColumnFiltersChange: tableState.onColumnFiltersChange,
-    onColumnVisibilityChange: tableState.onColumnVisibilityChange,
     getCoreRowModel: getCoreRowModel(),
     manualFiltering: true,
     manualPagination: true,

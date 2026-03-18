@@ -24,8 +24,8 @@ type SaleOrdersSummaryProps = {
 }
 
 const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
-  { label: 'Tiền mặt', value: 'CASH' },
-  { label: 'Chuyển khoản', value: 'TRANSFER' },
+  { label: 'Tiền mặt', value: '1_CASH' },
+  { label: 'Chuyển khoản', value: '2_BANK_TRANSFER' },
 ]
 
 const DENOMINATIONS = [1000, 2000, 5000, 10_000, 20_000, 50_000, 100_000, 200_000, 500_000]
@@ -55,7 +55,7 @@ export function SaleOrdersSummary({
   const [discount, setDiscount] = useState(order.discount ?? 0)
   const [notes, setNotes] = useState(order.notes ?? '')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    order.customer_paid_amount ? 'CASH' : 'TRANSFER'
+    order.payment_method ?? '1_CASH'
   )
   const [isEditing, setIsEditing] = useState(false)
   const customerName = order.customer?.name ?? 'Khách lẻ'
@@ -72,7 +72,7 @@ export function SaleOrdersSummary({
     setTotalAmmount(order.total_amount ?? 0)
     setDiscount(order.discount ?? 0)
     setNotes(order.notes ?? '')
-    setPaymentMethod(order.customer_paid_amount ? 'CASH' : 'TRANSFER')
+    setPaymentMethod(order.payment_method ?? '1_CASH')
   }, [order, setBankId])
 
   const queryClient = useQueryClient()
@@ -83,7 +83,8 @@ export function SaleOrdersSummary({
         order: {
           customer_id: order.customer_id ?? null,
           status: order.status,
-          customer_paid_amount: paymentMethod === 'CASH' ? customerPaid : 0,
+          payment_method: paymentMethod,
+          customer_paid_amount: paymentMethod === '1_CASH' ? customerPaid : 0,
           discount,
           total_amount: totalAmmount,
           notes: notes.trim().length > 0 ? notes.trim() : null,
@@ -163,7 +164,7 @@ export function SaleOrdersSummary({
           })}
         </div>
 
-        {paymentMethod === 'CASH' ? (
+        {paymentMethod === '1_CASH' ? (
           <div className='space-y-2 text-sm'>
             <div className='flex items-center justify-between text-muted-foreground'>
               <span>Khách đưa</span>

@@ -16,6 +16,8 @@ export type StockAdjustmentsListQueryInput = {
   locationIds?: string[]
   reasonCodes?: StockAdjustment['reason_code'][]
   adjustmentTypes?: Array<'increase' | 'decrease'>
+  fromDate?: string
+  toDate?: string
 }
 
 export type StockAdjustmentsListQueryResult = {
@@ -63,6 +65,14 @@ export const createStockAdjustmentRepository = (
 
       if (!hasIncrease && hasDecrease) {
         query = query.lt('quantity', 0)
+      }
+
+      if (params.fromDate) {
+        query = query.gte('created_at', params.fromDate)
+      }
+
+      if (params.toDate) {
+        query = query.lte('created_at', params.toDate)
       }
 
       const { data, error, count } = await query

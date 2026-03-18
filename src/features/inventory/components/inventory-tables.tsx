@@ -40,6 +40,7 @@ export function InventoryTable<TData>({
         searchPlaceholder={searchPlaceholder}
         searchKey={searchKey}
         filters={filters}
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

@@ -15,7 +15,7 @@ type SaleOrderInvoiceProps = {
   total: number
   orderDiscount: number
   customerName: string | null
-  paymentMethod: 'CASH' | 'TRANSFER'
+  paymentMethod: '1_CASH' | '2_BANK_TRANSFER'
   cashReceived?: number
   changeAmount?: number
   bankAccount: BankAccount
@@ -139,10 +139,10 @@ export function SaleOrderInvoice({
         <div>
           <span>PT thanh toan: </span>
           <span className='font-semibold'>
-            {paymentMethod === 'CASH' ? 'Tien mat' : 'Chuyen khoan'}
+            {paymentMethod === '1_CASH' ? 'Tien mat' : 'Chuyen khoan'}
           </span>
         </div>
-        {paymentMethod === 'CASH' && (
+        {paymentMethod === '1_CASH' && (
           <>
             <div className='flex justify-between'>
               <span>Tien khach dua:</span>

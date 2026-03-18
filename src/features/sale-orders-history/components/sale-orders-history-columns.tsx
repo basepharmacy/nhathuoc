@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { Link } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
@@ -47,9 +48,20 @@ export const getSaleOrdersHistoryColumns = (
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Khách hàng' />
       ),
-      cell: ({ row }) => (
-        <LongText className='max-w-52'>{row.getValue('customer_name')}</LongText>
-      ),
+      cell: ({ row }) => {
+        const customerId = row.original.customer?.id
+        const name = row.getValue<string>('customer_name')
+        if (!customerId) return <LongText className='max-w-52'>{name}</LongText>
+        return (
+          <Link
+            to='/customers/$customerId'
+            params={{ customerId: String(customerId) }}
+            className='max-w-52 truncate text-sm font-medium hover:underline'
+          >
+            {name}
+          </Link>
+        )
+      },
       meta: { label: 'Khách hàng' },
       enableSorting: false,
       filterFn: (row, id, value) => value.includes(row.getValue(id)),

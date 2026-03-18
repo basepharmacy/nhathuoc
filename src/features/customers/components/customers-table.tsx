@@ -2,7 +2,6 @@ import { useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -29,7 +28,6 @@ type CustomersTableProps = {
 
 export function CustomersTable({ data, isLoading }: CustomersTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
 
@@ -40,14 +38,12 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
     },
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -59,6 +55,7 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
         table={table}
         searchPlaceholder='Tìm khách hàng...'
         searchKey='name'
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

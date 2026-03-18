@@ -182,6 +182,7 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
         p_discount: params.order.discount ?? 0,
         p_issued_at: params.order.issued_at ?? undefined,
         p_is_offline: params.isOffline ?? false,
+        p_payment_method: params.order.payment_method ?? undefined,
         p_items: params.items.map((item) => ({
           product_id: item.product_id,
           product_unit_id: item.product_unit_id ?? null,

@@ -50,23 +50,19 @@ export function useStockAdjustment({
     mutationFn: async () => {
       validateAdjustment()
 
-      // Create each adjustment sequentially
-      for (const item of items) {
-        const normalizedReason = item.reason.trim().length > 0 ? item.reason.trim() : null
-        const isExistingBatch = Boolean(item.batchId)
-        await stockAdjustmentsRepo.createStockAdjustment({
+      await stockAdjustmentsRepo.createBatchStockAdjustments(
+        items.map((item) => ({
           tenant_id: tenantId,
           product_id: item.product.id,
           location_id: selectedLocationId!,
-          batch_id: item.batchId,
           batch_code: item.batchCode.trim(),
           quantity: item.quantity,
           cost_price: item.costPrice,
           reason_code: item.reasonCode,
-          reason: normalizedReason,
-          expiry_date: isExistingBatch ? null : item.expiryDate.trim() || null,
-        })
-      }
+          reason: item.reason.trim().length > 0 ? item.reason.trim() : null,
+          expiry_date: item.expiryDate.trim(),
+        }))
+      )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })

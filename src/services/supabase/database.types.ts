@@ -901,6 +901,7 @@ export type Database = {
           issued_at: string | null
           location_id: string | null
           notes: string | null
+          payment_method: Database["public"]["Enums"]["payment_method"] | null
           sale_order_code: string
           status: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
@@ -918,6 +919,7 @@ export type Database = {
           issued_at?: string | null
           location_id?: string | null
           notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           sale_order_code: string
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
@@ -935,6 +937,7 @@ export type Database = {
           issued_at?: string | null
           location_id?: string | null
           notes?: string | null
+          payment_method?: Database["public"]["Enums"]["payment_method"] | null
           sale_order_code?: string
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id?: string
@@ -1234,6 +1237,7 @@ export type Database = {
           staff_license: number
           status: Database["public"]["Enums"]["tenant_status"]
           tenant_code: string | null
+          type: Database["public"]["Enums"]["tenant_type"]
           updated_at: string | null
         }
         Insert: {
@@ -1250,6 +1254,7 @@ export type Database = {
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
           tenant_code?: string | null
+          type?: Database["public"]["Enums"]["tenant_type"]
           updated_at?: string | null
         }
         Update: {
@@ -1266,6 +1271,7 @@ export type Database = {
           staff_license?: number
           status?: Database["public"]["Enums"]["tenant_status"]
           tenant_code?: string | null
+          type?: Database["public"]["Enums"]["tenant_type"]
           updated_at?: string | null
         }
         Relationships: []
@@ -1285,6 +1291,7 @@ export type Database = {
           p_items?: Json
           p_location_id?: string
           p_notes?: string
+          p_payment_method?: Database["public"]["Enums"]["payment_method"]
           p_sale_order_code?: string
           p_status?: Database["public"]["Enums"]["sale_order_status"]
           p_total_amount?: number
@@ -1335,7 +1342,11 @@ export type Database = {
         }[]
       }
       get_purchases_statistics_v2: {
-        Args: { p_location_id?: string; p_purchase_period_id?: number }
+        Args: {
+          p_location_id?: string
+          p_purchase_period_id?: number
+          p_supplier_id?: string
+        }
         Returns: {
           total_debt: number
           total_order_amount: number
@@ -1481,6 +1492,7 @@ export type Database = {
         | "SUPPLIER_PAYMENT_DELETED"
       location_status: "1_ACTIVE" | "2_INACTIVE"
       location_type: "1_WAREHOUSE" | "2_STORE" | "9_OTHER"
+      payment_method: "1_CASH" | "2_BANK_TRANSFER"
       product_status: "1_DRAFT" | "2_ACTIVE" | "3_INACTIVE" | "4_ARCHIVED"
       product_type: "1_OTC" | "2_PRESCRIPTION_REQUIRED"
       purchase_order_payment_status: "1_UNPAID" | "2_PARTIALLY_PAID" | "3_PAID"
@@ -1504,6 +1516,7 @@ export type Database = {
         | "8_INSUFFICIENT_STOCK"
       staff_role: "OWNER" | "MANAGER" | "STAFF"
       tenant_status: "1_ACTIVE" | "2_LICENSE_EXPIRED" | "3_CANCELLED"
+      tenant_type: "1_NORMAL" | "2_PRO" | "3_ENTERPRISE"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1643,6 +1656,7 @@ export const Constants = {
       ],
       location_status: ["1_ACTIVE", "2_INACTIVE"],
       location_type: ["1_WAREHOUSE", "2_STORE", "9_OTHER"],
+      payment_method: ["1_CASH", "2_BANK_TRANSFER"],
       product_status: ["1_DRAFT", "2_ACTIVE", "3_INACTIVE", "4_ARCHIVED"],
       product_type: ["1_OTC", "2_PRESCRIPTION_REQUIRED"],
       purchase_order_payment_status: ["1_UNPAID", "2_PARTIALLY_PAID", "3_PAID"],
@@ -1669,6 +1683,7 @@ export const Constants = {
       ],
       staff_role: ["OWNER", "MANAGER", "STAFF"],
       tenant_status: ["1_ACTIVE", "2_LICENSE_EXPIRED", "3_CANCELLED"],
+      tenant_type: ["1_NORMAL", "2_PRO", "3_ENTERPRISE"],
     },
   },
 } as const

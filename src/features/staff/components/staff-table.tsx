@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -44,7 +43,6 @@ export function StaffTable({
 
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [sorting, setSorting] = useState<SortingState>([])
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
     selectedLocationId
@@ -81,13 +79,11 @@ export function StaffTable({
       sorting,
       rowSelection,
       columnFilters,
-      columnVisibility,
     },
     enableRowSelection: true,
     onColumnFiltersChange: setColumnFilters,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -118,6 +114,7 @@ export function StaffTable({
             options: locationOptions,
           },
         ]}
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

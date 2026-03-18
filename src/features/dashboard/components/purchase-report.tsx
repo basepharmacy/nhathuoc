@@ -90,6 +90,7 @@ export function PurchaseReport() {
 
   return (
     <div className='space-y-4'>
+      <p className='text-sm text-muted-foreground'>* Chỉ tính các đơn đã được nhập kho thành công</p>
       <KpiGrid items={purchaseKpi} />
       <div className='grid grid-cols-1 gap-4 lg:grid-cols-7'>
         <Card className='col-span-1 lg:col-span-4'>

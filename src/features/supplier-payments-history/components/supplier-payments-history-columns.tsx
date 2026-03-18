@@ -1,4 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
+import { Link } from '@tanstack/react-router'
 import { LongText } from '@/components/long-text'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { formatCurrency } from '@/lib/utils'
@@ -44,9 +45,15 @@ export const getSupplierPaymentsHistoryColumns = (
         <DataTableColumnHeader column={column} title='Nhà cung cấp' />
       ),
       cell: ({ row }) => (
-        <LongText className='max-w-52'>
-          {row.getValue('supplier_name')}
-        </LongText>
+        <Link
+          to='/suppliers/$supplierId'
+          params={{ supplierId: row.original.supplier?.id ?? '' }}
+          className='hover:underline font-medium'
+        >
+          <LongText className='max-w-52'>
+            {row.getValue('supplier_name')}
+          </LongText>
+        </Link>
       ),
       meta: { label: 'Nhà cung cấp' },
       enableSorting: false,

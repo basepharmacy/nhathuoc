@@ -70,7 +70,7 @@ export function PurchaseOrdersMeta({
             locations={locations}
             locationId={locationId}
             onLocationChange={onLocationChange}
-            disabled={locationDisabled}
+            disabled={locationDisabled || isEdit}
           />
         </div>
         <div className='flex items-center gap-2 text-muted-foreground'>

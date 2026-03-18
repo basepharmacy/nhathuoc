@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
-  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -31,7 +30,6 @@ type LocationsTableProps = {
 
 export function LocationsTable({ data, isLoading }: LocationsTableProps) {
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     { id: 'status', value: ['1_ACTIVE'] },
   ])
@@ -64,7 +62,6 @@ export function LocationsTable({ data, isLoading }: LocationsTableProps) {
     state: {
       sorting,
       columnFilters,
-      columnVisibility,
       rowSelection,
       globalFilter,
     },
@@ -72,7 +69,6 @@ export function LocationsTable({ data, isLoading }: LocationsTableProps) {
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
-    onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
     globalFilterFn: (row, _columnId, filterValue) => {
       const search = String(filterValue ?? '')
@@ -107,6 +103,7 @@ export function LocationsTable({ data, isLoading }: LocationsTableProps) {
             options: typeOptions,
           },
         ]}
+        hideViewOptions
       />
       <div className='overflow-hidden rounded-md border'>
         <Table>

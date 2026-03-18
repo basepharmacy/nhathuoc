@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   type ColumnFiltersState,
   type OnChangeFn,
@@ -7,6 +8,7 @@ import {
   useReactTable,
   flexRender,
 } from '@tanstack/react-table'
+import { Cross2Icon } from '@radix-ui/react-icons'
 import { cn } from '@/lib/utils'
 import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import {
@@ -17,7 +19,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { DatePicker } from '@/components/date-picker'
+import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { DataTablePagination, DataTableSkeletonRows, DataTableFacetedFilter } from '@/components/data-table'
 import { stockAdjustmentsColumns } from './stock-adjustments-columns'
 
 type FilterOption = {
@@ -40,6 +46,10 @@ type Props = {
   total: number
   isLoading: boolean
   filters: FilterOption[]
+  fromDate?: Date | undefined
+  toDate?: Date | undefined
+  onFromDateChange?: (date: Date | undefined) => void
+  onToDateChange?: (date: Date | undefined) => void
 }
 
 export function StockAdjustmentsTable({
@@ -49,6 +59,10 @@ export function StockAdjustmentsTable({
   total,
   isLoading,
   filters,
+  fromDate,
+  toDate,
+  onFromDateChange,
+  onToDateChange,
 }: Props) {
   const table = useReactTable({
     data,
@@ -68,14 +82,80 @@ export function StockAdjustmentsTable({
     rowCount: total,
   })
 
+  const filterValue = (table.getColumn('search')?.getFilterValue() as string) ?? ''
+  const [localValue, setLocalValue] = useState(filterValue)
+  const debouncedValue = useDebouncedValue(localValue, 300)
+
+  useEffect(() => {
+    table.getColumn('search')?.setFilterValue(debouncedValue)
+  }, [debouncedValue, table])
+
+  useEffect(() => {
+    setLocalValue(filterValue)
+  }, [filterValue])
+
+  const isFiltered =
+    localValue.length > 0 ||
+    table.getState().columnFilters.length > 0 ||
+    fromDate !== undefined ||
+    toDate !== undefined
+
+  const handleReset = () => {
+    setLocalValue('')
+    table.resetColumnFilters()
+    onFromDateChange?.(undefined)
+    onToDateChange?.(undefined)
+  }
+
   return (
     <div className='flex flex-1 flex-col gap-4'>
-      <DataTableToolbar
-        table={table}
-        searchPlaceholder='Tìm sản phẩm...'
-        searchKey='search'
-        filters={filters}
-      />
+      <div className='flex items-center justify-between'>
+        <div className='flex flex-1 flex-col-reverse items-start gap-y-2 sm:flex-row sm:items-center sm:space-x-2'>
+          <Input
+            placeholder='Tìm sản phẩm...'
+            value={localValue}
+            onChange={(e) => setLocalValue(e.target.value)}
+            className='h-8 w-[150px] lg:w-[250px]'
+          />
+          <div className='flex gap-x-2'>
+            {filters.map((filter) => {
+              const column = table.getColumn(filter.columnId)
+              if (!column) return null
+              return (
+                <DataTableFacetedFilter
+                  key={filter.columnId}
+                  column={column}
+                  title={filter.title}
+                  options={filter.options}
+                />
+              )
+            })}
+          </div>
+          {isFiltered && (
+            <Button variant='ghost' onClick={handleReset} className='h-8 px-2 lg:px-3'>
+              Reset
+              <Cross2Icon className='ms-2 h-4 w-4' />
+            </Button>
+          )}
+        </div>
+        <div className='flex items-center gap-x-2'>
+          <DatePicker
+            selected={fromDate}
+            onSelect={(d) => onFromDateChange?.(d)}
+            placeholder='Từ ngày'
+            disablePastDates={false}
+            className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
+          />
+          <span className='text-sm text-muted-foreground'>-</span>
+          <DatePicker
+            selected={toDate}
+            onSelect={(d) => onToDateChange?.(d)}
+            placeholder='Đến ngày'
+            disablePastDates={false}
+            className='h-8 w-[140px] justify-start text-start text-sm font-normal data-[empty=true]:text-muted-foreground'
+          />
+        </div>
+      </div>
       <div className='overflow-hidden rounded-md border'>
         <Table>
           <TableHeader>

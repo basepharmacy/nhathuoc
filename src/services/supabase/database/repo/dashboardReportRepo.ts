@@ -161,9 +161,11 @@ export const createDashboardReportRepository = (
     },
     async getPurchasesStatisticsV2(params: {
       locationId?: string | null
+      supplierId?: string
     }): Promise<PurchasesStatisticsV2Result> {
       const { data, error } = await client.rpc('get_purchases_statistics_v2', {
         p_location_id: params.locationId ?? undefined,
+        p_supplier_id: params.supplierId ?? undefined,
       })
 
       if (error) {

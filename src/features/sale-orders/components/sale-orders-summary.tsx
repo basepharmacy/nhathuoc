@@ -33,8 +33,8 @@ type SaleOrdersSummaryProps = {
 }
 
 const PAYMENT_METHODS: Array<{ label: string; value: PaymentMethod }> = [
-  { label: 'Tiền mặt', value: 'CASH' },
-  { label: 'Chuyển khoản', value: 'TRANSFER' },
+  { label: 'Tiền mặt', value: '1_CASH' },
+  { label: 'Chuyển khoản', value: '2_BANK_TRANSFER' },
 ]
 
 const DENOMINATIONS = [1000, 2000, 5000, 10_000, 20_000, 50_000, 100_000, 200_000, 500_000]
@@ -153,7 +153,7 @@ export const SaleOrdersSummary = memo(function SaleOrdersSummary({
           ))}
         </div>
 
-        {paymentMethod === 'CASH' ? (
+        {paymentMethod === '1_CASH' ? (
           <div className='space-y-2 text-sm'>
             <div className='flex items-center justify-between text-muted-foreground'>
               <span>Khách đưa</span>

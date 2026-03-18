@@ -1,11 +1,9 @@
-import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useUser } from '@/client/provider'
 import {
 	getSupplierDetailQueryOptions,
-	getSupplierPaymentsBySupplierIdQueryOptions,
-	getPurchaseOrdersBySupplierIdQueryOptions,
+	getPurchasesStatisticsV2QueryOptions,
 } from '@/client/queries'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
@@ -15,7 +13,6 @@ import { SupplierHeader } from './components/supplier-header'
 import { SupplierInfoCard } from './components/supplier-info-card'
 import { SupplierSummaryCards } from './components/supplier-summary-cards'
 import { SupplierTabs } from './components/supplier-tabs'
-import { type SupplierSummary } from './data/schema'
 
 const route = getRouteApi('/_authenticated/suppliers/$supplierId')
 
@@ -35,45 +32,25 @@ function SupplierDetailContent() {
 	})
 
 	const {
-		data: orders = [],
-		isLoading: isOrdersLoading,
-		isError: isOrdersError,
-		error: ordersError,
+		data: statistics,
+		isLoading: isStatisticsLoading,
+		isError: isStatisticsError,
+		error: statisticsError,
 	} = useQuery({
-		...getPurchaseOrdersBySupplierIdQueryOptions(tenantId, supplierId),
-		enabled: !!tenantId && !!supplierId,
+		...getPurchasesStatisticsV2QueryOptions({ supplierId }),
+		enabled: !!supplierId,
 	})
 
-	const {
-		data: payments = [],
-		isLoading: isPaymentsLoading,
-		isError: isPaymentsError,
-		error: paymentsError,
-	} = useQuery({
-		...getSupplierPaymentsBySupplierIdQueryOptions(tenantId, supplierId),
-		enabled: !!tenantId && !!supplierId,
-	})
+	const isLoading = isSupplierLoading || isStatisticsLoading
+	const isError = isSupplierError || isStatisticsError
+	const error = supplierError ?? statisticsError
 
-	const isLoading = isSupplierLoading || isOrdersLoading || isPaymentsLoading
-	const isError = isSupplierError || isOrdersError || isPaymentsError
-	const error = supplierError ?? ordersError ?? paymentsError
-
-	const summary = useMemo<SupplierSummary>(
-		() => {
-			const totalAmount = orders.reduce((sum, order) => {
-				const orderTotal = order.total_amount ?? 0
-				return sum + orderTotal
-			}, 0)
-			const totalPaid = payments.reduce((sum, payment) => sum + (payment.amount ?? 0), 0)
-			return {
-				totalOrders: orders.length,
-				totalAmount,
-				totalPaid,
-				totalDebt: Math.max(0, totalAmount - totalPaid),
-			}
-		},
-		[orders, payments]
-	)
+	const summary = {
+		totalOrders: statistics?.totalOrders ?? 0,
+		totalAmount: statistics?.totalOrderAmount ?? 0,
+		totalPaid: statistics?.totalPaidAmount ?? 0,
+		totalDebt: statistics?.totalDebt ?? 0,
+	}
 
 	return (
 		<>

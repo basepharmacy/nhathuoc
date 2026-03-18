@@ -24,7 +24,7 @@ export function StockAdjustments() {
     enabled: !!tenantId,
   })
 
-  const { tableState, filters, listQueryParams } = useStockAdjustmentsTable({
+  const { tableState, filters, listQueryParams, fromDate, setFromDate, toDate, setToDate } = useStockAdjustmentsTable({
     tenantId,
     locations,
     selectedLocationId,
@@ -70,6 +70,10 @@ export function StockAdjustments() {
           total={total}
           isLoading={isLoading}
           filters={filters}
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={setFromDate}
+          onToDateChange={setToDate}
         />
       </Main>
     </StockAdjustmentsProvider>

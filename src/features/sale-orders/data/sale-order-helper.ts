@@ -39,7 +39,7 @@ export function mapOrderToSaleOrderInCreate(
     id: order.id,
     orderCode: order.sale_order_code ?? '',
     customerId: order.customer_id ?? '',
-    paymentMethod: 'CASH',
+    paymentMethod: order.payment_method ?? '1_CASH',
     subTotal,
     orderDiscount: order.discount ?? 0,
     totalAmount: order.total_amount ?? 0,
