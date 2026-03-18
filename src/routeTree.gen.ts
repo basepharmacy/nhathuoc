@@ -37,6 +37,7 @@ import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedCategoriesIndexRouteImport } from './routes/_authenticated/categories/index'
 import { Route as AuthenticatedBankAccountsIndexRouteImport } from './routes/_authenticated/bank-accounts/index'
 import { Route as AuthenticatedSuppliersSupplierIdRouteImport } from './routes/_authenticated/suppliers/$supplierId'
+import { Route as AuthenticatedSupplierPaymentsHistoryRouteImport } from './routes/_authenticated/supplier-payments/history'
 import { Route as AuthenticatedStaffsStaffIdRouteImport } from './routes/_authenticated/staffs/$staffId'
 import { Route as AuthenticatedSettingsAccountRouteImport } from './routes/_authenticated/settings/account'
 import { Route as AuthenticatedSaleOrdersHistoryRouteImport } from './routes/_authenticated/sale-orders/history'
@@ -201,6 +202,12 @@ const AuthenticatedSuppliersSupplierIdRoute =
     path: '/suppliers/$supplierId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedSupplierPaymentsHistoryRoute =
+  AuthenticatedSupplierPaymentsHistoryRouteImport.update({
+    id: '/supplier-payments/history',
+    path: '/supplier-payments/history',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedStaffsStaffIdRoute =
   AuthenticatedStaffsStaffIdRouteImport.update({
     id: '/staffs/$staffId',
@@ -276,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
+  '/supplier-payments/history': typeof AuthenticatedSupplierPaymentsHistoryRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/categories/': typeof AuthenticatedCategoriesIndexRoute
@@ -313,6 +321,7 @@ export interface FileRoutesByTo {
   '/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
+  '/supplier-payments/history': typeof AuthenticatedSupplierPaymentsHistoryRoute
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/bank-accounts': typeof AuthenticatedBankAccountsIndexRoute
   '/categories': typeof AuthenticatedCategoriesIndexRoute
@@ -353,6 +362,7 @@ export interface FileRoutesById {
   '/_authenticated/sale-orders/history': typeof AuthenticatedSaleOrdersHistoryRoute
   '/_authenticated/settings/account': typeof AuthenticatedSettingsAccountRoute
   '/_authenticated/staffs/$staffId': typeof AuthenticatedStaffsStaffIdRoute
+  '/_authenticated/supplier-payments/history': typeof AuthenticatedSupplierPaymentsHistoryRoute
   '/_authenticated/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/_authenticated/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/_authenticated/categories/': typeof AuthenticatedCategoriesIndexRoute
@@ -393,6 +403,7 @@ export interface FileRouteTypes {
     | '/sale-orders/history'
     | '/settings/account'
     | '/staffs/$staffId'
+    | '/supplier-payments/history'
     | '/suppliers/$supplierId'
     | '/bank-accounts/'
     | '/categories/'
@@ -430,6 +441,7 @@ export interface FileRouteTypes {
     | '/sale-orders/history'
     | '/settings/account'
     | '/staffs/$staffId'
+    | '/supplier-payments/history'
     | '/suppliers/$supplierId'
     | '/bank-accounts'
     | '/categories'
@@ -469,6 +481,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sale-orders/history'
     | '/_authenticated/settings/account'
     | '/_authenticated/staffs/$staffId'
+    | '/_authenticated/supplier-payments/history'
     | '/_authenticated/suppliers/$supplierId'
     | '/_authenticated/bank-accounts/'
     | '/_authenticated/categories/'
@@ -700,6 +713,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSuppliersSupplierIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/supplier-payments/history': {
+      id: '/_authenticated/supplier-payments/history'
+      path: '/supplier-payments/history'
+      fullPath: '/supplier-payments/history'
+      preLoaderRoute: typeof AuthenticatedSupplierPaymentsHistoryRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/staffs/$staffId': {
       id: '/_authenticated/staffs/$staffId'
       path: '/staffs/$staffId'
@@ -791,6 +811,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSaleOrdersDetailRoute: typeof AuthenticatedSaleOrdersDetailRoute
   AuthenticatedSaleOrdersHistoryRoute: typeof AuthenticatedSaleOrdersHistoryRoute
   AuthenticatedStaffsStaffIdRoute: typeof AuthenticatedStaffsStaffIdRoute
+  AuthenticatedSupplierPaymentsHistoryRoute: typeof AuthenticatedSupplierPaymentsHistoryRoute
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
   AuthenticatedBankAccountsIndexRoute: typeof AuthenticatedBankAccountsIndexRoute
   AuthenticatedCategoriesIndexRoute: typeof AuthenticatedCategoriesIndexRoute
@@ -819,6 +840,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSaleOrdersDetailRoute: AuthenticatedSaleOrdersDetailRoute,
   AuthenticatedSaleOrdersHistoryRoute: AuthenticatedSaleOrdersHistoryRoute,
   AuthenticatedStaffsStaffIdRoute: AuthenticatedStaffsStaffIdRoute,
+  AuthenticatedSupplierPaymentsHistoryRoute:
+    AuthenticatedSupplierPaymentsHistoryRoute,
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
   AuthenticatedBankAccountsIndexRoute: AuthenticatedBankAccountsIndexRoute,
   AuthenticatedCategoriesIndexRoute: AuthenticatedCategoriesIndexRoute,

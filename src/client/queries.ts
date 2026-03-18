@@ -18,7 +18,7 @@ import {
   activityHistoryRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
-import { type SupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { type SupplierPaymentsHistoryQueryInput, type AllSupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 import { type SaleOrdersHistoryQueryInput } from '@/services/supabase/database/repo/saleOrdersRepo'
 import {
   type InventoryBatchesListQueryInput,
@@ -379,6 +379,33 @@ export const getSupplierPaymentsHistoryQueryOptions = (
         return { data: [], total: 0 }
       }
       const result = await supplierPaymentsRepo.getSupplierPaymentsHistory(params)
+      return result
+    },
+  })
+
+export const getAllSupplierPaymentsHistoryQueryOptions = (
+  params: AllSupplierPaymentsHistoryQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'supplier-payments',
+      'all-history',
+      params.tenantId,
+      {
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+        search: params.search ?? '',
+        supplierIds: params.supplierIds ?? [],
+        fromDate: params.fromDate ?? '',
+        toDate: params.toDate ?? '',
+        sorting: params.sorting ?? [],
+      },
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) {
+        return { data: [], total: 0 }
+      }
+      const result = await supplierPaymentsRepo.getAllSupplierPaymentsHistory(params)
       return result
     },
   })

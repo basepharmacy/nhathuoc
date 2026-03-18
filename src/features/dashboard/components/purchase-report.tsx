@@ -15,7 +15,8 @@ import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { formatCurrency } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
-import { ClipboardList, DollarSign, TrendingDown, Truck } from 'lucide-react'
+import { ChevronRight, ClipboardList, DollarSign, TrendingDown, Truck } from 'lucide-react'
+import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { KpiGrid, type KpiItem } from './kpi-card'
 import { MonthlyBarChart } from './monthly-bar-chart'
@@ -40,6 +41,7 @@ export function PurchaseReport() {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const locationId = selectedLocationId ?? user?.location?.id ?? undefined
+  const navigate = useNavigate()
   const [supplierTab, setSupplierTab] = useState<SupplierTab>('orders')
   const [productTab, setProductTab] = useState<ProductTab>('amount')
 
@@ -121,20 +123,27 @@ export function PurchaseReport() {
               <CardDescription>5 nhà cung cấp hàng đầu</CardDescription>
             </CardHeader>
             <CardContent className='flex flex-1 flex-col'>
-              <div className='flex flex-1 flex-col justify-between divide-y'>
+              <div className='space-y-3'>
                 {topSuppliers.map((supplier, index) => (
-                  <div key={supplier.id ?? supplier.name} className='flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0'>
-                    <div className='flex items-center gap-3'>
-                      <span className='flex size-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium'>
-                        {index + 1}
-                      </span>
-                      <p className='text-sm leading-none font-medium'>{supplier.name}</p>
+                  <div
+                    key={supplier.id ?? supplier.name}
+                    className='flex cursor-pointer items-center gap-3 rounded-lg border border-transparent bg-muted/40 px-3 py-2 transition-colors hover:bg-muted/80'
+                    onClick={() => navigate({ to: '/suppliers/$supplierId', params: { supplierId: supplier.id } })}
+                  >
+                    <div className='flex flex-1 flex-wrap items-center justify-between gap-3'>
+                      <div className='flex items-center gap-3'>
+                        <span className='flex size-6 items-center justify-center rounded-full bg-background text-xs font-medium'>
+                          {index + 1}
+                        </span>
+                        <p className='text-sm font-medium'>{supplier.name}</p>
+                      </div>
+                      <div className='text-sm font-semibold'>
+                        {supplierTab === 'orders'
+                          ? `${supplier.statValue} đơn`
+                          : formatCurrency(supplier.statValue, { style: 'currency' })}
+                      </div>
                     </div>
-                    <div className='text-sm font-medium tabular-nums'>
-                      {supplierTab === 'orders'
-                        ? `${supplier.statValue} đơn`
-                        : formatCurrency(supplier.statValue, { style: 'currency' })}
-                    </div>
+                    <ChevronRight className='h-4 w-4 shrink-0 text-muted-foreground' />
                   </div>
                 ))}
               </div>
