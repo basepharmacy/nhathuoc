@@ -9,6 +9,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { handleServerError } from '@/lib/handle-server-error'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { isNetworkError } from '@/services/offline/mutation-queue'
 import { createIdbPersister } from '@/services/offline/persister'
 import { AuthUserProvider } from './client/provider'
@@ -54,7 +55,7 @@ const queryClient = new QueryClient({
 
         if (error instanceof AxiosError) {
           if (error.response?.status === 304) {
-            toast.error('Content not modified!')
+            toast.error('Nội dung chưa được thay đổi.')
           }
         }
       },
@@ -67,21 +68,24 @@ const queryClient = new QueryClient({
 
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
-          toast.error('Session expired!')
+          toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
           const redirect = `${router?.history?.location?.href ?? '/'}`
           router?.navigate({ to: '/sign-in', search: { redirect } })
         }
         if (error.response?.status === 500) {
-          toast.error('Internal Server Error!')
+          toast.error('Máy chủ đang bận. Vui lòng thử lại sau.')
           // Only navigate to error page in production to avoid disrupting HMR in development
           if (import.meta.env.PROD) {
             router?.navigate({ to: '/500' })
           }
         }
         if (error.response?.status === 403) {
-          // router?.navigate("/forbidden", { replace: true });
+          toast.error('Bạn không có quyền thực hiện thao tác này.')
         }
+        return
       }
+
+      toast.error(mapSupabaseError(error))
     },
   }),
 })

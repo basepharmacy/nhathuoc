@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { purchaseOrdersRepo } from '@/client'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { type PurchaseOrderWithRelations } from '@/services/supabase'
 
 export function useDeletePurchaseOrder(tenantId: string) {
@@ -28,11 +29,7 @@ export function useDeletePurchaseOrder(tenantId: string) {
       toast.success('Đã xóa đơn nhập hàng.')
     },
     onError: (error) => {
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Đã xảy ra lỗi, vui lòng thử lại.'
-      toast.error(message)
+      toast.error(mapSupabaseError(error))
     },
   })
 

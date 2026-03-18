@@ -5,6 +5,7 @@ import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { Plus, Sparkles } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { supplierBankAccountsRepo, supplierPaymentsRepo } from '@/client'
@@ -252,11 +253,7 @@ export function SuppliersPaymentDialog({
       onOpenChange(false)
     },
     onError: (error) => {
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Đã xảy ra lỗi, vui lòng thử lại.'
-      toast.error(message)
+      toast.error(mapSupabaseError(error))
     },
   })
 

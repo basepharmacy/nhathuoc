@@ -6,6 +6,7 @@ import { Link, useNavigate } from '@tanstack/react-router'
 import { Loader2, LogIn } from 'lucide-react'
 import { toast } from 'sonner'
 import { supabaseAuth } from '@/services/supabase'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -20,27 +21,6 @@ import {
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/password-input'
 
-const mapAuthErrorToVietnamese = (error: unknown): string => {
-  const fallback = 'Đăng nhập thất bại. Vui lòng thử lại.'
-
-  if (!error || typeof error !== 'object') return fallback
-
-  const status = 'status' in error ? Number(error.status) : undefined
-
-  if (status === 429) {
-    return 'Bạn thao tác quá nhanh. Vui lòng thử lại sau.'
-  }
-
-  if (status === 401 || status === 400) {
-    return 'Email hoặc mật khẩu không đúng.'
-  }
-
-  if (status && status >= 500) {
-    return 'Máy chủ đang bận. Vui lòng thử lại sau.'
-  }
-
-  return fallback
-}
 
 const formSchema = z.object({
   login: z
@@ -111,7 +91,7 @@ export function UserAuthForm({
 
       toast.success(`Chào mừng bạn đăng nhập trở lại, ${email}!`)
     } catch (error) {
-      toast.error(mapAuthErrorToVietnamese(error))
+      toast.error(mapSupabaseError(error))
     } finally {
       setIsLoading(false)
     }

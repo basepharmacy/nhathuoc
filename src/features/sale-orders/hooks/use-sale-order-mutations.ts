@@ -5,6 +5,7 @@ import { saleOrdersRepo } from '@/client'
 import { type SaleOrder } from '@/services/supabase'
 import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
 import { useOnlineStatus } from '@/hooks/use-online-status'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { useSaleOrderStoreApi } from '../store/sale-order-context'
 import { selectTotal, selectIsEdit } from '../store/sale-order-selectors'
 
@@ -55,11 +56,7 @@ export function useSaleOrderMutations({
   }
 
   const handleMutationError = (error: unknown) => {
-    const message =
-      error && typeof error === 'object' && 'message' in error
-        ? String((error as { message: string }).message)
-        : 'Đã xảy ra lỗi, vui lòng thử lại.'
-    toast.error(message)
+    toast.error(mapSupabaseError(error))
   }
 
   const createMutation = useMutation({

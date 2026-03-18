@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { supabaseAuth } from '@/services/supabase'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 
 interface SignOutDialogProps {
@@ -29,11 +30,7 @@ export function SignOutDialog({ open, onOpenChange }: SignOutDialogProps) {
         replace: true,
       })
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : 'Không thể đăng xuất. Vui lòng thử lại.'
-      toast.error(message)
+      toast.error(mapSupabaseError(error))
     } finally {
       setIsLoading(false)
     }

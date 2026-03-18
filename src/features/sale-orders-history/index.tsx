@@ -10,6 +10,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { useUser } from '@/client/provider'
 import { saleOrdersRepo } from '@/client'
 import {
@@ -78,11 +79,7 @@ export function SaleOrdersHistory() {
       toast.success('Đã xóa đơn bán hàng.')
     },
     onError: (error) => {
-      const message =
-        error && typeof error === 'object' && 'message' in error
-          ? String((error as { message: string }).message)
-          : 'Đã xảy ra lỗi, vui lòng thử lại.'
-      toast.error(message)
+      toast.error(mapSupabaseError(error))
     },
   })
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { purchaseOrdersRepo } from '@/client'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type PurchaseOrder } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type OrderItem, type PaymentStatus, getDefaultUnit } from '../data/types'
@@ -148,11 +149,7 @@ export function usePurchaseOrder({
     paid <= 0 ? '1_UNPAID' : paid >= totals.total ? '3_PAID' : '2_PARTIALLY_PAID'
 
   const handleMutationError = (error: unknown) => {
-    const message =
-      error && typeof error === 'object' && 'message' in error
-        ? String((error as { message: string }).message)
-        : 'Đã xảy ra lỗi, vui lòng thử lại.'
-    toast.error(message)
+    toast.error(mapSupabaseError(error))
   }
 
   const createMutation = useMutation({

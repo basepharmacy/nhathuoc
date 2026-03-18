@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { stockAdjustmentsRepo } from '@/client'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
 import { type AdjustmentItem, getDefaultUnit } from '../data/types'
 
@@ -39,11 +40,7 @@ export function useStockAdjustment({
 
   // ── Mutation ────────────────────────────────────────────────
   const handleMutationError = (error: unknown) => {
-    const message =
-      error && typeof error === 'object' && 'message' in error
-        ? String((error as { message: string }).message)
-        : 'Đã xảy ra lỗi, vui lòng thử lại.'
-    toast.error(message)
+    toast.error(mapSupabaseError(error))
   }
 
   const createMutation = useMutation({
