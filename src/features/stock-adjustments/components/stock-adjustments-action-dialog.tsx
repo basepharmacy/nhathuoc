@@ -112,7 +112,6 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
         tenant_id: tenantId,
         product_id: batch.productId,
         location_id: batch.locationId,
-        batch_id: batch.batchId,
         batch_code: batch.batchCode,
         quantity: values.quantity,
         cost_price: values.costPrice,

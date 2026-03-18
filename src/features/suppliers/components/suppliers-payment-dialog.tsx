@@ -233,7 +233,6 @@ export function SuppliersPaymentDialog({
         payment_date: values.payment_date,
         reference_code: normalizeOptionalText(values.reference_code),
         note: normalizeOptionalText(values.note),
-        is_payment_on_purchase_order: false,
       })
     },
     onSuccess: () => {

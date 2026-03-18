@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-export const productTypeValues = ['1_OTC', '2_PRESCRIPTION_REQUIRED'] as const
+export const productTypeValues = ['1_OTC', '2_PRESCRIPTION_REQUIRED', '9_OTHERS'] as const
 export const productStatusValues = [
   '1_DRAFT',
   '2_ACTIVE',
@@ -11,6 +11,7 @@ export const productStatusValues = [
 export const productTypeLabels: Record<(typeof productTypeValues)[number], string> = {
   '1_OTC': 'Bán tại quầy',
   '2_PRESCRIPTION_REQUIRED': 'Cần đơn',
+  '9_OTHERS': 'Khác'
 }
 
 export const productStatusLabels: Record<(typeof productStatusValues)[number], string> = {
