@@ -234,7 +234,7 @@ export async function migrateProducts(
           product_id: productId,
           batch_code: batchCode,
           expiry_date: parseKiotVietDate(expiryDateStr),
-          quantity,
+          quantity: Math.round(quantity),
           cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
           location_id: locationId,
           reason_code: '1_FIRST_STOCK',
