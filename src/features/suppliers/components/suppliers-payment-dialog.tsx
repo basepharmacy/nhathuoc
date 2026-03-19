@@ -35,6 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { BankCombobox, bankByBin } from '@/components/bank-combobox'
+import { SearchSelect } from '@/components/search-select'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { DatePicker } from '@/components/date-picker'
@@ -152,12 +153,14 @@ function AddBankAccountInline({
 
 type SuppliersPaymentDialogProps = {
   currentRow?: Supplier
+  suppliers?: Supplier[]
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
 export function SuppliersPaymentDialog({
-  currentRow,
+  currentRow: currentRowProp,
+  suppliers,
   open,
   onOpenChange,
 }: SuppliersPaymentDialogProps) {
@@ -167,6 +170,10 @@ export function SuppliersPaymentDialog({
   const isOpenRef = useRef(open)
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [showAddBank, setShowAddBank] = useState(false)
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string>('')
+
+  const showSupplierSelect = !currentRowProp && !!suppliers?.length
+  const currentRow = currentRowProp ?? suppliers?.find((s) => s.id === selectedSupplierId)
 
   const { data: bankAccounts = [] } = useQuery({
     ...getSupplierBankAccountsQueryOptions(currentRow?.id ?? ''),
@@ -186,6 +193,7 @@ export function SuppliersPaymentDialog({
     if (open) {
       setSelectedAccountId(null)
       setShowAddBank(false)
+      setSelectedSupplierId('')
     }
   }, [open])
 
@@ -244,6 +252,7 @@ export function SuppliersPaymentDialog({
         queryKey: ['supplier-payments', tenantId, currentRow.id, 'history'],
       })
       queryClient.invalidateQueries({ queryKey: ['suppliers'] })
+      queryClient.invalidateQueries({ queryKey: ['all-supplier-payments-history'] })
       if (!isOpenRef.current) return
       form.reset({
         ...defaultValues,
@@ -304,6 +313,19 @@ export function SuppliersPaymentDialog({
               onSubmit={form.handleSubmit(onSubmit)}
               className='space-y-4'
             >
+              {showSupplierSelect && (
+                <div className='grid grid-cols-6 items-center gap-x-4 gap-y-1'>
+                  <label className='col-span-2 text-sm font-medium'>Nhà cung cấp</label>
+                  <SearchSelect
+                    options={suppliers.map((s) => ({ value: s.id, label: s.name }))}
+                    value={selectedSupplierId}
+                    onValueChange={setSelectedSupplierId}
+                    placeholder='Chọn nhà cung cấp'
+                    searchPlaceholder='Tìm nhà cung cấp...'
+                    className='col-span-4'
+                  />
+                </div>
+              )}
               <FormField
                 control={form.control}
                 name='amount'
@@ -406,7 +428,7 @@ export function SuppliersPaymentDialog({
                   </FormItem>
                 )}
               />
-              {!showRightPanel && (
+              {!showRightPanel && currentRow && (
                 <div className='pt-2'>
                   <Button
                     type='button'

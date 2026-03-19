@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
+import { Wallet } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import {
@@ -10,8 +11,10 @@ import {
 } from '@/client/queries'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
+import { Button } from '@/components/ui/button'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { SuppliersPaymentDialog } from '@/features/suppliers/components/suppliers-payment-dialog'
 import { SupplierPaymentInvoice } from './components/supplier-payment-invoice'
 import { getSupplierPaymentsHistoryColumns } from './components/supplier-payments-history-columns'
 import { SupplierPaymentsHistoryTable } from './components/supplier-payments-history-table'
@@ -41,6 +44,8 @@ export function SupplierPaymentsHistory() {
 
   // Actions
   const { deleteState, handleDelete } = useDeleteSupplierPayment(tenantId)
+
+  const [paymentOpen, setPaymentOpen] = useState(false)
 
   const [printTarget, setPrintTarget] = useState<SupplierPaymentWithSupplier | null>(null)
   const [printOpen, setPrintOpen] = useState(false)
@@ -91,11 +96,14 @@ export function SupplierPaymentsHistory() {
       <Header fixed>
         <div className='flex w-full items-center justify-between gap-4'>
           <div className='flex flex-wrap items-center gap-3'>
-            <h2 className='text-2xl font-bold tracking-tight'>Lịch sử thanh toán NCC</h2>
+            <h2 className='text-2xl font-bold tracking-tight'>Lịch sử thanh toán</h2>
             <p className='text-sm text-muted-foreground'>
               Quản lý lịch sử thanh toán nhà cung cấp tại đây.
             </p>
           </div>
+          <Button className='space-x-1' onClick={() => setPaymentOpen(true)}>
+            <span>Thanh toán</span> <Wallet size={18} />
+          </Button>
         </div>
       </Header>
 
@@ -123,6 +131,12 @@ export function SupplierPaymentsHistory() {
           } : null}
         />
       </Main>
+
+      <SuppliersPaymentDialog
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+        suppliers={suppliers}
+      />
 
       {printTarget && (
         <PrintPreviewDialog
