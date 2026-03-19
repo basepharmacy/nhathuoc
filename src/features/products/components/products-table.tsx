@@ -7,6 +7,7 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
+  getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
@@ -19,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
+import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
 import { type ProductWithUnits, Category } from '@/services/supabase'
 import { getProductsColumns } from './products-columns'
 
@@ -95,6 +96,7 @@ export function ProductsTable({ data, categories, isLoading }: ProductsTableProp
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getSortedRowModel: getSortedRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
   })
 
   return (
@@ -176,6 +178,7 @@ export function ProductsTable({ data, categories, isLoading }: ProductsTableProp
           </TableBody>
         </Table>
       </div>
+      <DataTablePagination table={table} />
     </div>
   )
 }
