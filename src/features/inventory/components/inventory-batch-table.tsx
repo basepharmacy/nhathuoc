@@ -83,6 +83,13 @@ function createColumns(
       enableHiding: true,
     },
     {
+      id: 'expiry_status',
+      accessorFn: () => '',
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+    },
+    {
       accessorKey: 'batch_code',
       header: 'Lô',
     },

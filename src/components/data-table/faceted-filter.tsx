@@ -23,6 +23,7 @@ import { Separator } from '@/components/ui/separator'
 type DataTableFacetedFilterProps<TData, TValue> = {
   column?: Column<TData, TValue>
   title?: string
+  singleSelect?: boolean
   options: {
     label: string
     value: string
@@ -33,6 +34,7 @@ type DataTableFacetedFilterProps<TData, TValue> = {
 export function DataTableFacetedFilter<TData, TValue>({
   column,
   title,
+  singleSelect = false,
   options,
 }: DataTableFacetedFilterProps<TData, TValue>) {
   const facets = column?.getFacetedUniqueValues()
@@ -91,20 +93,28 @@ export function DataTableFacetedFilter<TData, TValue>({
                   <CommandItem
                     key={option.value}
                     onSelect={() => {
-                      if (isSelected) {
-                        selectedValues.delete(option.value)
+                      if (singleSelect) {
+                        // Radio behavior: toggle off if already selected, otherwise select only this one
+                        column?.setFilterValue(
+                          isSelected ? undefined : [option.value]
+                        )
                       } else {
-                        selectedValues.add(option.value)
+                        if (isSelected) {
+                          selectedValues.delete(option.value)
+                        } else {
+                          selectedValues.add(option.value)
+                        }
+                        const filterValues = Array.from(selectedValues)
+                        column?.setFilterValue(
+                          filterValues.length ? filterValues : undefined
+                        )
                       }
-                      const filterValues = Array.from(selectedValues)
-                      column?.setFilterValue(
-                        filterValues.length ? filterValues : undefined
-                      )
                     }}
                   >
                     <div
                       className={cn(
-                        'flex size-4 items-center justify-center rounded-sm border border-primary',
+                        'flex size-4 items-center justify-center border border-primary',
+                        singleSelect ? 'rounded-full' : 'rounded-sm',
                         isSelected
                           ? 'bg-primary text-primary-foreground'
                           : 'opacity-50 [&_svg]:invisible'

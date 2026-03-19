@@ -13,6 +13,7 @@ import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/
 export type FilterOption = {
   columnId: string
   title: string
+  singleSelect?: boolean
   options: { label: string; value: string }[]
 }
 

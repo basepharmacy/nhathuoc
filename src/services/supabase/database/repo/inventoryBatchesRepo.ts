@@ -18,6 +18,7 @@ export type InventoryBatchWithRelations = InventoryBatch & {
 }
 
 export type InventoryBatchStockStatus = 'in_stock' | 'out_of_stock'
+export type InventoryBatchExpiryStatus = 'expired' | '7_days' | '1_month' | '3_months'
 
 export type InventoryBatchesListQueryInput = {
   tenantId: string
@@ -26,6 +27,7 @@ export type InventoryBatchesListQueryInput = {
   search?: string
   locationIds?: string[]
   stockStatus?: InventoryBatchStockStatus
+  expiryStatus?: InventoryBatchExpiryStatus
 }
 
 export type InventoryBatchesListQueryResult = {
@@ -52,6 +54,8 @@ export type InventoryProductsListQueryInput = {
   pageSize: number
   search?: string
   locationIds?: string[]
+  stockStatus?: InventoryBatchStockStatus
+  expiryStatus?: InventoryBatchExpiryStatus
 }
 
 export type InventoryProductsListItem = {
@@ -133,6 +137,23 @@ export const createInventoryBatchRepository = (
         query = query.eq('quantity', 0)
       }
 
+      if (params.expiryStatus) {
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        if (params.expiryStatus === 'expired') {
+          query = query.not('expiry_date', 'is', null).lt('expiry_date', todayStr)
+        } else {
+          let daysAhead: number
+          if (params.expiryStatus === '7_days') daysAhead = 7
+          else if (params.expiryStatus === '1_month') daysAhead = 30
+          else daysAhead = 90
+          const futureDate = new Date(today)
+          futureDate.setDate(futureDate.getDate() + daysAhead)
+          const futureDateStr = futureDate.toISOString().split('T')[0]
+          query = query.not('expiry_date', 'is', null).gte('expiry_date', todayStr).lte('expiry_date', futureDateStr)
+        }
+      }
+
       const { data, error, count } = await query
         .order('batch_code', { ascending: true })
         .range(start, end)
@@ -163,7 +184,12 @@ export const createInventoryBatchRepository = (
           { count: 'exact' }
         )
         .eq('tenant_id', params.tenantId)
-        .gt('inventory_batches.quantity', 0)
+
+      if (params.stockStatus === 'out_of_stock') {
+        query = query.eq('inventory_batches.quantity', 0)
+      } else {
+        query = query.gt('inventory_batches.quantity', 0)
+      }
 
       if (params.locationIds?.length) {
         query = query.in('inventory_batches.location_id', params.locationIds)
@@ -171,6 +197,23 @@ export const createInventoryBatchRepository = (
 
       if (searchValue) {
         query = query.ilike('product_name', `%${searchValue}%`)
+      }
+
+      if (params.expiryStatus) {
+        const today = new Date()
+        const todayStr = today.toISOString().split('T')[0]
+        if (params.expiryStatus === 'expired') {
+          query = query.not('inventory_batches.expiry_date', 'is', null).lt('inventory_batches.expiry_date', todayStr)
+        } else {
+          let daysAhead: number
+          if (params.expiryStatus === '7_days') daysAhead = 7
+          else if (params.expiryStatus === '1_month') daysAhead = 30
+          else daysAhead = 90
+          const futureDate = new Date(today)
+          futureDate.setDate(futureDate.getDate() + daysAhead)
+          const futureDateStr = futureDate.toISOString().split('T')[0]
+          query = query.not('inventory_batches.expiry_date', 'is', null).gte('inventory_batches.expiry_date', todayStr).lte('inventory_batches.expiry_date', futureDateStr)
+        }
       }
 
       const { data, error, count } = await query

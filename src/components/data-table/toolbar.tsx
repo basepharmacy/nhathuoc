@@ -16,6 +16,7 @@ type DataTableToolbarProps<TData> = {
   filters?: {
     columnId: string
     title: string
+    singleSelect?: boolean
     options: {
       label: string
       value: string
@@ -90,6 +91,7 @@ export function DataTableToolbar<TData>({
                 key={filter.columnId}
                 column={column}
                 title={filter.title}
+                singleSelect={filter.singleSelect}
                 options={filter.options}
               />
             )

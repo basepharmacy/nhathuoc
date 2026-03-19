@@ -3,7 +3,7 @@ import {
   type ColumnFiltersState,
   type PaginationState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput, type InventoryBatchStockStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchesListQueryInput, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 type Location = { id: string; name: string }
 
@@ -51,6 +51,16 @@ export function useInventoryTable({
     return undefined
   }, [columnFilters])
 
+  const expiryStatus = useMemo(() => {
+    const expiryFilter = columnFilters.find(
+      (filter) => filter.id === 'expiry_status'
+    )
+    if (Array.isArray(expiryFilter?.value) && expiryFilter.value.length === 1) {
+      return expiryFilter.value[0] as InventoryBatchExpiryStatus
+    }
+    return undefined
+  }, [columnFilters])
+
   const listQueryParams: InventoryBatchesListQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
@@ -58,7 +68,8 @@ export function useInventoryTable({
     search: searchValue,
     locationIds,
     stockStatus,
-  }), [tenantId, pagination, searchValue, locationIds, stockStatus])
+    expiryStatus,
+  }), [tenantId, pagination, searchValue, locationIds, stockStatus, expiryStatus])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -106,6 +117,13 @@ export function useInventoryTable({
     { label: 'Hết tồn kho', value: 'out_of_stock' },
   ]
 
+  const expiryStatusOptions = [
+    { label: 'Đã hết hạn', value: 'expired' },
+    { label: 'Còn 7 ngày', value: '7_days' },
+    { label: 'Còn 1 tháng', value: '1_month' },
+    { label: 'Còn 3 tháng', value: '3_months' },
+  ]
+
   const filters = useMemo(
     () => [
       {
@@ -116,7 +134,14 @@ export function useInventoryTable({
       {
         columnId: 'stock_status',
         title: 'Trạng thái tồn kho',
+        singleSelect: true,
         options: stockStatusOptions,
+      },
+      {
+        columnId: 'expiry_status',
+        title: 'Hạn sử dụng',
+        singleSelect: true,
+        options: expiryStatusOptions,
       },
     ],
     [locationOptions]

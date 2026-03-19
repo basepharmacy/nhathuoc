@@ -68,6 +68,20 @@ function createColumns(
       enableHiding: true,
     },
     {
+      id: 'stock_status',
+      accessorFn: () => '',
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+    },
+    {
+      id: 'expiry_status',
+      accessorFn: () => '',
+      header: () => null,
+      cell: () => null,
+      enableHiding: true,
+    },
+    {
       accessorKey: 'productName',
       header: 'Sản phẩm',
       cell: ({ row }) => (

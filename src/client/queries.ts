@@ -467,6 +467,7 @@ export const getInventoryBatchesListQueryOptions = (
         search: params.search ?? '',
         locationIds: params.locationIds ?? [],
         stockStatus: params.stockStatus ?? '',
+        expiryStatus: params.expiryStatus ?? '',
       },
     ],
     queryFn: async () => {
@@ -488,6 +489,8 @@ export const getInventoryProductsListQueryOptions = (
         pageSize: params.pageSize,
         search: params.search ?? '',
         locationIds: params.locationIds ?? [],
+        stockStatus: params.stockStatus ?? '',
+        expiryStatus: params.expiryStatus ?? '',
       },
     ],
     queryFn: async () => {
