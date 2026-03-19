@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type OnChangeFn,
@@ -8,8 +8,13 @@ import {
   useReactTable,
   flexRender,
 } from '@tanstack/react-table'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { Cross2Icon } from '@radix-ui/react-icons'
+import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
+import { stockAdjustmentsRepo } from '@/client'
+import { useUser } from '@/client/provider'
+import { mapSupabaseError } from '@/lib/error-mapper'
 import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import {
   Table,
@@ -24,7 +29,7 @@ import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/date-picker'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { DataTablePagination, DataTableSkeletonRows, DataTableFacetedFilter } from '@/components/data-table'
-import { stockAdjustmentsColumns } from './stock-adjustments-columns'
+import { createStockAdjustmentsColumns } from './stock-adjustments-columns'
 
 type FilterOption = {
   columnId: string
@@ -64,9 +69,40 @@ export function StockAdjustmentsTable({
   onFromDateChange,
   onToDateChange,
 }: Props) {
+  const { user } = useUser()
+  const tenantId = user?.profile?.tenant_id ?? ''
+  const queryClient = useQueryClient()
+
+  const cancelMutation = useMutation({
+    mutationFn: async (row: StockAdjustmentWithRelations) => {
+      await stockAdjustmentsRepo.deleteStockAdjustment(row.id)
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
+      queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId] })
+      queryClient.invalidateQueries({
+        queryKey: ['dashboard-report', 'low-stock-products'],
+      })
+      toast.success('Đã huỷ đơn điều chỉnh thành công.')
+    },
+    onError: (error) => {
+      toast.error(mapSupabaseError(error))
+    },
+  })
+
+  const handleCancel = useCallback(
+    (row: StockAdjustmentWithRelations) => cancelMutation.mutate(row),
+    [cancelMutation]
+  )
+
+  const columns = useMemo(
+    () => createStockAdjustmentsColumns(handleCancel),
+    [handleCancel]
+  )
+
   const table = useReactTable({
     data,
-    columns: stockAdjustmentsColumns,
+    columns,
     state: {
       pagination: tableState.pagination,
       columnFilters: tableState.columnFilters,

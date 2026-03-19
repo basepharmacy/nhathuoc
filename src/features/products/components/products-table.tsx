@@ -178,7 +178,7 @@ export function ProductsTable({ data, categories, isLoading }: ProductsTableProp
           </TableBody>
         </Table>
       </div>
-      <DataTablePagination table={table} />
+      <DataTablePagination table={table} totalRows={data.length} totalLabel='sản phẩm' />
     </div>
   )
 }

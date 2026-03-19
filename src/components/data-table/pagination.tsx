@@ -18,16 +18,21 @@ import {
 type DataTablePaginationProps<TData> = {
   table: Table<TData>
   className?: string
+  totalRows?: number
+  totalLabel?: string
 }
 
 export function DataTablePagination<TData>({
   table,
   className,
+  totalRows,
+  totalLabel = 'mục',
 }: DataTablePaginationProps<TData>) {
   const currentPage = table.getState().pagination.pageIndex + 1
   const totalPages = table.getPageCount()
   const pageNumbers = getPageNumbers(currentPage, totalPages)
-
+  totalRows = 10
+  totalLabel = 'sản phẩm'
   return (
     <div
       className={cn(
@@ -39,7 +44,7 @@ export function DataTablePagination<TData>({
     >
       <div className='flex w-full items-center justify-between'>
         <div className='flex w-[100px] items-center justify-center text-sm font-medium @2xl/content:hidden'>
-          Trang {currentPage} / {totalPages}
+          Trang {currentPage} / {totalPages} ({totalRows ?? table.getPrePaginationRowModel().rows.length} {totalLabel})
         </div>
         <div className='flex items-center gap-2 @max-2xl/content:flex-row-reverse'>
           <Select
