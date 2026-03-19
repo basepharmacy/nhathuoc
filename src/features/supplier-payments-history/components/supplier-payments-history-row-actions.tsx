@@ -9,7 +9,7 @@ import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/r
 type SupplierPaymentsHistoryRowActionsProps = {
   row: Row<SupplierPaymentWithSupplier>
   onPrint?: (payment: SupplierPaymentWithSupplier) => void
-  onDelete: (payment: SupplierPaymentWithSupplier) => void
+  onDelete?: (payment: SupplierPaymentWithSupplier) => void
 }
 
 export function SupplierPaymentsHistoryRowActions({
@@ -23,13 +23,15 @@ export function SupplierPaymentsHistoryRowActions({
       icon: Printer,
       onClick: () => onPrint(row.original),
     }] : []),
-    {
+    ...(onDelete ? [{
       label: 'Xóa',
       icon: Trash2,
       destructive: true,
       onClick: () => onDelete(row.original),
-    },
+    }] : []),
   ]
+
+  if (actions.length === 0) return null
 
   return <RowActions actions={actions} />
 }

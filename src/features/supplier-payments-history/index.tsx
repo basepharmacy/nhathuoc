@@ -14,6 +14,7 @@ import { Main } from '@/components/layout/main'
 import { Button } from '@/components/ui/button'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { usePermissions } from '@/hooks/use-permissions'
 import { SuppliersPaymentDialog } from '@/features/suppliers/components/suppliers-payment-dialog'
 import { SupplierPaymentInvoice } from './components/supplier-payment-invoice'
 import { getSupplierPaymentsHistoryColumns } from './components/supplier-payments-history-columns'
@@ -25,6 +26,7 @@ export function SupplierPaymentsHistory() {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const { selectedLocationId } = useLocationContext()
+  const { canEdit } = usePermissions()
 
   // Data queries
   const { data: suppliers = [], isError: isSuppliersError } = useQuery({
@@ -55,9 +57,10 @@ export function SupplierPaymentsHistory() {
     setPrintOpen(true)
   }, [])
 
+  const allowEdit = canEdit('supplier_payments')
   const columns = useMemo(
-    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: handleDelete }),
-    [handlePrint, handleDelete]
+    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: allowEdit ? handleDelete : undefined }),
+    [handlePrint, handleDelete, allowEdit]
   )
 
   // Table state + filters
@@ -101,9 +104,11 @@ export function SupplierPaymentsHistory() {
               Quản lý lịch sử thanh toán nhà cung cấp tại đây.
             </p>
           </div>
-          <Button className='space-x-1' onClick={() => setPaymentOpen(true)}>
-            <span>Thanh toán</span> <Wallet size={18} />
-          </Button>
+          {canEdit('supplier_payments') && (
+            <Button className='space-x-1' onClick={() => setPaymentOpen(true)}>
+              <span>Thanh toán</span> <Wallet size={18} />
+            </Button>
+          )}
         </div>
       </Header>
 
@@ -117,7 +122,7 @@ export function SupplierPaymentsHistory() {
           toDate={toDate}
           onFromDateChange={setFromDate}
           onToDateChange={setToDate}
-          deleteState={deleteState ? {
+          deleteState={canEdit('supplier_payments') ? (deleteState ? {
             ...deleteState,
             desc: (
               <>
@@ -128,7 +133,7 @@ export function SupplierPaymentsHistory() {
                 ?
               </>
             ),
-          } : null}
+          } : null) : null}
         />
       </Main>
 

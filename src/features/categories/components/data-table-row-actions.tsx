@@ -16,7 +16,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useCategories()
   const { canEdit } = usePermissions()
 
-  if (!canEdit('products')) return null
+  if (!canEdit('categories')) return null
   const actions: RowAction[] = [
     {
       label: 'Chỉnh sửa',

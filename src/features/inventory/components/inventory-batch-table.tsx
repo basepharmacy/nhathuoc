@@ -186,7 +186,7 @@ export function InventoryBatchTable({
   }
 
   const { canEdit } = usePermissions()
-  const allowAdjust = canEdit('products')
+  const allowAdjust = canEdit('stock_adjustments')
   const columns = useMemo(() => createColumns(handleAdjust, allowAdjust), [allowAdjust])
 
   // eslint-disable-next-line react-hooks/incompatible-library

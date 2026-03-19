@@ -39,7 +39,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
     <RowActions
       actions={actions}
       wrapper={(children) => (
-        <Can feature='settings' action='edit'>
+        <Can feature='locations' action='edit'>
           {children}
         </Can>
       )}

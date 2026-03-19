@@ -6,7 +6,7 @@ import { useLocations } from './locations-provider'
 export function LocationsPrimaryButtons() {
   const { setOpen } = useLocations()
   return (
-    <Can feature='settings' action='edit'>
+    <Can feature='locations' action='edit'>
       <Button className='space-x-1' onClick={() => setOpen('add')}>
         <span>Thêm cửa hàng</span> <MapPinPlus size={18} />
       </Button>

@@ -35,19 +35,19 @@ const staticNavGroups: NavGroup[] = [
         title: 'Bán hàng',
         url: '/sale-orders',
         icon: ShoppingCart,
-        feature: 'sales',
+        feature: 'sale_orders',
       },
       {
         title: 'Tồn kho',
         url: '/inventory',
         icon: Warehouse,
-        feature: 'products',
+        feature: 'inventory',
       },
       {
         title: 'Nhập hàng',
         url: '/purchase-orders',
         icon: ClipboardList,
-        feature: 'purchase',
+        feature: 'purchase_orders',
       },
     ],
   },
@@ -57,22 +57,25 @@ const staticNavGroups: NavGroup[] = [
       {
         title: 'Bán hàng',
         icon: Truck,
-        feature: 'sales',
+        feature: 'sale_orders',
         items: [
           {
             title: 'Đơn bán hàng',
             url: '/sale-orders',
             icon: ShoppingCart,
+            feature: 'sale_orders',
           },
           {
             title: 'Khách hàng',
             url: '/customers',
             icon: Users,
+            feature: 'customers',
           },
           {
             title: 'Lịch sử bán hàng',
             url: '/sale-orders/history',
             icon: ClipboardList,
+            feature: 'sale_orders_history',
           },
         ],
       },
@@ -85,49 +88,57 @@ const staticNavGroups: NavGroup[] = [
             title: 'Quản lý danh mục',
             url: '/categories',
             icon: Folder,
+            feature: 'categories',
           },
           {
             title: 'Quản lý sản phẩm',
             url: '/products',
             icon: Box,
+            feature: 'products',
           },
           {
             title: 'Quản lý tồn kho',
             url: '/inventory',
             icon: Warehouse,
+            feature: 'inventory',
           },
           {
             title: 'Điều chỉnh tồn kho',
             url: '/inventory/adjustments',
             icon: Warehouse,
+            feature: 'stock_adjustments',
           },
         ],
       },
       {
         title: 'Nhập hàng',
         icon: Truck,
-        feature: 'purchase',
+        feature: 'purchase_orders',
         items: [
           {
             title: 'Nhập hàng',
             url: '/purchase-orders',
             icon: ClipboardList,
+            feature: 'purchase_orders',
           },
           {
             title: 'Nhà cung cấp',
             url: '/suppliers',
             icon: Building2,
+            feature: 'suppliers',
           },
           {
             title: 'Lịch sử nhập hàng',
             url: '/purchase-orders/history',
             icon: ClipboardList,
+            feature: 'purchase_orders_history',
           },
           {
             title: 'Thanh toán',
             url: '/supplier-payments/history',
             icon: CreditCard,
-          }
+            feature: 'supplier_payments',
+          },
         ],
       },
     ],
@@ -139,25 +150,25 @@ const staticNavGroups: NavGroup[] = [
         title: 'Quản lý cửa hàng',
         url: '/locations',
         icon: MapPin,
-        feature: 'settings',
+        feature: 'locations',
       },
       {
         title: 'Quản lý nhân viên',
         url: '/staffs',
         icon: Users,
-        feature: 'settings',
+        feature: 'staffs',
       },
       {
         title: 'Tài khoản thanh toán',
         url: '/bank-accounts',
         icon: BarChart3,
-        feature: 'settings',
+        feature: 'bank_accounts',
       },
       {
         title: 'Chuyển đổi dữ liệu',
         url: '/data-migration',
         icon: Database,
-        feature: 'settings',
+        feature: 'data_migration',
       },
     ],
   },
@@ -167,11 +178,25 @@ function filterNavByRole(navGroups: NavGroup[], role: StaffRole): NavGroup[] {
   return navGroups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => {
-        const feature = item.feature as Feature | undefined
-        if (!feature) return true
-        return canView(role, feature)
-      }),
+      items: group.items
+        .map((item) => {
+          const feature = item.feature as Feature | undefined
+          if (feature && !canView(role, feature)) return null
+
+          // Filter sub-items by their own feature
+          if (item.items) {
+            const filteredSubItems = item.items.filter((sub) => {
+              const subFeature = (sub as { feature?: Feature }).feature
+              if (!subFeature) return true
+              return canView(role, subFeature)
+            })
+            if (filteredSubItems.length === 0) return null
+            return { ...item, items: filteredSubItems }
+          }
+
+          return item
+        })
+        .filter(Boolean) as NavGroup['items'],
     }))
     .filter((group) => group.items.length > 0)
 }

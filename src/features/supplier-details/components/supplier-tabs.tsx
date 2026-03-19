@@ -22,6 +22,7 @@ import {
   getPurchaseOrdersHistoryQueryOptions,
   getSupplierPaymentsHistoryQueryOptions,
 } from '@/client/queries'
+import { usePermissions } from '@/hooks/use-permissions'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { PurchaseOrdersHistoryTable } from '@/features/purchase-orders-history/components/purchase-orders-history-table'
 import { getPurchaseOrdersHistoryColumns } from '@/features/purchase-orders-history/components/purchase-orders-history-columns'
@@ -42,6 +43,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const navigate = useNavigate()
+  const { canView, canEdit } = usePermissions()
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -117,9 +119,10 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
     }))
   }, [paymentFilters, paymentSorting])
 
+  const allowEditPayments = canEdit('supplier_payments')
   const supplierPaymentsColumns = useMemo(
-    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: handleDelete, hideSupplier: true }),
-    [handlePrint, handleDelete]
+    () => getSupplierPaymentsHistoryColumns({ onPrint: handlePrint, onDelete: allowEditPayments ? handleDelete : undefined, hideSupplier: true }),
+    [handlePrint, handleDelete, allowEditPayments]
   )
 
   // eslint-disable-next-line react-hooks/incompatible-library
@@ -269,25 +272,30 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
 
   return (
     <>
-    <Tabs defaultValue='payments' className='gap-4'>
+    <Tabs defaultValue={canView('supplier_payments') ? 'payments' : 'orders'} className='gap-4'>
       <div className='flex flex-wrap items-center justify-between gap-2'>
         <TabsList>
-          <TabsTrigger value='payments'>Thanh toán</TabsTrigger>
+          {canView('supplier_payments') && (
+            <TabsTrigger value='payments'>Thanh toán</TabsTrigger>
+          )}
           <TabsTrigger value='orders'>Lịch sử đặt hàng</TabsTrigger>
         </TabsList>
-        <Button
-          size='sm'
-          disabled={!supplier}
-          onClick={() => {
-            if (!supplier) return
-            setCurrentRow(supplier)
-            setOpen('payment')
-          }}
-        >
-          Thanh toán
-        </Button>
+        {canEdit('supplier_payments') && (
+          <Button
+            size='sm'
+            disabled={!supplier}
+            onClick={() => {
+              if (!supplier) return
+              setCurrentRow(supplier)
+              setOpen('payment')
+            }}
+          >
+            Thanh toán
+          </Button>
+        )}
       </div>
 
+      {canView('supplier_payments') && (
       <TabsContent value='payments'>
         <Card className='py-4'>
           <CardContent className='px-4'>
@@ -300,7 +308,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
               toDate={paymentToDate}
               onFromDateChange={setPaymentFromDate}
               onToDateChange={setPaymentToDate}
-              deleteState={deleteState ? {
+              deleteState={canEdit('supplier_payments') ? (deleteState ? {
                 ...deleteState,
                 title: 'Xóa thanh toán',
                 desc: (
@@ -316,11 +324,12 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
                     Các đơn hàng liên quan sẽ được cập nhật lại trạng thái thanh toán.
                   </>
                 ),
-              } : null}
+              } : null) : null}
             />
           </CardContent>
         </Card>
       </TabsContent>
+      )}
 
       <TabsContent value='orders'>
         <Card className='py-4'>

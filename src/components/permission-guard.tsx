@@ -15,7 +15,7 @@ type CanProps = {
  * Edit actions are also blocked when the selected location is inactive (2_INACTIVE).
  *
  * @example
- * <Can feature="settings" action="edit">
+ * <Can feature="staffs" action="edit">
  *   <Button>Thêm nhân viên</Button>
  * </Can>
  */

@@ -5,6 +5,7 @@ import {
   DataTableRowActions as RowActions,
   type RowAction,
 } from '@/components/data-table-row-actions'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type Supplier } from '../data/schema'
 import { useSuppliers } from './suppliers-provider'
 
@@ -15,6 +16,7 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useSuppliers()
   const navigate = useNavigate()
+  const { canEdit, canView } = usePermissions()
 
   const actions: RowAction[] = [
     {
@@ -26,31 +28,33 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
           params: { supplierId: row.original.id },
         }),
     },
-    {
+    ...(canView('supplier_payments') ? [{
       label: 'Thanh toán',
       icon: Wallet,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('payment')
       },
-    },
-    {
-      label: 'Chỉnh sửa',
-      icon: Pencil,
-      onClick: () => {
-        setCurrentRow(row.original)
-        setOpen('edit')
+    }] : []),
+    ...(canEdit('suppliers') ? [
+      {
+        label: 'Chỉnh sửa',
+        icon: Pencil,
+        onClick: () => {
+          setCurrentRow(row.original)
+          setOpen('edit')
+        },
       },
-    },
-    {
-      label: 'Xóa',
-      icon: Trash2,
-      destructive: true,
-      onClick: () => {
-        setCurrentRow(row.original)
-        setOpen('delete')
+      {
+        label: 'Xóa',
+        icon: Trash2,
+        destructive: true,
+        onClick: () => {
+          setCurrentRow(row.original)
+          setOpen('delete')
+        },
       },
-    },
+    ] : []),
   ]
 
   return <RowActions actions={actions} />

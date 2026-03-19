@@ -4,6 +4,7 @@ import { suppliersRepo } from '@/client'
 import { useUser } from '@/client/provider'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { Button } from '@/components/ui/button'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type Supplier } from '@/features/suppliers/data/schema'
 import { useSuppliers } from '@/features/suppliers/components/suppliers-provider'
 
@@ -14,6 +15,7 @@ type SupplierActionsProps = {
 
 export function SupplierActions({ isActive, supplier }: SupplierActionsProps) {
   const { setOpen, setCurrentRow } = useSuppliers()
+  const { canEdit, canView } = usePermissions()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const queryClient = useQueryClient()
@@ -52,46 +54,52 @@ export function SupplierActions({ isActive, supplier }: SupplierActionsProps) {
   return (
     <>
       <div className='flex flex-wrap items-center gap-2'>
-        <Button
-          variant='outline'
-          disabled={!supplier}
-          onClick={() => {
-            if (!supplier) return
-            setCurrentRow(supplier)
-            setOpen('payment')
-          }}
-        >
-          Thanh toán
-        </Button>
-        <Button
-          variant='outline'
-          className='border-destructive/40 text-destructive hover:bg-destructive/10'
-          disabled={!supplier || updateStatusMutation.isPending}
-          onClick={handleToggleStatus}
-        >
-          {isActive === false ? 'Mở giao dịch' : 'Ngừng giao dịch'}
-        </Button>
-        <Button
-          variant='destructive'
-          disabled={!supplier}
-          onClick={() => {
-            if (!supplier) return
-            setCurrentRow(supplier)
-            setOpen('delete')
-          }}
-        >
-          Xoá
-        </Button>
-        <Button
-          disabled={!supplier}
-          onClick={() => {
-            if (!supplier) return
-            setCurrentRow(supplier)
-            setOpen('edit')
-          }}
-        >
-          Chỉnh sửa
-        </Button>
+        {canView('supplier_payments') && (
+          <Button
+            variant='outline'
+            disabled={!supplier}
+            onClick={() => {
+              if (!supplier) return
+              setCurrentRow(supplier)
+              setOpen('payment')
+            }}
+          >
+            Thanh toán
+          </Button>
+        )}
+        {canEdit('suppliers') && (
+          <>
+            <Button
+              variant='outline'
+              className='border-destructive/40 text-destructive hover:bg-destructive/10'
+              disabled={!supplier || updateStatusMutation.isPending}
+              onClick={handleToggleStatus}
+            >
+              {isActive === false ? 'Mở giao dịch' : 'Ngừng giao dịch'}
+            </Button>
+            <Button
+              variant='destructive'
+              disabled={!supplier}
+              onClick={() => {
+                if (!supplier) return
+                setCurrentRow(supplier)
+                setOpen('delete')
+              }}
+            >
+              Xoá
+            </Button>
+            <Button
+              disabled={!supplier}
+              onClick={() => {
+                if (!supplier) return
+                setCurrentRow(supplier)
+                setOpen('edit')
+              }}
+            >
+              Chỉnh sửa
+            </Button>
+          </>
+        )}
       </div>
       <ConfirmDialog
         open={confirmOpen}

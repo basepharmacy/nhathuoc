@@ -15,7 +15,7 @@ const formatDateLabel = (value?: string | null) => {
 
 type SupplierPaymentsHistoryColumnHandlers = {
   onPrint?: (payment: SupplierPaymentWithSupplier) => void
-  onDelete: (payment: SupplierPaymentWithSupplier) => void
+  onDelete?: (payment: SupplierPaymentWithSupplier) => void
   hideSupplier?: boolean
 }
 

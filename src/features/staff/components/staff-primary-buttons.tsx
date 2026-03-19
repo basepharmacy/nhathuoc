@@ -6,7 +6,7 @@ import { useStaff } from './staff-provider'
 export function StaffPrimaryButtons() {
   const { setOpen } = useStaff()
   return (
-    <Can feature='settings' action='edit'>
+    <Can feature='staffs' action='edit'>
       <Button className='space-x-1' onClick={() => setOpen('add')}>
         <span>Thêm nhân viên</span> <UserPlus size={18} />
       </Button>
