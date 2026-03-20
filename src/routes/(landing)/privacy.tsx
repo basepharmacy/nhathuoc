@@ -1,0 +1,6 @@
+import { createFileRoute } from '@tanstack/react-router'
+import { LandingPrivacy } from '@/landing/pages/privacy'
+
+export const Route = createFileRoute('/(landing)/privacy')({
+  component: LandingPrivacy,
+})

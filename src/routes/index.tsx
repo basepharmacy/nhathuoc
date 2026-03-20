@@ -1,19 +1,13 @@
-import { z } from 'zod'
 import { createFileRoute, redirect } from '@tanstack/react-router'
-import { SignIn } from '@/features/auth/sign-in'
 import { supabaseAuth } from '@/services/supabase'
+import { LandingHome } from '@/landing/pages/home'
 
-const searchSchema = z.object({
-  redirect: z.string().optional(),
-})
-
-export const Route = createFileRoute('/(auth)/sign-in')({
+export const Route = createFileRoute('/')({
   beforeLoad: async () => {
     const session = await supabaseAuth.getSession()
     if (session) {
       throw redirect({ to: '/dashboard' })
     }
   },
-  component: SignIn,
-  validateSearch: searchSchema,
+  component: LandingHome,
 })

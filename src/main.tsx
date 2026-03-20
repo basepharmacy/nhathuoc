@@ -69,7 +69,7 @@ const queryClient = new QueryClient({
       if (error instanceof AxiosError) {
         if (error.response?.status === 401) {
           toast.error('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.')
-          const redirect = `${router?.history?.location?.href ?? '/'}`
+          const redirect = `${router?.history?.location?.href ?? '/dashboard'}`
           router?.navigate({ to: '/sign-in', search: { redirect } })
         }
         if (error.response?.status === 500) {

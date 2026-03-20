@@ -10,9 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
-import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated/index'
+import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as publicSupportRouteImport } from './routes/(public)/support'
 import { Route as publicPrivacyPolicyRouteImport } from './routes/(public)/privacy-policy'
+import { Route as landingTrialRouteImport } from './routes/(landing)/trial'
+import { Route as landingPrivacyRouteImport } from './routes/(landing)/privacy'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
 import { Route as errors404RouteImport } from './routes/(errors)/404'
@@ -52,9 +55,14 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
+const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const publicSupportRoute = publicSupportRouteImport.update({
@@ -65,6 +73,16 @@ const publicSupportRoute = publicSupportRouteImport.update({
 const publicPrivacyPolicyRoute = publicPrivacyPolicyRouteImport.update({
   id: '/(public)/privacy-policy',
   path: '/privacy-policy',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const landingTrialRoute = landingTrialRouteImport.update({
+  id: '/(landing)/trial',
+  path: '/trial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const landingPrivacyRoute = landingPrivacyRouteImport.update({
+  id: '/(landing)/privacy',
+  path: '/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const errors503Route = errors503RouteImport.update({
@@ -264,7 +282,7 @@ const AuthenticatedInventoryAdjustmentsNewRoute =
   } as any)
 
 export interface FileRoutesByFullPath {
-  '/': typeof AuthenticatedIndexRoute
+  '/': typeof IndexRoute
   '/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
@@ -274,8 +292,11 @@ export interface FileRoutesByFullPath {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/privacy': typeof landingPrivacyRoute
+  '/trial': typeof landingTrialRoute
   '/privacy-policy': typeof publicPrivacyPolicyRoute
   '/support': typeof publicSupportRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
@@ -303,6 +324,7 @@ export interface FileRoutesByFullPath {
   '/inventory/adjustments/': typeof AuthenticatedInventoryAdjustmentsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/forgot-password': typeof authForgotPasswordRoute
   '/otp': typeof authOtpRoute
   '/sign-in': typeof authSignInRoute
@@ -311,9 +333,11 @@ export interface FileRoutesByTo {
   '/404': typeof errors404Route
   '/500': typeof errors500Route
   '/503': typeof errors503Route
+  '/privacy': typeof landingPrivacyRoute
+  '/trial': typeof landingTrialRoute
   '/privacy-policy': typeof publicPrivacyPolicyRoute
   '/support': typeof publicSupportRoute
-  '/': typeof AuthenticatedIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
@@ -342,6 +366,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteRouteWithChildren
   '/(auth)/forgot-password': typeof authForgotPasswordRoute
@@ -352,9 +377,11 @@ export interface FileRoutesById {
   '/(errors)/404': typeof errors404Route
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
+  '/(landing)/privacy': typeof landingPrivacyRoute
+  '/(landing)/trial': typeof landingTrialRoute
   '/(public)/privacy-policy': typeof publicPrivacyPolicyRoute
   '/(public)/support': typeof publicSupportRoute
-  '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
   '/_authenticated/purchase-orders/history': typeof AuthenticatedPurchaseOrdersHistoryRoute
@@ -394,8 +421,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/privacy'
+    | '/trial'
     | '/privacy-policy'
     | '/support'
+    | '/dashboard'
     | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
@@ -423,6 +453,7 @@ export interface FileRouteTypes {
     | '/inventory/adjustments/'
   fileRoutesByTo: FileRoutesByTo
   to:
+    | '/'
     | '/forgot-password'
     | '/otp'
     | '/sign-in'
@@ -431,9 +462,11 @@ export interface FileRouteTypes {
     | '/404'
     | '/500'
     | '/503'
+    | '/privacy'
+    | '/trial'
     | '/privacy-policy'
     | '/support'
-    | '/'
+    | '/dashboard'
     | '/customers/$customerId'
     | '/errors/$error'
     | '/purchase-orders/history'
@@ -461,6 +494,7 @@ export interface FileRouteTypes {
     | '/inventory/adjustments'
   id:
     | '__root__'
+    | '/'
     | '/_authenticated'
     | '/_authenticated/settings'
     | '/(auth)/forgot-password'
@@ -471,9 +505,11 @@ export interface FileRouteTypes {
     | '/(errors)/404'
     | '/(errors)/500'
     | '/(errors)/503'
+    | '/(landing)/privacy'
+    | '/(landing)/trial'
     | '/(public)/privacy-policy'
     | '/(public)/support'
-    | '/_authenticated/'
+    | '/_authenticated/dashboard'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/errors/$error'
     | '/_authenticated/purchase-orders/history'
@@ -502,6 +538,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   authForgotPasswordRoute: typeof authForgotPasswordRoute
   authOtpRoute: typeof authOtpRoute
@@ -511,6 +548,8 @@ export interface RootRouteChildren {
   errors404Route: typeof errors404Route
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
+  landingPrivacyRoute: typeof landingPrivacyRoute
+  landingTrialRoute: typeof landingTrialRoute
   publicPrivacyPolicyRoute: typeof publicPrivacyPolicyRoute
   publicSupportRoute: typeof publicSupportRoute
 }
@@ -524,11 +563,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/': {
-      id: '/_authenticated/'
+    '/': {
+      id: '/'
       path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/(public)/support': {
@@ -543,6 +589,20 @@ declare module '@tanstack/react-router' {
       path: '/privacy-policy'
       fullPath: '/privacy-policy'
       preLoaderRoute: typeof publicPrivacyPolicyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(landing)/trial': {
+      id: '/(landing)/trial'
+      path: '/trial'
+      fullPath: '/trial'
+      preLoaderRoute: typeof landingTrialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(landing)/privacy': {
+      id: '/(landing)/privacy'
+      path: '/privacy'
+      fullPath: '/privacy'
+      preLoaderRoute: typeof landingPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(errors)/503': {
@@ -804,7 +864,7 @@ const AuthenticatedSettingsRouteRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRouteRoute: typeof AuthenticatedSettingsRouteRouteWithChildren
-  AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedCustomersCustomerIdRoute: typeof AuthenticatedCustomersCustomerIdRoute
   AuthenticatedErrorsErrorRoute: typeof AuthenticatedErrorsErrorRoute
   AuthenticatedPurchaseOrdersHistoryRoute: typeof AuthenticatedPurchaseOrdersHistoryRoute
@@ -832,7 +892,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSettingsRouteRoute: AuthenticatedSettingsRouteRouteWithChildren,
-  AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedCustomersCustomerIdRoute: AuthenticatedCustomersCustomerIdRoute,
   AuthenticatedErrorsErrorRoute: AuthenticatedErrorsErrorRoute,
   AuthenticatedPurchaseOrdersHistoryRoute:
@@ -866,6 +926,7 @@ const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   authForgotPasswordRoute: authForgotPasswordRoute,
   authOtpRoute: authOtpRoute,
@@ -875,6 +936,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors404Route: errors404Route,
   errors500Route: errors500Route,
   errors503Route: errors503Route,
+  landingPrivacyRoute: landingPrivacyRoute,
+  landingTrialRoute: landingTrialRoute,
   publicPrivacyPolicyRoute: publicPrivacyPolicyRoute,
   publicSupportRoute: publicSupportRoute,
 }

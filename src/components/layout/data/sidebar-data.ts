@@ -27,7 +27,7 @@ const staticNavGroups: NavGroup[] = [
     items: [
       {
         title: 'Tổng hợp',
-        url: '/',
+        url: '/dashboard',
         icon: LayoutDashboard,
         feature: 'dashboard',
       },

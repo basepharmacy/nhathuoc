@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from '@tanstack/react-router'
-import { Route } from '@/routes/_authenticated/index'
+import { Route } from '@/routes/_authenticated/dashboard'
 import {
   Select,
   SelectContent,
@@ -37,7 +37,7 @@ export function Dashboard() {
   const [activityFromDate, setActivityFromDate] = useState<Date | undefined>()
   const [activityToDate, setActivityToDate] = useState<Date | undefined>()
   const { tab: activeTab } = Route.useSearch()
-  const navigate = useNavigate({ from: '/' })
+  const navigate = useNavigate({ from: '/dashboard' })
 
   function setActiveTab(tab: DashboardTab) {
     navigate({ search: { tab } })
