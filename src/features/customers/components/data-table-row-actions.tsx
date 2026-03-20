@@ -1,6 +1,6 @@
 import { type Row } from '@tanstack/react-table'
 import { useNavigate } from '@tanstack/react-router'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
+import { Eye, SquarePen, Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -30,7 +30,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
     },
     {
       label: 'Chỉnh sửa',
-      icon: Pencil,
+      icon: SquarePen,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('edit')

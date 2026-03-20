@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, Pencil, Trash2 } from 'lucide-react'
+import { Eye, SquarePen, Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -22,7 +22,7 @@ export function SaleOrdersHistoryRowActions({
   const actions: RowAction[] = [
     {
       label: isDraft ? 'Chỉnh sửa' : 'Xem chi tiết',
-      icon: isDraft ? Pencil : Eye,
+      icon: isDraft ? SquarePen : Eye,
       onClick: () => onEdit(row.original),
     },
     {

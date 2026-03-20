@@ -8,7 +8,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { useNavigate } from '@tanstack/react-router'
-import { Pencil } from 'lucide-react'
+import { SquarePen } from 'lucide-react'
 import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
 import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Badge } from '@/components/ui/badge'
@@ -159,7 +159,7 @@ function createColumns(
             const actions: RowAction[] = [
               {
                 label: 'Điều chỉnh',
-                icon: Pencil,
+                icon: SquarePen,
                 onClick: () => onAdjust(row.original),
               },
             ]

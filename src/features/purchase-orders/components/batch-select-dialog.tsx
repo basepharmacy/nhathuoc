@@ -35,6 +35,7 @@ type BatchSelectDialogProps = {
   onSave: (batchCode: string, expiryDate: string, batchId?: string | null) => void
   saveLabel?: string
   readOnly?: boolean
+  allowExpiryEdit?: boolean
 }
 
 export function BatchSelectDialog({
@@ -49,6 +50,7 @@ export function BatchSelectDialog({
   onSave,
   saveLabel = 'Lưu',
   readOnly = false,
+  allowExpiryEdit = false,
 }: BatchSelectDialogProps) {
   const [batchCode, setBatchCode] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
@@ -92,7 +94,7 @@ export function BatchSelectDialog({
     return parsed
   }, [expiryDate])
 
-  const isExpiryLocked = Boolean(selectedBatch)
+  const isExpiryLocked = Boolean(selectedBatch) && !allowExpiryEdit
 
   const generateUniqueBatchCode = () => {
     const existingLotNumbers = new Set<number>()
@@ -267,7 +269,7 @@ export function BatchSelectDialog({
                 }
                 setExpiryDate(format(date, 'yyyy-MM-dd'))
               }}
-              placeholder='Chọn hạn sử dụng'
+              placeholder=''
               className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
               disabled={isExpiryLocked || readOnly || noExpiry}
             />

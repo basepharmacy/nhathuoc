@@ -13,7 +13,7 @@ import {
   formatDateTimeLabel,
   formatQuantity,
 } from '@/lib/utils'
-import { Pencil } from 'lucide-react'
+import { SquarePen } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import {
   DataTableRowActions,
@@ -155,7 +155,7 @@ function createColumns(
             const actions: RowAction[] = [
               {
                 label: 'Điều chỉnh',
-                icon: Pencil,
+                icon: SquarePen,
                 onClick: () => onAdjust(row.original),
               },
             ]

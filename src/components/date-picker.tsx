@@ -57,9 +57,11 @@ export function DatePicker({
       </PopoverTrigger>
       <PopoverContent className='w-auto p-0'>
         <Calendar
+          key={String(open)}
           mode='single'
           captionLayout='dropdown'
           locale={vi}
+          defaultMonth={selected ?? undefined}
           fromYear={resolvedFromYear}
           toYear={resolvedToYear}
           selected={selected}

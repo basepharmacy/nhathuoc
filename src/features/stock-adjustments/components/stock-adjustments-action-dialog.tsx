@@ -1,11 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
+import { format } from 'date-fns'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { SquarePen } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { stockAdjustmentsRepo } from '@/client'
 import { formatCurrency, formatDateLabel, formatQuantity, normalizeNumber } from '@/lib/utils'
+import { DatePicker } from '@/components/date-picker'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -117,7 +122,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
         cost_price: values.costPrice,
         reason_code: values.reasonCode,
         reason: normalizeOptionalText(values.reason),
-        expiry_date: null,
+        expiry_date: expiryDate || null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
@@ -160,6 +165,25 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
   )
 
   const minQuantity = -batch.quantity
+
+  const [editingExpiry, setEditingExpiry] = useState(false)
+  const [expiryDate, setExpiryDate] = useState<string | null>(batch.expiryDate)
+  const [noExpiry, setNoExpiry] = useState(!batch.expiryDate)
+
+  const expirySelected = useMemo(() => {
+    if (!expiryDate) return undefined
+    const parsed = new Date(expiryDate)
+    if (Number.isNaN(parsed.getTime())) return undefined
+    return parsed
+  }, [expiryDate])
+
+  useEffect(() => {
+    if (open) {
+      setEditingExpiry(false)
+      setExpiryDate(batch.expiryDate)
+      setNoExpiry(!batch.expiryDate)
+    }
+  }, [open, batch.expiryDate])
 
   const [showMinPopover, setShowMinPopover] = useState(false)
   const minPopoverTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -212,8 +236,17 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
               <p className='font-medium'>{batch.batchCode}</p>
             </div>
             <div>
-              <span className='text-muted-foreground'>HSD</span>
-              <p className='font-medium'>{batch.expiryDate ? formatDateLabel(batch.expiryDate) : '-'}</p>
+              <div className='flex items-center gap-1'>
+                <span className='text-muted-foreground'>HSD</span>
+                <button
+                  type='button'
+                  onClick={() => setEditingExpiry((prev) => !prev)}
+                  className='text-muted-foreground hover:text-foreground'
+                >
+                  <SquarePen className='size-4' />
+                </button>
+              </div>
+              <p className='font-medium'>{expiryDate ? formatDateLabel(expiryDate) : '-'}</p>
             </div>
             <div>
               <span className='text-muted-foreground'>Tồn kho</span>
@@ -326,6 +359,71 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
                 </FormItem>
               )}
             />
+
+            {editingExpiry && (
+              <div className='space-y-2'>
+                <div className='flex items-center justify-between'>
+                  <Label className='text-sm font-medium'>Hạn sử dụng</Label>
+                  <div className='flex items-center gap-2'>
+                    <Label htmlFor='sa-no-expiry' className='text-xs text-muted-foreground font-normal'>
+                      Không có HSD
+                    </Label>
+                    <Switch
+                      id='sa-no-expiry'
+                      checked={noExpiry}
+                      onCheckedChange={(checked) => {
+                        setNoExpiry(checked)
+                        if (checked) {
+                          setExpiryDate(null)
+                        } else {
+                          const defaultDate = new Date()
+                          defaultDate.setFullYear(defaultDate.getFullYear() + 1)
+                          setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+                <DatePicker
+                  selected={expirySelected}
+                  onSelect={(date) => {
+                    if (!date) {
+                      setExpiryDate(null)
+                      return
+                    }
+                    setExpiryDate(format(date, 'yyyy-MM-dd'))
+                  }}
+                  placeholder=''
+                  className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+                  disablePastDates={false}
+                  disabled={noExpiry}
+                />
+                {!noExpiry && (
+                  <div className='flex gap-2'>
+                    <span
+                      className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80'
+                      onClick={() => {
+                        const date = new Date()
+                        date.setFullYear(date.getFullYear() + 1)
+                        setExpiryDate(format(date, 'yyyy-MM-dd'))
+                      }}
+                    >
+                      1 năm
+                    </span>
+                    <span
+                      className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80'
+                      onClick={() => {
+                        const date = new Date()
+                        date.setFullYear(date.getFullYear() + 2)
+                        setExpiryDate(format(date, 'yyyy-MM-dd'))
+                      }}
+                    >
+                      2 năm
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {errorMessage && (
               <Alert variant='destructive'>

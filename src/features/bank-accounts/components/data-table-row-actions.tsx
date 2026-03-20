@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Pencil, Trash2 } from 'lucide-react'
+import { SquarePen, Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -18,7 +18,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const actions: RowAction[] = [
     {
       label: 'Chỉnh sửa',
-      icon: Pencil,
+      icon: SquarePen,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('edit')
