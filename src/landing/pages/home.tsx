@@ -213,7 +213,7 @@ export function LandingHome() {
               {
                 step: '01',
                 title: 'Nhập sản phẩm',
-                desc: 'Chọn thuốc từ thư viện hơn 50.000 sản phẩm có sẵn với đầy đủ thông tin chuẩn (tên, đơn vị tính, barcode, hoạt chất ...). Hoặc tạo thuốc mới cực nhanh nếu nhà thuốc bạn có thuốc đặc thù.',
+                desc: 'Chọn ngay từ thư viện hơn 50.000 sản phẩm với đầy đủ thông tin chuẩn (tên, đơn vị tính, barcode, hoạt chất ...)',
               },
               {
                 step: '02',

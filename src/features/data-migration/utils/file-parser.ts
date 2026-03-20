@@ -28,7 +28,7 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
     reader.onload = (e) => {
       try {
         const data = new Uint8Array(e.target?.result as ArrayBuffer)
-        const workbook = XLSX.read(data, { type: 'array' })
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true })
         const firstSheet = workbook.Sheets[workbook.SheetNames[0]]
         const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(firstSheet, { defval: '' })
 
@@ -36,7 +36,14 @@ function parseExcel(file: File): Promise<Record<string, string>[]> {
         const rows: Record<string, string>[] = jsonData.map((row) => {
           const stringRow: Record<string, string> = {}
           for (const [key, value] of Object.entries(row)) {
-            stringRow[key.trim()] = String(value ?? '').trim()
+            if (value instanceof Date) {
+              const d = value.getDate().toString().padStart(2, '0')
+              const m = (value.getMonth() + 1).toString().padStart(2, '0')
+              const y = value.getFullYear()
+              stringRow[key.trim()] = `${d}/${m}/${y}`
+            } else {
+              stringRow[key.trim()] = String(value ?? '').trim()
+            }
           }
           return stringRow
         })
