@@ -57,16 +57,13 @@ export function useStockAdjustment({
           cost_price: item.costPrice,
           reason_code: item.reasonCode,
           reason: item.reason.trim().length > 0 ? item.reason.trim() : null,
-          expiry_date: item.expiryDate.trim(),
+          expiry_date: item.expiryDate ? item.expiryDate.trim() : null,
         }))
       )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
-      queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId] })
-      queryClient.invalidateQueries({
-        queryKey: ['dashboard-report', 'low-stock-products'],
-      })
+      queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'all', 'all-available'] })
       toast.success('Đã tạo điều chỉnh tồn kho.')
       // Reset form
       setItems([])

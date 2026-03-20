@@ -79,10 +79,7 @@ export function StockAdjustmentsTable({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['stock-adjustments', tenantId] })
-      queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId] })
-      queryClient.invalidateQueries({
-        queryKey: ['dashboard-report', 'low-stock-products'],
-      })
+      queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'all', 'all-available'] })
       toast.success('Đã huỷ đơn điều chỉnh thành công.')
     },
     onError: (error) => {

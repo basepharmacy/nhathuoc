@@ -14,6 +14,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { DatePicker } from '@/components/date-picker'
+import { Switch } from '@/components/ui/switch'
 import { formatDateLabel } from '@/lib/utils'
 
 const toDateInputValue = (value?: string | null) => {
@@ -51,6 +52,7 @@ export function BatchSelectDialog({
 }: BatchSelectDialogProps) {
   const [batchCode, setBatchCode] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
+  const [noExpiry, setNoExpiry] = useState(false)
 
   const { data: allBatches = [] } = useQuery({
     ...getInventoryBatchesQueryOptions(tenantId, productId ? [productId] : [], locationId),
@@ -123,10 +125,15 @@ export function BatchSelectDialog({
     setBatchCode(initialBatchCode)
     if (initialExpiryDate) {
       setExpiryDate(toDateInputValue(initialExpiryDate))
+      setNoExpiry(false)
+    } else if (initialBatchCode) {
+      setExpiryDate('')
+      setNoExpiry(true)
     } else {
       const defaultDate = new Date()
       defaultDate.setFullYear(defaultDate.getFullYear() + 1)
       setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
+      setNoExpiry(false)
     }
   }, [open, initialBatchCode, initialExpiryDate])
 
@@ -138,14 +145,14 @@ export function BatchSelectDialog({
   }, [selectedBatch])
 
   const batchCodeError = !batchCode.trim() ? 'Vui lòng nhập mã lô.' : null
-  const expiryDateError = !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
+  const expiryDateError = !noExpiry && !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
   const canSave = !batchCodeError && !expiryDateError
 
   const handleSave = () => {
     if (readOnly || !canSave) return
     const normalizedBatchCode = batchCode.trim()
     const matchedBatch = allBatches.find((batch) => batch.batch_code === normalizedBatchCode)
-    onSave(normalizedBatchCode, expiryDate.trim(), matchedBatch?.id ?? null)
+    onSave(normalizedBatchCode, noExpiry ? '' : expiryDate.trim(), matchedBatch?.id ?? null)
   }
 
   return (
@@ -215,7 +222,30 @@ export function BatchSelectDialog({
             )}
           </div>
           <div className='space-y-2'>
-            <Label htmlFor='expiry-date'>Hạn sử dụng</Label>
+            <div className='flex items-center justify-between'>
+              <Label htmlFor='expiry-date'>Hạn sử dụng</Label>
+              <div className='flex items-center gap-2'>
+                <Label htmlFor='no-expiry' className='text-xs text-muted-foreground font-normal'>
+                  Không có HSD
+                </Label>
+                <Switch
+                  id='no-expiry'
+                  checked={noExpiry}
+                  onCheckedChange={(checked) => {
+                    if (readOnly || isExpiryLocked) return
+                    setNoExpiry(checked)
+                    if (checked) {
+                      setExpiryDate('')
+                    } else {
+                      const defaultDate = new Date()
+                      defaultDate.setFullYear(defaultDate.getFullYear() + 1)
+                      setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
+                    }
+                  }}
+                  disabled={readOnly || isExpiryLocked}
+                />
+              </div>
+            </div>
             <DatePicker
               selected={expirySelected}
               onSelect={(date) => {
@@ -229,40 +259,42 @@ export function BatchSelectDialog({
               }}
               placeholder='Chọn hạn sử dụng'
               className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-              disabled={isExpiryLocked || readOnly}
+              disabled={isExpiryLocked || readOnly || noExpiry}
             />
-            <div className='flex gap-2'>
-              <span
-                className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
-                onClick={() => {
-                  if (readOnly || isExpiryLocked) return
-                  const date = new Date()
-                  date.setFullYear(date.getFullYear() + 1)
-                  setExpiryDate(format(date, 'yyyy-MM-dd'))
-                }}
-                style={{
-                  pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
-                  opacity: readOnly || isExpiryLocked ? 0.5 : 1,
-                }}
-              >
-                1 năm
-              </span>
-              <span
-                className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
-                onClick={() => {
-                  if (readOnly || isExpiryLocked) return
-                  const date = new Date()
-                  date.setFullYear(date.getFullYear() + 2)
-                  setExpiryDate(format(date, 'yyyy-MM-dd'))
-                }}
-                style={{
-                  pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
-                  opacity: readOnly || isExpiryLocked ? 0.5 : 1,
-                }}
-              >
-                2 năm
-              </span>
-            </div>
+            {!noExpiry && (
+              <div className='flex gap-2'>
+                <span
+                  className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
+                  onClick={() => {
+                    if (readOnly || isExpiryLocked) return
+                    const date = new Date()
+                    date.setFullYear(date.getFullYear() + 1)
+                    setExpiryDate(format(date, 'yyyy-MM-dd'))
+                  }}
+                  style={{
+                    pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
+                    opacity: readOnly || isExpiryLocked ? 0.5 : 1,
+                  }}
+                >
+                  1 năm
+                </span>
+                <span
+                  className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'
+                  onClick={() => {
+                    if (readOnly || isExpiryLocked) return
+                    const date = new Date()
+                    date.setFullYear(date.getFullYear() + 2)
+                    setExpiryDate(format(date, 'yyyy-MM-dd'))
+                  }}
+                  style={{
+                    pointerEvents: readOnly || isExpiryLocked ? 'none' : 'auto',
+                    opacity: readOnly || isExpiryLocked ? 0.5 : 1,
+                  }}
+                >
+                  2 năm
+                </span>
+              </div>
+            )}
             {expiryDateError ? (
               <p className='text-xs text-destructive'>{expiryDateError}</p>
             ) : null}

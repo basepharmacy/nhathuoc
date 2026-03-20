@@ -124,11 +124,6 @@ export function usePurchaseOrder({
       if (itemsWithoutBatch.length > 0) {
         throw new Error('Vui lòng nhập mã lô cho tất cả sản phẩm.')
       }
-
-      const itemsWithoutExpiry = items.filter((item) => !item.expiryDate.trim())
-      if (itemsWithoutExpiry.length > 0) {
-        throw new Error('Vui lòng nhập hạn sử dụng cho tất cả sản phẩm.')
-      }
     }
   }
 
@@ -204,12 +199,10 @@ export function usePurchaseOrder({
       })
     },
     onSuccess: (_data, status) => {
-      queryClient.invalidateQueries({
-        queryKey: ['purchase-orders'],
-      })
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', tenantId] })
       if (status === '4_STORED') {
         queryClient.invalidateQueries({
-          queryKey: ['dashboard-report', 'low-stock-products'],
+          queryKey: ['inventory-batches', tenantId, 'all', 'all-available'],
         })
       }
       toast.success('Đã cập nhật đơn nhập hàng.')

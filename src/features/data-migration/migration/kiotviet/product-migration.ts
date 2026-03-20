@@ -251,7 +251,7 @@ export async function migrateProducts(
           allAdjustments.push({
             tenant_id: tenantId,
             product_id: productId,
-            batch_code: 'LO0000',
+            batch_code: 'LO00000',
             expiry_date: null,
             quantity: Math.round(stockQuantity),
             cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
