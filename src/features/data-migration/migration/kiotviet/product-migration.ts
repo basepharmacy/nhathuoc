@@ -220,6 +220,7 @@ export async function migrateProducts(
 
     // Tạo stock adjustments từ baseRow (dù baseRow có conversion != 1, vẫn đọc batch data)
     {
+      let hasBatch = false
       for (let batchIdx = 1; batchIdx <= 30; batchIdx++) {
         const batchCode = baseRow[`Lô ${batchIdx}`]?.trim()
         const expiryDateStr = baseRow[`Hạn sử dụng ${batchIdx}`]?.trim()
@@ -229,6 +230,7 @@ export async function migrateProducts(
         if (!batchCode) continue
         if (quantity <= 0) continue
 
+        hasBatch = true
         allAdjustments.push({
           tenant_id: tenantId,
           product_id: productId,
@@ -240,6 +242,24 @@ export async function migrateProducts(
           reason_code: '1_FIRST_STOCK',
           reason: 'Nhập tồn đầu kỳ từ KiotViet',
         })
+      }
+
+      // Sản phẩm không có thông tin lô -> tạo lô mặc định từ tồn kho
+      if (!hasBatch) {
+        const stockQuantity = parseKiotVietNumber(baseRow['Tồn kho'])
+        if (stockQuantity > 0) {
+          allAdjustments.push({
+            tenant_id: tenantId,
+            product_id: productId,
+            batch_code: 'LO0000',
+            expiry_date: null,
+            quantity: Math.round(stockQuantity),
+            cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
+            location_id: locationId,
+            reason_code: '1_FIRST_STOCK',
+            reason: 'Nhập tồn đầu kỳ từ KiotViet',
+          })
+        }
       }
     }
   }
