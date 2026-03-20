@@ -180,9 +180,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         </span>
                         <div className='mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                           {item.batchCode ? <span>Lô: {item.batchCode}</span> : null}
-                          {item.expiryDate ? (
-                            <span>HSD: {formatDateLabel(item.expiryDate)}</span>
-                          ) : null}
+                          <span>HSD: {formatDateLabel(item.expiryDate)}</span>
                           <span>SL: {item.stock}</span>
                         </div>
                       </TableCell>

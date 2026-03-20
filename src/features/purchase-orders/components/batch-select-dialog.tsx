@@ -92,7 +92,7 @@ export function BatchSelectDialog({
     return parsed
   }, [expiryDate])
 
-  const isExpiryLocked = Boolean(selectedBatch?.expiry_date)
+  const isExpiryLocked = Boolean(selectedBatch)
 
   const generateUniqueBatchCode = () => {
     const existingLotNumbers = new Set<number>()
@@ -141,10 +141,14 @@ export function BatchSelectDialog({
     if (!selectedBatch) return
     if (selectedBatch.expiry_date) {
       setExpiryDate(toDateInputValue(selectedBatch.expiry_date))
+      setNoExpiry(false)
+    } else {
+      setExpiryDate('')
+      setNoExpiry(true)
     }
   }, [selectedBatch])
 
-  const batchCodeError = !batchCode.trim() ? 'Vui lòng nhập mã lô.' : null
+  const batchCodeError = !batchCode.trim() ? 'Vui lòng nhập mã lô hoặc chọn từ lô có sẵn.' : null
   const expiryDateError = !noExpiry && !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
   const canSave = !batchCodeError && !expiryDateError
 
@@ -208,12 +212,18 @@ export function BatchSelectDialog({
                     onClick={() => {
                       if (readOnly) return
                       setBatchCode(batch.batch_code)
-                      setExpiryDate(toDateInputValue(batch.expiry_date))
+                      if (batch.expiry_date) {
+                        setExpiryDate(toDateInputValue(batch.expiry_date))
+                        setNoExpiry(false)
+                      } else {
+                        setExpiryDate('')
+                        setNoExpiry(true)
+                      }
                     }}
                     disabled={readOnly}
                   >
                     {batch.batch_code}
-                    {batch.expiry_date ? ` - ${formatDateLabel(batch.expiry_date)}` : ''}
+                    {batch.expiry_date ? ` - ${formatDateLabel(batch.expiry_date)}` : ' - HSD: Không'}
                   </Button>
                 ))}
               </div>

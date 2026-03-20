@@ -26,18 +26,24 @@ export function StockAdjustmentsAddSearch({
   onAddProduct,
 }: StockAdjustmentsAddSearchProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('')
   const [activeIndex, setActiveIndex] = useState(0)
   const [searchOpen, setSearchOpen] = useState(false)
 
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedSearchTerm(searchTerm), 300)
+    return () => clearTimeout(timer)
+  }, [searchTerm])
+
   const productsFiltered = useMemo(() => {
-    const term = normalizeSearchValue(searchTerm.trim())
-    if (!term) return []
+    const term = normalizeSearchValue(debouncedSearchTerm.trim())
+    if (!term) return products.slice(0, 10)
     return products
       .filter((product) =>
         normalizeSearchValue(product.product_name).includes(term)
       )
-      .slice(0, 6)
-  }, [products, searchTerm])
+      .slice(0, 10)
+  }, [products, debouncedSearchTerm])
 
   useEffect(() => {
     if (productsFiltered.length === 0) {

@@ -108,6 +108,9 @@ export function DataMigration() {
         queryClient.invalidateQueries({ queryKey: getCategoriesQueryOptions(tenantId).queryKey }),
         queryClient.invalidateQueries({ queryKey: getCustomersQueryOptions(tenantId).queryKey }),
         queryClient.invalidateQueries({ queryKey: getSuppliersQueryOptions(tenantId).queryKey }),
+        queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'all', 'all-available'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory-batches', tenantId, 'list'] }),
+        queryClient.invalidateQueries({ queryKey: ['inventory-products', tenantId, 'list'] }),
       ])
     } catch (error) {
       addLog({
