@@ -12,9 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
-import { Route as publicSupportRouteImport } from './routes/(public)/support'
-import { Route as publicPrivacyPolicyRouteImport } from './routes/(public)/privacy-policy'
 import { Route as landingTrialRouteImport } from './routes/(landing)/trial'
+import { Route as landingSupportRouteImport } from './routes/(landing)/support'
 import { Route as landingPrivacyRouteImport } from './routes/(landing)/privacy'
 import { Route as errors503RouteImport } from './routes/(errors)/503'
 import { Route as errors500RouteImport } from './routes/(errors)/500'
@@ -65,19 +64,14 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const publicSupportRoute = publicSupportRouteImport.update({
-  id: '/(public)/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const publicPrivacyPolicyRoute = publicPrivacyPolicyRouteImport.update({
-  id: '/(public)/privacy-policy',
-  path: '/privacy-policy',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const landingTrialRoute = landingTrialRouteImport.update({
   id: '/(landing)/trial',
   path: '/trial',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const landingSupportRoute = landingSupportRouteImport.update({
+  id: '/(landing)/support',
+  path: '/support',
   getParentRoute: () => rootRouteImport,
 } as any)
 const landingPrivacyRoute = landingPrivacyRouteImport.update({
@@ -293,9 +287,8 @@ export interface FileRoutesByFullPath {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/privacy': typeof landingPrivacyRoute
+  '/support': typeof landingSupportRoute
   '/trial': typeof landingTrialRoute
-  '/privacy-policy': typeof publicPrivacyPolicyRoute
-  '/support': typeof publicSupportRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -334,9 +327,8 @@ export interface FileRoutesByTo {
   '/500': typeof errors500Route
   '/503': typeof errors503Route
   '/privacy': typeof landingPrivacyRoute
+  '/support': typeof landingSupportRoute
   '/trial': typeof landingTrialRoute
-  '/privacy-policy': typeof publicPrivacyPolicyRoute
-  '/support': typeof publicSupportRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -378,9 +370,8 @@ export interface FileRoutesById {
   '/(errors)/500': typeof errors500Route
   '/(errors)/503': typeof errors503Route
   '/(landing)/privacy': typeof landingPrivacyRoute
+  '/(landing)/support': typeof landingSupportRoute
   '/(landing)/trial': typeof landingTrialRoute
-  '/(public)/privacy-policy': typeof publicPrivacyPolicyRoute
-  '/(public)/support': typeof publicSupportRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/customers/$customerId': typeof AuthenticatedCustomersCustomerIdRoute
   '/_authenticated/errors/$error': typeof AuthenticatedErrorsErrorRoute
@@ -422,9 +413,8 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/privacy'
-    | '/trial'
-    | '/privacy-policy'
     | '/support'
+    | '/trial'
     | '/dashboard'
     | '/customers/$customerId'
     | '/errors/$error'
@@ -463,9 +453,8 @@ export interface FileRouteTypes {
     | '/500'
     | '/503'
     | '/privacy'
-    | '/trial'
-    | '/privacy-policy'
     | '/support'
+    | '/trial'
     | '/dashboard'
     | '/customers/$customerId'
     | '/errors/$error'
@@ -506,9 +495,8 @@ export interface FileRouteTypes {
     | '/(errors)/500'
     | '/(errors)/503'
     | '/(landing)/privacy'
+    | '/(landing)/support'
     | '/(landing)/trial'
-    | '/(public)/privacy-policy'
-    | '/(public)/support'
     | '/_authenticated/dashboard'
     | '/_authenticated/customers/$customerId'
     | '/_authenticated/errors/$error'
@@ -549,9 +537,8 @@ export interface RootRouteChildren {
   errors500Route: typeof errors500Route
   errors503Route: typeof errors503Route
   landingPrivacyRoute: typeof landingPrivacyRoute
+  landingSupportRoute: typeof landingSupportRoute
   landingTrialRoute: typeof landingTrialRoute
-  publicPrivacyPolicyRoute: typeof publicPrivacyPolicyRoute
-  publicSupportRoute: typeof publicSupportRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -577,25 +564,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/(public)/support': {
-      id: '/(public)/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof publicSupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/(public)/privacy-policy': {
-      id: '/(public)/privacy-policy'
-      path: '/privacy-policy'
-      fullPath: '/privacy-policy'
-      preLoaderRoute: typeof publicPrivacyPolicyRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/(landing)/trial': {
       id: '/(landing)/trial'
       path: '/trial'
       fullPath: '/trial'
       preLoaderRoute: typeof landingTrialRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/(landing)/support': {
+      id: '/(landing)/support'
+      path: '/support'
+      fullPath: '/support'
+      preLoaderRoute: typeof landingSupportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(landing)/privacy': {
@@ -937,9 +917,8 @@ const rootRouteChildren: RootRouteChildren = {
   errors500Route: errors500Route,
   errors503Route: errors503Route,
   landingPrivacyRoute: landingPrivacyRoute,
+  landingSupportRoute: landingSupportRoute,
   landingTrialRoute: landingTrialRoute,
-  publicPrivacyPolicyRoute: publicPrivacyPolicyRoute,
-  publicSupportRoute: publicSupportRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
