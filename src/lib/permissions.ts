@@ -21,6 +21,8 @@ export type Feature =
   | 'suppliers'
   | 'purchase_orders_history'
   | 'supplier_payments'
+  // Hồ sơ cá nhân
+  | 'profile'
   // Thiết lập
   | 'locations'
   | 'staffs'
@@ -41,8 +43,8 @@ const PERMISSIONS: Record<Feature, Record<StaffRole, Permission>> = {
   customers:              { OWNER: 'full', MANAGER: 'full', STAFF: 'full' },
   sale_orders_history:    { OWNER: 'full', MANAGER: 'full', STAFF: 'full' },
   // Sản phẩm
-  categories:             { OWNER: 'full', MANAGER: 'full', STAFF: 'view' },
-  products:               { OWNER: 'full', MANAGER: 'full', STAFF: 'view' },
+  categories:             { OWNER: 'full', MANAGER: 'view', STAFF: 'view' },
+  products:               { OWNER: 'full', MANAGER: 'view', STAFF: 'view' },
   inventory:              { OWNER: 'full', MANAGER: 'full', STAFF: 'view' },
   stock_adjustments:      { OWNER: 'full', MANAGER: 'full', STAFF: 'none' },
   // Nhập hàng
@@ -50,10 +52,12 @@ const PERMISSIONS: Record<Feature, Record<StaffRole, Permission>> = {
   suppliers:              { OWNER: 'full', MANAGER: 'view', STAFF: 'none' },
   purchase_orders_history:{ OWNER: 'full', MANAGER: 'full', STAFF: 'none' },
   supplier_payments:      { OWNER: 'full', MANAGER: 'none', STAFF: 'none' },
+  // Hồ sơ cá nhân
+  profile:                { OWNER: 'full', MANAGER: 'view', STAFF: 'view' },
   // Thiết lập
   locations:              { OWNER: 'full', MANAGER: 'view', STAFF: 'none' },
   staffs:                 { OWNER: 'full', MANAGER: 'view', STAFF: 'none' },
-  bank_accounts:          { OWNER: 'full', MANAGER: 'view', STAFF: 'none' },
+  bank_accounts:          { OWNER: 'full', MANAGER: 'view', STAFF: 'view' },
   data_migration:         { OWNER: 'full', MANAGER: 'none', STAFF: 'none' },
 }
 
@@ -77,6 +81,8 @@ const ROUTE_FEATURE_MAP: Record<string, Feature> = {
   '/purchase-orders/history': 'purchase_orders_history',
   '/suppliers': 'suppliers',
   '/supplier-payments': 'supplier_payments',
+  // Hồ sơ cá nhân
+  '/settings': 'profile',
   // Thiết lập
   '/locations': 'locations',
   '/staffs': 'staffs',

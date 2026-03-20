@@ -257,6 +257,7 @@ export const createDashboardReportRepository = (
       now?: Date
     }): Promise<ExpiredInventoryBatch[]> {
       const now = params.now ?? new Date()
+      const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
       let query = client
         .from('inventory_batches')
         .select(
@@ -265,7 +266,7 @@ export const createDashboardReportRepository = (
         .eq('tenant_id', params.tenantId)
         .gt('quantity', 0)
         .not('expiry_date', 'is', null)
-        .lt('expiry_date', now.toISOString())
+        .lt('expiry_date', today)
         .order('expiry_date', { ascending: true })
 
       if (params.locationId) {

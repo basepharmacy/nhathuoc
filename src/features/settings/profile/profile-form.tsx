@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { toast } from 'sonner'
 import { useQueryClient } from '@tanstack/react-query'
 import { useUser } from '@/client/provider'
+import { canEdit } from '@/lib/permissions'
+import type { StaffRole } from '@/lib/permissions'
 import { profilesRepo } from '@/client'
 import { Button } from '@/components/ui/button'
 import {
@@ -38,6 +40,7 @@ export function ProfileForm() {
   const { user } = useUser()
   const queryClient = useQueryClient()
   const profile = user?.profile
+  const isEditable = profile?.role ? canEdit(profile.role as StaffRole, 'profile') : false
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -97,7 +100,7 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Tên</FormLabel>
               <FormControl>
-                <Input placeholder='Nhập tên' {...field} />
+                <Input placeholder='Nhập tên' {...field} disabled={!isEditable} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -111,7 +114,7 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Số điện thoại</FormLabel>
               <FormControl>
-                <Input placeholder='Nhập số điện thoại' {...field} />
+                <Input placeholder='Nhập số điện thoại' {...field} disabled={!isEditable} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -125,7 +128,7 @@ export function ProfileForm() {
             <FormItem>
               <FormLabel>Địa chỉ</FormLabel>
               <FormControl>
-                <Input placeholder='Nhập địa chỉ' {...field} />
+                <Input placeholder='Nhập địa chỉ' {...field} disabled={!isEditable} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -142,6 +145,7 @@ export function ProfileForm() {
                 <Textarea
                   placeholder='Nhập mô tả về bản thân'
                   className='resize-none'
+                  disabled={!isEditable}
                   {...field}
                 />
               </FormControl>
@@ -150,9 +154,11 @@ export function ProfileForm() {
           )}
         />
 
-        <Button type='submit' disabled={form.formState.isSubmitting}>
-          {form.formState.isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
-        </Button>
+        {isEditable && (
+          <Button type='submit' disabled={form.formState.isSubmitting}>
+            {form.formState.isSubmitting ? 'Đang lưu...' : 'Cập nhật'}
+          </Button>
+        )}
       </form>
     </Form>
   )
