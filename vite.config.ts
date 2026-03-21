@@ -50,8 +50,8 @@ export default defineConfig({
         name: 'Sổ nhà thuốc',
         short_name: 'Nhà thuốc',
         description: 'Siêu đơn giản - Sổ tay nhà thuốc - Dùng ngay lập tức',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#1F4F3E',
+        background_color: '#f3f8f5',
         display: 'standalone',
         icons: [
           {

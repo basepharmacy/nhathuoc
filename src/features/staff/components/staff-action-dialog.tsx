@@ -32,6 +32,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { PasswordInput } from '@/components/password-input'
 import { Separator } from '@/components/ui/separator'
 import { SelectDropdown } from '@/components/select-dropdown'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { CircleHelp } from 'lucide-react'
 import { roles } from '../data/staff-data'
 import { type StaffRole, type StaffUser } from '../data/staff-schema'
 
@@ -60,6 +66,14 @@ const formSchema = z.object({
   location_id: z.string().optional().nullable(),
   password: z.string().optional(),
   confirmPassword: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.role === 'STAFF' && !data.location_id) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Vui lòng chọn chi nhánh cho nhân viên.',
+      path: ['location_id'],
+    })
+  }
 })
 
 type StaffForm = z.infer<typeof formSchema>
@@ -120,6 +134,12 @@ export function StaffActionDialog({
 
   const roleValue = useWatch({ control: form.control, name: 'role' })
 
+  useEffect(() => {
+    if (roleValue !== 'STAFF') {
+      form.setValue('location_id', null)
+    }
+  }, [roleValue, form])
+
   const locationOptions = useMemo(
     () =>
       locations.map((location) => ({
@@ -146,9 +166,9 @@ export function StaffActionDialog({
         role: values.role,
         login_id: (values.login ?? '').trim(),
         location_id:
-          values.role === 'OWNER'
-            ? undefined
-            : values.location_id ?? undefined,
+          values.role === 'STAFF'
+            ? values.location_id ?? undefined
+            : undefined,
       })
     },
     onSuccess: () => {
@@ -166,9 +186,9 @@ export function StaffActionDialog({
         phone: values.phone.trim(),
         address: normalizeOptionalText(values.address),
         location_id:
-          resolvedRole === 'OWNER'
-            ? null
-            : values.location_id ?? null,
+          values.role === 'STAFF'
+            ? values.location_id ?? null
+            : null,
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['staff-users', tenantId] })
@@ -405,43 +425,52 @@ export function StaffActionDialog({
                         >
                           {roles
                             .filter(({ value }) => isEdit || value !== 'OWNER')
-                            .map(({ label, value }) => (
-                            <FormItem
-                              key={value}
-                              className='flex items-center space-y-0 gap-2'
-                            >
-                              <FormControl>
-                                <RadioGroupItem value={value} />
-                              </FormControl>
-                              <FormLabel className='font-normal'>
-                                {label}
-                              </FormLabel>
-                            </FormItem>
-                          ))}
+                            .map(({ label, value, description }) => (
+                              <FormItem
+                                key={value}
+                                className='flex items-center space-y-0 gap-2'
+                              >
+                                <FormControl>
+                                  <RadioGroupItem value={value} />
+                                </FormControl>
+                                <FormLabel className='font-normal'>
+                                  {label}
+                                </FormLabel>
+                                <Tooltip>
+                                  <TooltipTrigger type='button' tabIndex={-1}>
+                                    <CircleHelp className='size-3.5 text-muted-foreground' />
+                                  </TooltipTrigger>
+                                  <TooltipContent side='right' className='max-w-64'>
+                                    {description}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </FormItem>
+                            ))}
                         </RadioGroup>
                       </FormControl>
                       <FormMessage className='col-span-4 col-start-3' />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name='location_id'
-                  render={({ field }) => (
-                    <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
-                      <FormLabel className='col-span-2 text-end'>Chi nhánh</FormLabel>
-                      <SelectDropdown
-                        value={field.value ?? ''}
-                        onValueChange={field.onChange}
-                        placeholder='Chọn chi nhánh'
-                        className='col-span-4'
-                        items={locationOptions}
-                        disabled={roleValue === 'OWNER'}
-                      />
-                      <FormMessage className='col-span-4 col-start-3' />
-                    </FormItem>
-                  )}
-                />
+                {roleValue === 'STAFF' && (
+                  <FormField
+                    control={form.control}
+                    name='location_id'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Chi nhánh</FormLabel>
+                        <SelectDropdown
+                          value={field.value ?? ''}
+                          onValueChange={field.onChange}
+                          placeholder='Chọn chi nhánh'
+                          className='col-span-4'
+                          items={locationOptions}
+                        />
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
             </div>
             {errorMessage && (

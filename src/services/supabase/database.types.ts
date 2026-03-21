@@ -22,6 +22,7 @@ export type Database = {
           id: string
           location_id: string | null
           metadata: Json | null
+          notification_sent: boolean
           reference_code: string | null
           tenant_id: string
           total_amount: number
@@ -34,6 +35,7 @@ export type Database = {
           id?: string
           location_id?: string | null
           metadata?: Json | null
+          notification_sent?: boolean
           reference_code?: string | null
           tenant_id: string
           total_amount?: number
@@ -46,6 +48,7 @@ export type Database = {
           id?: string
           location_id?: string | null
           metadata?: Json | null
+          notification_sent?: boolean
           reference_code?: string | null
           tenant_id?: string
           total_amount?: number
@@ -316,6 +319,75 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "locations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_settings: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          expo_push_token: string | null
+          id: string
+          profile_id: string
+          purchase_order_cancelled: boolean
+          purchase_order_ordered: boolean
+          purchase_order_stored: boolean
+          sale_order_cancelled: boolean
+          sale_order_completed: boolean
+          stock_adjustment_created: boolean
+          supplier_payment_created: boolean
+          supplier_payment_deleted: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          expo_push_token?: string | null
+          id?: string
+          profile_id: string
+          purchase_order_cancelled?: boolean
+          purchase_order_ordered?: boolean
+          purchase_order_stored?: boolean
+          sale_order_cancelled?: boolean
+          sale_order_completed?: boolean
+          stock_adjustment_created?: boolean
+          supplier_payment_created?: boolean
+          supplier_payment_deleted?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          expo_push_token?: string | null
+          id?: string
+          profile_id?: string
+          purchase_order_cancelled?: boolean
+          purchase_order_ordered?: boolean
+          purchase_order_stored?: boolean
+          sale_order_cancelled?: boolean
+          sale_order_completed?: boolean
+          stock_adjustment_created?: boolean
+          supplier_payment_created?: boolean
+          supplier_payment_deleted?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_settings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_settings_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

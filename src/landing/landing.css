@@ -6,30 +6,30 @@
 @import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800;900&family=Inter:wght@400;500;600&display=swap');
 
 .landing-page {
-  /* Light scheme */
-  --lp-background: #f4fbf9;
-  --lp-foreground: #161d1c;
+  /* Light scheme — based on #1F4F3E */
+  --lp-background: #f3f8f5;
+  --lp-foreground: #141c18;
 
-  --lp-primary: #006a64;
+  --lp-primary: #1F4F3E;
   --lp-on-primary: #ffffff;
-  --lp-primary-container: #9df2ea;
-  --lp-on-primary-container: #00504b;
+  --lp-primary-container: #a8dcc5;
+  --lp-on-primary-container: #0c3a2a;
 
-  --lp-secondary: #8e4d30;
+  --lp-secondary: #7a5230;
   --lp-on-secondary: #ffffff;
-  --lp-secondary-container: #ffdbce;
-  --lp-on-secondary-container: #71361c;
+  --lp-secondary-container: #ffdcc2;
+  --lp-on-secondary-container: #5e3a1c;
 
-  --lp-tertiary: #31628d;
+  --lp-tertiary: #2d6457;
   --lp-on-tertiary: #ffffff;
-  --lp-tertiary-container: #cfe5ff;
-  --lp-on-tertiary-container: #124a73;
+  --lp-tertiary-container: #b4e0d4;
+  --lp-on-tertiary-container: #164b3f;
 
-  --lp-surface: #f4fbf9;
-  --lp-on-surface: #161d1c;
-  --lp-surface-variant: #dae5e2;
-  --lp-on-surface-variant: #3f4947;
-  --lp-outline: #6f7977;
+  --lp-surface: #f3f8f5;
+  --lp-on-surface: #141c18;
+  --lp-surface-variant: #d8e4dd;
+  --lp-on-surface-variant: #3c4843;
+  --lp-outline: #6c7872;
 
   background: var(--lp-background);
   color: var(--lp-foreground);
@@ -39,29 +39,29 @@
 
 @media (prefers-color-scheme: dark) {
   .landing-page {
-    --lp-background: #0e1514;
-    --lp-foreground: #dde4e2;
+    --lp-background: #0e1512;
+    --lp-foreground: #dbe3de;
 
-    --lp-primary: #81d5cd;
-    --lp-on-primary: #003734;
-    --lp-primary-container: #00504b;
-    --lp-on-primary-container: #9df2ea;
+    --lp-primary: #8ccbae;
+    --lp-on-primary: #0c3a2a;
+    --lp-primary-container: #164d38;
+    --lp-on-primary-container: #a8dcc5;
 
-    --lp-secondary: #ffb598;
-    --lp-on-secondary: #552007;
-    --lp-secondary-container: #71361c;
-    --lp-on-secondary-container: #ffdbce;
+    --lp-secondary: #f5b898;
+    --lp-on-secondary: #4a2a0e;
+    --lp-secondary-container: #5e3a1c;
+    --lp-on-secondary-container: #ffdcc2;
 
-    --lp-tertiary: #9dcbfb;
-    --lp-on-tertiary: #003354;
-    --lp-tertiary-container: #124a73;
-    --lp-on-tertiary-container: #cfe5ff;
+    --lp-tertiary: #98c9bb;
+    --lp-on-tertiary: #0a3a2e;
+    --lp-tertiary-container: #164b3f;
+    --lp-on-tertiary-container: #b4e0d4;
 
-    --lp-surface: #0e1514;
-    --lp-on-surface: #dde4e2;
-    --lp-surface-variant: #3f4947;
-    --lp-on-surface-variant: #bec9c7;
-    --lp-outline: #899391;
+    --lp-surface: #0e1512;
+    --lp-on-surface: #dbe3de;
+    --lp-surface-variant: #3c4843;
+    --lp-on-surface-variant: #bcc8c2;
+    --lp-outline: #879189;
   }
 }
 
