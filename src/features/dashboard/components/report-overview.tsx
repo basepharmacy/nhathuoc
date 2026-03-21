@@ -254,7 +254,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
                 <CalendarX className='h-4 w-4 text-rose-600' />
                 Danh sách lô đã hết hạn
               </CardTitle>
-              <CardDescription>Những lô cần xử lý ngay</CardDescription>
+              <CardDescription>Những lô cần xử lý ngay.</CardDescription>
             </CardHeader>
             <CardContent>
               <div className='space-y-3'>
