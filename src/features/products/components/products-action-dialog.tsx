@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useFieldArray, useForm, useWatch } from 'react-hook-form'
+import { useFieldArray, useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
@@ -146,11 +146,6 @@ export function ProductsActionDialog({
   })
 
 
-  const unitsWatch = useWatch({
-    control: form.control,
-    name: 'units',
-  })
-
   const isOpenRef = useRef(open)
   const defaultDetailsOpen = useMemo(() => {
     if (!isEdit || !currentRow) return false
@@ -266,56 +261,30 @@ export function ProductsActionDialog({
     form.setValue('units', normalizedUnits, { shouldDirty: false })
   }, [defaultUnits, form, isEdit, open, currentRow?.id, currentRow?.product_units])
 
-  const autoCalcRef = useRef<{
-    baseCost: number
-    baseSell: number
-    factors: number[]
-  }>({ baseCost: 0, baseSell: 0, factors: [] })
-
-  useEffect(() => {
-    if (!unitsWatch?.length) return
-    const baseUnit = unitsWatch[0]
+  const recalcUnitPrices = useCallback((unitIndex: number) => {
+    const units = form.getValues('units')
+    if (!units?.length) return
+    const baseUnit = units[0]
     const baseCost = Number(baseUnit?.cost_price ?? 0)
     const baseSell = Number(baseUnit?.sell_price ?? 0)
-    const factors = unitsWatch.map((unit) =>
-      Number(unit?.conversion_factor ?? 0)
-    )
 
-    const prev = autoCalcRef.current
-    const baseChanged = baseCost !== prev.baseCost || baseSell !== prev.baseSell
-    const factorChanged = factors.some(
-      (factor, index) => index > 0 && factor !== prev.factors[index]
-    )
+    const unit = units[unitIndex]
+    if (!unit) return
+    const factor = Number(unit.conversion_factor ?? 0)
+    if (!Number.isFinite(factor) || factor <= 0) return
 
-    if (!baseChanged && !factorChanged) {
-      return
-    }
+    const nextCost = baseUnit?.cost_price != null ? baseCost * factor : null
+    const nextSell = baseUnit?.sell_price != null ? baseSell * factor : null
 
-    unitsWatch.forEach((unit, index) => {
-      if (index === 0) return
-      const factor = factors[index]
-      if (!Number.isFinite(factor) || factor <= 0) return
-
-      const nextCost = baseUnit?.cost_price != null ? baseCost * factor : null
-      const nextSell = baseUnit?.sell_price != null ? baseSell * factor : null
-
-      if (unit?.cost_price !== nextCost) {
-        form.setValue(`units.${index}.cost_price`, nextCost, {
-          shouldDirty: true,
-          shouldValidate: false,
-        })
-      }
-
-      if (unit?.sell_price !== nextSell) {
-        form.setValue(`units.${index}.sell_price`, nextSell, {
-          shouldDirty: true,
-          shouldValidate: false,
-        })
-      }
+    form.setValue(`units.${unitIndex}.cost_price`, nextCost, {
+      shouldDirty: true,
+      shouldValidate: false,
     })
-
-    autoCalcRef.current = { baseCost, baseSell, factors }
-  }, [form, unitsWatch])
+    form.setValue(`units.${unitIndex}.sell_price`, nextSell, {
+      shouldDirty: true,
+      shouldValidate: false,
+    })
+  }, [form])
 
   const normalizeUnits = (units: ProductForm['units']) =>
     units.map((unit, index) => ({
@@ -633,9 +602,10 @@ export function ProductsActionDialog({
                                             ? field.value
                                             : ''
                                       }
-                                      onChange={(event) =>
+                                      onChange={(event) => {
                                         field.onChange(event.target.value)
-                                      }
+                                        if (!isBaseUnit) recalcUnitPrices(index)
+                                      }}
                                     />
                                   </FormControl>
                                   <FormMessage />
@@ -660,9 +630,9 @@ export function ProductsActionDialog({
                                         const rawValue = event.target.value
                                         if (!rawValue) {
                                           field.onChange('')
-                                          return
+                                        } else {
+                                          field.onChange(normalizeNumber(rawValue))
                                         }
-                                        field.onChange(normalizeNumber(rawValue))
                                       }}
                                     />
                                   </FormControl>
@@ -688,9 +658,9 @@ export function ProductsActionDialog({
                                         const rawValue = event.target.value
                                         if (!rawValue) {
                                           field.onChange('')
-                                          return
+                                        } else {
+                                          field.onChange(normalizeNumber(rawValue))
                                         }
-                                        field.onChange(normalizeNumber(rawValue))
                                       }}
                                     />
                                   </FormControl>

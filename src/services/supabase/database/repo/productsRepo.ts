@@ -210,6 +210,16 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
         throw error
       }
     },
+    async updateProductUnitCostPrice(unitId: string, costPrice: number): Promise<void> {
+      const { error } = await client
+        .from('product_units')
+        .update({ cost_price: costPrice })
+        .eq('id', unitId)
+
+      if (error) {
+        throw error
+      }
+    },
   }
 
   return repo

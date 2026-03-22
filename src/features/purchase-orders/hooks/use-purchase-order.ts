@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { purchaseOrdersRepo } from '@/client'
+import { productsRepo, purchaseOrdersRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits, PurchaseOrderStatus } from '@/services/supabase/'
 import { type OrderItem, type PaymentStatus, getDefaultUnit } from '../data/types'
@@ -125,10 +125,36 @@ export function usePurchaseOrder({
     toast.error(mapSupabaseError(error))
   }
 
+  const updateCostPricesForNullItems = async (): Promise<boolean> => {
+    const updates: Array<{ unitId: string; costPrice: number }> = []
+    console.log('items to check for cost price update', items)
+    for (const item of items) {
+      if (!item.productUnitId || item.unitPrice <= 0) continue
+      const units = item.product.product_units ?? []
+      const orderedUnit = units.find((u) => u.id === item.productUnitId)
+      if (!orderedUnit || orderedUnit.cost_price !== null) continue
+
+      const orderedCF = orderedUnit.conversion_factor || 1
+      for (const u of units) {
+        if (u.cost_price === null) {
+          const costPrice = Math.round(item.unitPrice * (u.conversion_factor || 1) / orderedCF)
+          updates.push({ unitId: u.id, costPrice })
+        }
+      }
+    }
+
+    if (updates.length === 0) return false
+
+    await Promise.all(
+      updates.map((u) => productsRepo.updateProductUnitCostPrice(u.unitId, u.costPrice))
+    )
+    return true
+  }
+
   const createMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
       validateOrder(status !== '1_DRAFT')
-      return await purchaseOrdersRepo.createPurchaseOrderWithItems({
+      const order = await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
           purchase_order_code: orderCode,
           supplier_id: supplierId,
@@ -145,8 +171,12 @@ export function usePurchaseOrder({
         },
         items: buildOrderItems(),
       })
+      const didUpdateCost = await updateCostPricesForNullItems()
+      console.log('didUpdateCost', didUpdateCost)
+      return { order, didUpdateCost }
     },
-    onSuccess: (order, status) => {
+    onSuccess: ({ order, didUpdateCost }, status) => {
+      if (didUpdateCost) queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
       toast.success('Đã tạo đơn nhập hàng.')
       onOrderSuccess?.(order.purchase_order_code ?? '', status)
     },
@@ -173,9 +203,12 @@ export function usePurchaseOrder({
         },
         items: buildOrderItems(),
       })
+      const didUpdateCost = await updateCostPricesForNullItems()
+      return { didUpdateCost }
     },
-    onSuccess: (_data, status) => {
+    onSuccess: (result, status) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders', tenantId] })
+      if (result?.didUpdateCost) queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
       toast.success('Đã cập nhật đơn nhập hàng.')
       onOrderSuccess?.(orderCodeParam ?? '', status)
     },
