@@ -4,7 +4,9 @@ import {
   type ColumnFiltersState,
   type OnChangeFn,
   type PaginationState,
+  type SortingState,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import {
@@ -15,6 +17,7 @@ import {
 } from '@/lib/utils'
 import { SquarePen } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { DataTableColumnHeader } from '@/components/data-table'
 import {
   DataTableRowActions,
   type RowAction,
@@ -35,8 +38,10 @@ type Props = {
   tableState: {
     pagination: PaginationState
     columnFilters: ColumnFiltersState
+    sorting: SortingState
     onPaginationChange: OnChangeFn<PaginationState>
     onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
+    onSortingChange: OnChangeFn<SortingState>
   }
   pageCount: number
   total: number
@@ -62,8 +67,70 @@ function createColumns(
 ): ColumnDef<InventoryBatchWithRelations>[] {
   return [
     {
+      accessorKey: 'batch_code',
+      header: 'Lô',
+    },
+    {
+      id: 'product_name',
+      header: 'Sản phẩm',
+      cell: ({ row }) => (
+        <div className='flex space-x-2'>
+          <span className='truncate font-medium'>{row.original.product_name ?? 'Không rõ'}</span>
+          {row.original.product_status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
+        </div>
+      ),
+    },
+    {
+      id: 'expiry_date',
+      accessorKey: 'expiry_date',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='HSD' />,
+      cell: ({ row }) => (
+        <div className='flex items-center gap-2'>
+          <span>{formatDateLabel(row.original.expiry_date)}</span>
+          {getExpiryBadge(row.original.expiry_date)}
+        </div>
+      ),
+    },
+    {
+      id: 'quantity',
+      accessorKey: 'quantity',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Tồn kho' className='justify-end' />,
+      cell: ({ row }) => (
+        <span className='tabular-nums'>{formatQuantity(row.original.quantity) + ' ' + (row.original.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}</span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      id: 'cumulative_quantity',
+      accessorKey: 'cumulative_quantity',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Tổng nhập' className='justify-end' />,
+      cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      id: 'average_cost_price',
+      accessorKey: 'average_cost_price',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Giá nhập TB' className='justify-end' />,
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatCurrency(row.original.average_cost_price, { fallback: '0' })}đ
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      id: 'Cửa hàng',
+      header: 'Cửa hàng',
+      cell: ({ row }) => row.original.location_name ?? '-',
+    },
+    {
+      accessorKey: 'Cập nhật',
+      header: 'Cập nhật',
+      cell: ({ row }) => formatDateTimeLabel(row.original.updated_at),
+    },
+    {
       id: 'search',
-      accessorFn: (row) => `${row.batch_code} ${row.products?.product_name ?? ''}`,
+      accessorFn: (row) => `${row.batch_code} ${row.product_name ?? ''}`,
       header: () => null,
       cell: () => null,
       enableHiding: true,
@@ -88,64 +155,6 @@ function createColumns(
       header: () => null,
       cell: () => null,
       enableHiding: true,
-    },
-    {
-      accessorKey: 'batch_code',
-      header: 'Lô',
-    },
-    {
-      id: 'product_name',
-      header: 'Sản phẩm',
-      cell: ({ row }) => (
-        <div className='flex space-x-2'>
-          <span className='truncate font-medium'>{row.original.products?.product_name ?? 'Không rõ'}</span>
-          {row.original.products?.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'Hạn sử dụng',
-      header: 'HSD',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-2'>
-          <span>{formatDateLabel(row.original.expiry_date)}</span>
-          {getExpiryBadge(row.original.expiry_date)}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'Tồn kho',
-      header: 'Tồn kho',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>{formatQuantity(row.original.quantity) + ' ' + (row.original.products?.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}</span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'Tổng nhập kho',
-      header: 'Tổng nhập',
-      cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'Giá nhập TB',
-      header: 'Giá nhập TB',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatCurrency(row.original.average_cost_price, { fallback: '0' })}đ
-        </span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      id: 'Cửa hàng',
-      header: 'Cửa hàng',
-      cell: ({ row }) => row.original.locations?.name ?? '-',
-    },
-    {
-      accessorKey: 'Cập nhật',
-      header: 'Cập nhật',
-      cell: ({ row }) => formatDateTimeLabel(row.original.updated_at),
     },
     ...(showActions
       ? [
@@ -181,7 +190,7 @@ export function InventoryBatchTable({
   const handleAdjust = (batch: InventoryBatchWithRelations) => {
     setSelectedBatch({
       productId: batch.product_id,
-      productName: batch.products?.product_name ?? 'Không rõ',
+      productName: batch.product_name ?? 'Không rõ',
       locationId: batch.location_id ?? '',
       batchId: batch.id,
       batchCode: batch.batch_code,
@@ -203,12 +212,16 @@ export function InventoryBatchTable({
     state: {
       pagination: tableState.pagination,
       columnFilters: tableState.columnFilters,
+      sorting: tableState.sorting,
     },
     onPaginationChange: tableState.onPaginationChange,
     onColumnFiltersChange: tableState.onColumnFiltersChange,
+    onSortingChange: tableState.onSortingChange,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     manualFiltering: true,
     manualPagination: true,
+    manualSorting: true,
     pageCount,
     rowCount: total,
   })

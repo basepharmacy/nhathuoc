@@ -1,6 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { Link } from '@tanstack/react-router'
-import { LongText } from '@/components/long-text'
+import { LongText } from '@/components/ui/long-text'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { formatCurrency } from '@/lib/utils'
 import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'

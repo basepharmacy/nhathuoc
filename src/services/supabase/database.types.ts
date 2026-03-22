@@ -1364,6 +1364,65 @@ export type Database = {
         }
         Returns: string
       }
+      get_inventory_batches_list: {
+        Args: {
+          p_expiry_status?: string
+          p_location_id?: string
+          p_page_index?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort_by?: string
+          p_sort_order?: string
+          p_stock_status?: string
+        }
+        Returns: {
+          average_cost_price: number
+          batch_code: string
+          created_at: string
+          cumulative_quantity: number
+          expiry_date: string
+          id: string
+          location_id: string
+          location_name: string
+          product_id: string
+          product_name: string
+          product_status: Database["public"]["Enums"]["product_status"]
+          product_units: Json
+          quantity: number
+          tenant_id: string
+          total: number
+          updated_at: string
+        }[]
+      }
+      get_inventory_products_list: {
+        Args: {
+          p_expiry_status?: string
+          p_location_id?: string
+          p_page_index?: number
+          p_page_size?: number
+          p_search?: string
+          p_sort_by?: string
+          p_sort_order?: string
+          p_stock_status?: string
+        }
+        Returns: {
+          average_cost_price: number
+          batch_numbers: number
+          created_at: string
+          cumulative_quantity: number
+          id: string
+          location_id: string
+          location_name: string
+          nearest_expiry_date: string
+          product_name: string
+          product_status: Database["public"]["Enums"]["product_status"]
+          product_units: Json
+          quantity: number
+          tenant_id: string
+          total: number
+          updated_at: string
+        }[]
+      }
       get_inventory_statistics_v2: {
         Args: { p_location_id?: string }
         Returns: {

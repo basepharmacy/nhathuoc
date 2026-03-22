@@ -19,7 +19,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { PasswordInput } from '@/components/password-input'
+import { PasswordInput } from '@/components/ui/password-input'
 
 
 const formSchema = z.object({
@@ -89,7 +89,7 @@ export function UserAuthForm({
       const targetPath = redirectTo || '/'
       navigate({ to: targetPath, replace: true })
 
-      toast.success(`Chào mừng bạn đăng nhập trở lại, ${email}!`)
+      toast.success(`Chào mừng bạn đăng nhập trở lại!`)
     } catch (error) {
       toast.error(mapSupabaseError(error))
     } finally {

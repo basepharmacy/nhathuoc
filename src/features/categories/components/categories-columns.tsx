@@ -1,7 +1,7 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { cn, includesSearchValue } from '@/lib/utils'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
+import { LongText } from '@/components/ui/long-text'
 import { type Category } from '../data/schema'
 import { DataTableRowActions } from './data-table-row-actions'
 
@@ -36,7 +36,7 @@ export const categoriesColumns: ColumnDef<Category>[] = [
     ),
     meta: { label: 'SP đang bán' },
   },
-    {
+  {
     accessorKey: 'description',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Mô tả' />

@@ -1,7 +1,7 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
+import { LongText } from '@/components/ui/long-text'
 import { type SaleOrderWithRelations } from '@/services/supabase'
 import { formatCurrency } from '@/lib/utils'
 import { cn } from '@/lib/utils'

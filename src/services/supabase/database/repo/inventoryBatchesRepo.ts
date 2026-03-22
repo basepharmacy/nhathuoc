@@ -3,31 +3,48 @@ import type { Tables } from '../../database.types'
 import { ProductStatus } from '../model'
 
 export type InventoryBatch = Tables<'inventory_batches'>
-export type InventoryBatchWithRelations = InventoryBatch & {
-  products?: {
-    id: string
-    product_name: string
-    status: ProductStatus
-    product_units: {
-      unit_name: string
-      is_base_unit: boolean
-      conversion_factor: number
-    }[]
-  } | null
-  locations?: { id: string; name: string } | null
-}
+
 
 export type InventoryBatchStockStatus = 'in_stock' | 'out_of_stock'
 export type InventoryBatchExpiryStatus = 'expired' | '7_days' | '1_month' | '3_months'
+
+export type InventoryBatchSortField = 'expiry_date' | 'quantity' | 'cumulative_quantity' | 'average_cost_price'
 
 export type InventoryBatchesListQueryInput = {
   tenantId: string
   pageIndex: number
   pageSize: number
   search?: string
-  locationIds?: string[]
+  locationId?: string
   stockStatus?: InventoryBatchStockStatus
   expiryStatus?: InventoryBatchExpiryStatus
+  sortBy?: InventoryBatchSortField
+  sortOrder?: 'asc' | 'desc'
+}
+
+export type ProductUnit = {
+  unit_name: string
+  is_base_unit: boolean
+  conversion_factor: number
+}
+
+export type InventoryBatchWithRelations = {
+  id: string
+  batch_code: string
+  product_id: string
+  location_id: string
+  tenant_id: string
+  quantity: number
+  cumulative_quantity: number
+  average_cost_price: number
+  expiry_date: string
+  created_at: string
+  updated_at: string
+  product_name: string
+  product_status: ProductStatus
+  product_units: ProductUnit[]
+  location_name: string
+  total: number
 }
 
 export type InventoryBatchesListQueryResult = {
@@ -38,7 +55,7 @@ export type InventoryBatchesListQueryResult = {
 export type InventoryBatchesSummaryQueryInput = {
   tenantId: string
   search?: string
-  locationIds?: string[]
+  locationId?: string
 }
 
 export type InventoryBatchesSummary = {
@@ -48,28 +65,36 @@ export type InventoryBatchesSummary = {
   totalValue: number
 }
 
+export type InventoryProductSortField = 'nearest_expiry_date' | 'quantity' | 'cumulative_quantity' | 'average_cost_price' | 'batch_numbers'
+
 export type InventoryProductsListQueryInput = {
   tenantId: string
   pageIndex: number
   pageSize: number
   search?: string
-  locationIds?: string[]
+  locationId?: string
   stockStatus?: InventoryBatchStockStatus
   expiryStatus?: InventoryBatchExpiryStatus
+  sortBy?: InventoryProductSortField
+  sortOrder?: 'asc' | 'desc'
 }
 
 export type InventoryProductsListItem = {
-  productId: string
-  productName: string
-  status: ProductStatus
-  totalQuantity: number
-  totalCumulativeQuantity: number
-  averageCostPrice: number
-  totalValue: number
-  batchCount: number
-  locations: string[]
-  earliestExpiry: string | null
-  base_unit_name: string
+  id: string
+  product_name: string
+  product_status: ProductStatus
+  quantity: number
+  cumulative_quantity: number
+  average_cost_price: number
+  batch_numbers: number
+  location_id: string
+  location_name: string
+  nearest_expiry_date: string
+  product_units: ProductUnit[]
+  tenant_id: string
+  created_at: string
+  updated_at: string
+  total: number
 }
 
 export type InventoryProductsListQueryResult = {
@@ -84,12 +109,8 @@ export const createInventoryBatchRepository = (
     async getInventoryBatchesSummary(
       params: InventoryBatchesSummaryQueryInput
     ): Promise<InventoryBatchesSummary> {
-      const locationId = params.locationIds?.length === 1
-        ? params.locationIds[0]
-        : undefined
-
       const { data, error } = await client.rpc('get_inventory_statistics_v2', {
-        p_location_id: locationId,
+        p_location_id: params.locationId,
       })
 
       if (error) {
@@ -111,60 +132,31 @@ export const createInventoryBatchRepository = (
       if (!params.tenantId) {
         return { data: [], total: 0 }
       }
-      const start = params.pageIndex * params.pageSize
-      const end = start + params.pageSize - 1
-      const searchValue = params.search?.trim()
 
-      let query = client
-        .from('inventory_batches')
-        .select(
-          `*, products!inner(id, product_name, status, product_units(unit_name, is_base_unit, conversion_factor)), locations(id, name)`,
-          { count: 'exact' }
-        )
-        .eq('tenant_id', params.tenantId)
-
-      if (params.locationIds?.length) {
-        query = query.in('location_id', params.locationIds)
-      }
-
-      if (searchValue) {
-        query = query.ilike('products.product_name', `%${searchValue}%`)
-      }
-
-      if (params.stockStatus === 'in_stock') {
-        query = query.gt('quantity', 0)
-      } else if (params.stockStatus === 'out_of_stock') {
-        query = query.eq('quantity', 0)
-      }
-
-      if (params.expiryStatus) {
-        const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
-        if (params.expiryStatus === 'expired') {
-          query = query.not('expiry_date', 'is', null).lt('expiry_date', todayStr)
-        } else {
-          let daysAhead: number
-          if (params.expiryStatus === '7_days') daysAhead = 7
-          else if (params.expiryStatus === '1_month') daysAhead = 30
-          else daysAhead = 90
-          const futureDate = new Date(today)
-          futureDate.setDate(futureDate.getDate() + daysAhead)
-          const futureDateStr = futureDate.toISOString().split('T')[0]
-          query = query.not('expiry_date', 'is', null).gte('expiry_date', todayStr).lte('expiry_date', futureDateStr)
-        }
-      }
-
-      const { data, error, count } = await query
-        .order('batch_code', { ascending: true })
-        .range(start, end)
+      const { data, error } = await client.rpc('get_inventory_batches_list', {
+        p_page_index: params.pageIndex,
+        p_page_size: params.pageSize,
+        p_search: params.search?.trim() || undefined,
+        p_location_id: params.locationId,
+        p_stock_status: params.stockStatus,
+        p_expiry_status: params.expiryStatus,
+        p_sort_by: params.sortBy,
+        p_sort_order: params.sortOrder,
+      })
 
       if (error) {
         throw error
       }
 
+      const rows = data ?? []
+      const total = rows[0]?.total ?? 0
+
       return {
-        data: data ?? [],
-        total: count ?? 0,
+        data: rows.map((row) => ({
+          ...row,
+          product_units: (row.product_units ?? []) as ProductUnit[],
+        })),
+        total,
       }
     },
     async getInventoryProductsList(
@@ -173,105 +165,31 @@ export const createInventoryBatchRepository = (
       if (!params.tenantId) {
         return { data: [], total: 0 }
       }
-      const start = params.pageIndex * params.pageSize
-      const end = start + params.pageSize - 1
-      const searchValue = params.search?.trim()
 
-      let query = client
-        .from('products')
-        .select(
-          `id, product_name, status, inventory_batches!inner(id, quantity, cumulative_quantity, average_cost_price, expiry_date, location_id, locations(name)), product_units(unit_name, is_base_unit, conversion_factor)`,
-          { count: 'exact' }
-        )
-        .eq('tenant_id', params.tenantId)
-
-      if (params.stockStatus === 'out_of_stock') {
-        query = query.eq('inventory_batches.quantity', 0)
-      } else {
-        query = query.gt('inventory_batches.quantity', 0)
-      }
-
-      if (params.locationIds?.length) {
-        query = query.in('inventory_batches.location_id', params.locationIds)
-      }
-
-      if (searchValue) {
-        query = query.ilike('product_name', `%${searchValue}%`)
-      }
-
-      if (params.expiryStatus) {
-        const today = new Date()
-        const todayStr = today.toISOString().split('T')[0]
-        if (params.expiryStatus === 'expired') {
-          query = query.not('inventory_batches.expiry_date', 'is', null).lt('inventory_batches.expiry_date', todayStr)
-        } else {
-          let daysAhead: number
-          if (params.expiryStatus === '7_days') daysAhead = 7
-          else if (params.expiryStatus === '1_month') daysAhead = 30
-          else daysAhead = 90
-          const futureDate = new Date(today)
-          futureDate.setDate(futureDate.getDate() + daysAhead)
-          const futureDateStr = futureDate.toISOString().split('T')[0]
-          query = query.not('inventory_batches.expiry_date', 'is', null).gte('inventory_batches.expiry_date', todayStr).lte('inventory_batches.expiry_date', futureDateStr)
-        }
-      }
-
-      const { data, error, count } = await query
-        .order('product_name', { ascending: true })
-        .range(start, end)
+      const { data, error } = await client.rpc('get_inventory_products_list', {
+        p_page_index: params.pageIndex,
+        p_page_size: params.pageSize,
+        p_search: params.search?.trim() || undefined,
+        p_location_id: params.locationId,
+        p_stock_status: params.stockStatus,
+        p_expiry_status: params.expiryStatus,
+        p_sort_by: params.sortBy,
+        p_sort_order: params.sortOrder,
+      })
 
       if (error) {
         throw error
       }
 
-      const mapped = (data ?? []).map((product) => {
-        const batches = product.inventory_batches ?? []
-        let totalQuantity = 0
-        let totalCumulativeQuantity = 0
-        let totalValue = 0
-        let earliestExpiry: string | null = null
-        const locations = new Set<string>()
-
-        batches.forEach((batch) => {
-          const quantity = batch.quantity ?? 0
-          const cumulativeQuantity = batch.cumulative_quantity ?? 0
-          const averageCostPrice = batch.average_cost_price ?? 0
-          totalQuantity += quantity
-          totalCumulativeQuantity += cumulativeQuantity
-          totalValue += quantity * averageCostPrice
-
-          const locationName = batch.locations?.name
-          if (locationName) {
-            locations.add(locationName)
-          }
-
-          if (batch.expiry_date) {
-            if (!earliestExpiry || new Date(batch.expiry_date) < new Date(earliestExpiry)) {
-              earliestExpiry = batch.expiry_date
-            }
-          }
-        })
-
-        const averageCostPrice = totalQuantity > 0 ? totalValue / totalQuantity : 0
-
-        return {
-          productId: product.id,
-          productName: product.product_name ?? 'Không rõ',
-          status: product.status,
-          totalQuantity,
-          totalCumulativeQuantity,
-          averageCostPrice,
-          totalValue: averageCostPrice * totalQuantity,
-          batchCount: batches.length,
-          locations: Array.from(locations),
-          earliestExpiry,
-          base_unit_name: product.product_units?.find((unit) => unit.is_base_unit)?.unit_name ?? '',
-        }
-      })
+      const rows = data ?? []
+      const total = rows[0]?.total ?? 0
 
       return {
-        data: mapped,
-        total: count ?? 0,
+        data: rows.map((row) => ({
+          ...row,
+          product_units: (row.product_units ?? []) as ProductUnit[],
+        })),
+        total,
       }
     },
     async getAllAvailableBatches(params: {

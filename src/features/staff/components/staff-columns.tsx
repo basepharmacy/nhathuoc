@@ -1,6 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { LongText } from '@/components/long-text'
+import { LongText } from '@/components/ui/long-text'
 import { roles } from '../data/staff-data'
 import { type StaffUser } from '../data/staff-schema'
 import { DataTableRowActions } from './data-table-row-actions'

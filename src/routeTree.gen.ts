@@ -32,10 +32,8 @@ import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products/index'
 import { Route as AuthenticatedLocationsIndexRouteImport } from './routes/_authenticated/locations/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
-import { Route as AuthenticatedHelpCenterIndexRouteImport } from './routes/_authenticated/help-center/index'
 import { Route as AuthenticatedDataMigrationIndexRouteImport } from './routes/_authenticated/data-migration/index'
 import { Route as AuthenticatedCustomersIndexRouteImport } from './routes/_authenticated/customers/index'
-import { Route as AuthenticatedChatsIndexRouteImport } from './routes/_authenticated/chats/index'
 import { Route as AuthenticatedCategoriesIndexRouteImport } from './routes/_authenticated/categories/index'
 import { Route as AuthenticatedBankAccountsIndexRouteImport } from './routes/_authenticated/bank-accounts/index'
 import { Route as AuthenticatedSuppliersSupplierIdRouteImport } from './routes/_authenticated/suppliers/$supplierId'
@@ -173,12 +171,6 @@ const AuthenticatedInventoryIndexRoute =
     path: '/inventory/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedHelpCenterIndexRoute =
-  AuthenticatedHelpCenterIndexRouteImport.update({
-    id: '/help-center/',
-    path: '/help-center/',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedDataMigrationIndexRoute =
   AuthenticatedDataMigrationIndexRouteImport.update({
     id: '/data-migration/',
@@ -191,11 +183,6 @@ const AuthenticatedCustomersIndexRoute =
     path: '/customers/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedChatsIndexRoute = AuthenticatedChatsIndexRouteImport.update({
-  id: '/chats/',
-  path: '/chats/',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedCategoriesIndexRoute =
   AuthenticatedCategoriesIndexRouteImport.update({
     id: '/categories/',
@@ -301,10 +288,8 @@ export interface FileRoutesByFullPath {
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/categories/': typeof AuthenticatedCategoriesIndexRoute
-  '/chats/': typeof AuthenticatedChatsIndexRoute
   '/customers/': typeof AuthenticatedCustomersIndexRoute
   '/data-migration/': typeof AuthenticatedDataMigrationIndexRoute
-  '/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/locations/': typeof AuthenticatedLocationsIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
@@ -341,10 +326,8 @@ export interface FileRoutesByTo {
   '/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/bank-accounts': typeof AuthenticatedBankAccountsIndexRoute
   '/categories': typeof AuthenticatedCategoriesIndexRoute
-  '/chats': typeof AuthenticatedChatsIndexRoute
   '/customers': typeof AuthenticatedCustomersIndexRoute
   '/data-migration': typeof AuthenticatedDataMigrationIndexRoute
-  '/help-center': typeof AuthenticatedHelpCenterIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/locations': typeof AuthenticatedLocationsIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
@@ -384,10 +367,8 @@ export interface FileRoutesById {
   '/_authenticated/suppliers/$supplierId': typeof AuthenticatedSuppliersSupplierIdRoute
   '/_authenticated/bank-accounts/': typeof AuthenticatedBankAccountsIndexRoute
   '/_authenticated/categories/': typeof AuthenticatedCategoriesIndexRoute
-  '/_authenticated/chats/': typeof AuthenticatedChatsIndexRoute
   '/_authenticated/customers/': typeof AuthenticatedCustomersIndexRoute
   '/_authenticated/data-migration/': typeof AuthenticatedDataMigrationIndexRoute
-  '/_authenticated/help-center/': typeof AuthenticatedHelpCenterIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/locations/': typeof AuthenticatedLocationsIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
@@ -427,10 +408,8 @@ export interface FileRouteTypes {
     | '/suppliers/$supplierId'
     | '/bank-accounts/'
     | '/categories/'
-    | '/chats/'
     | '/customers/'
     | '/data-migration/'
-    | '/help-center/'
     | '/inventory/'
     | '/locations/'
     | '/products/'
@@ -467,10 +446,8 @@ export interface FileRouteTypes {
     | '/suppliers/$supplierId'
     | '/bank-accounts'
     | '/categories'
-    | '/chats'
     | '/customers'
     | '/data-migration'
-    | '/help-center'
     | '/inventory'
     | '/locations'
     | '/products'
@@ -509,10 +486,8 @@ export interface FileRouteTypes {
     | '/_authenticated/suppliers/$supplierId'
     | '/_authenticated/bank-accounts/'
     | '/_authenticated/categories/'
-    | '/_authenticated/chats/'
     | '/_authenticated/customers/'
     | '/_authenticated/data-migration/'
-    | '/_authenticated/help-center/'
     | '/_authenticated/inventory/'
     | '/_authenticated/locations/'
     | '/_authenticated/products/'
@@ -704,13 +679,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInventoryIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/help-center/': {
-      id: '/_authenticated/help-center/'
-      path: '/help-center'
-      fullPath: '/help-center/'
-      preLoaderRoute: typeof AuthenticatedHelpCenterIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/data-migration/': {
       id: '/_authenticated/data-migration/'
       path: '/data-migration'
@@ -723,13 +691,6 @@ declare module '@tanstack/react-router' {
       path: '/customers'
       fullPath: '/customers/'
       preLoaderRoute: typeof AuthenticatedCustomersIndexRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/chats/': {
-      id: '/_authenticated/chats/'
-      path: '/chats'
-      fullPath: '/chats/'
-      preLoaderRoute: typeof AuthenticatedChatsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/categories/': {
@@ -855,10 +816,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSuppliersSupplierIdRoute: typeof AuthenticatedSuppliersSupplierIdRoute
   AuthenticatedBankAccountsIndexRoute: typeof AuthenticatedBankAccountsIndexRoute
   AuthenticatedCategoriesIndexRoute: typeof AuthenticatedCategoriesIndexRoute
-  AuthenticatedChatsIndexRoute: typeof AuthenticatedChatsIndexRoute
   AuthenticatedCustomersIndexRoute: typeof AuthenticatedCustomersIndexRoute
   AuthenticatedDataMigrationIndexRoute: typeof AuthenticatedDataMigrationIndexRoute
-  AuthenticatedHelpCenterIndexRoute: typeof AuthenticatedHelpCenterIndexRoute
   AuthenticatedInventoryIndexRoute: typeof AuthenticatedInventoryIndexRoute
   AuthenticatedLocationsIndexRoute: typeof AuthenticatedLocationsIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
@@ -885,10 +844,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSuppliersSupplierIdRoute: AuthenticatedSuppliersSupplierIdRoute,
   AuthenticatedBankAccountsIndexRoute: AuthenticatedBankAccountsIndexRoute,
   AuthenticatedCategoriesIndexRoute: AuthenticatedCategoriesIndexRoute,
-  AuthenticatedChatsIndexRoute: AuthenticatedChatsIndexRoute,
   AuthenticatedCustomersIndexRoute: AuthenticatedCustomersIndexRoute,
   AuthenticatedDataMigrationIndexRoute: AuthenticatedDataMigrationIndexRoute,
-  AuthenticatedHelpCenterIndexRoute: AuthenticatedHelpCenterIndexRoute,
   AuthenticatedInventoryIndexRoute: AuthenticatedInventoryIndexRoute,
   AuthenticatedLocationsIndexRoute: AuthenticatedLocationsIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,

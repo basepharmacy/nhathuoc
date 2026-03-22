@@ -26,7 +26,7 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { PasswordInput } from '@/components/password-input'
+import { PasswordInput } from '@/components/ui/password-input'
 
 const formSchema = z
   .object({

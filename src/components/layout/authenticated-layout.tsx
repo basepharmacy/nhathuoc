@@ -6,7 +6,6 @@ import { SearchProvider } from '@/context/search-provider'
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar'
 import { AppSidebar } from '@/components/layout/app-sidebar'
 import { OfflineIndicator } from '@/components/offline-indicator'
-import { SkipToMain } from '@/components/skip-to-main'
 import { InactiveLocationIndicator } from '@/components/inactive-location-indicator'
 import { useOfflineSync } from '@/hooks/use-offline-sync'
 
@@ -21,7 +20,6 @@ export function AuthenticatedLayout({ children }: AuthenticatedLayoutProps) {
     <SearchProvider>
       <LayoutProvider>
         <SidebarProvider defaultOpen={defaultOpen}>
-          <SkipToMain />
           <AppSidebar />
           <SidebarInset
             className={cn(

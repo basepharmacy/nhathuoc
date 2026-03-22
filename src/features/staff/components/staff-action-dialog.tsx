@@ -29,7 +29,7 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Input } from '@/components/ui/input'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { PasswordInput } from '@/components/password-input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Separator } from '@/components/ui/separator'
 import { SelectDropdown } from '@/components/select-dropdown'
 import {

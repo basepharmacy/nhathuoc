@@ -4,12 +4,15 @@ import {
   type ColumnFiltersState,
   type OnChangeFn,
   type PaginationState,
+  type SortingState,
   getCoreRowModel,
+  getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
 import { useNavigate } from '@tanstack/react-router'
 import { SquarePen } from 'lucide-react'
 import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
+import { DataTableColumnHeader } from '@/components/data-table'
 import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -27,8 +30,10 @@ type Props = {
   tableState: {
     pagination: PaginationState
     columnFilters: ColumnFiltersState
+    sorting: SortingState
     onPaginationChange: OnChangeFn<PaginationState>
     onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
+    onSortingChange: OnChangeFn<SortingState>
   }
   pageCount: number
   total: number
@@ -54,8 +59,78 @@ function createColumns(
 ): ColumnDef<InventoryProductsListItem>[] {
   return [
     {
+      accessorKey: 'product_name',
+      header: 'Sản phẩm',
+      cell: ({ row }) => (
+        <div className='flex space-x-2'>
+          <span className='truncate font-medium'>{row.original.product_name}</span>
+          {row.original.product_status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'nearest_expiry_date',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='HSD gần nhất' />,
+      cell: ({ row }) => (
+        <div className='flex items-center gap-2'>
+          <span>{formatDateLabel(row.original.nearest_expiry_date)}</span>
+          {getExpiryBadge(row.original.nearest_expiry_date)}
+        </div>
+      ),
+    },
+    {
+      accessorKey: 'quantity',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Tồn kho' className='justify-end' />,
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatQuantity(row.original.quantity) + ' ' + (row.original.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'cumulative_quantity',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Tổng nhập' className='justify-end' />,
+      cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'average_cost_price',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Giá nhập TB' className='justify-end' />,
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatCurrency(row.original.average_cost_price, { fallback: '0' })}đ
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      id: 'totalValue',
+      header: 'Giá trị tồn kho',
+      cell: ({ row }) => (
+        <span className='tabular-nums'>
+          {formatCurrency(
+            row.original.average_cost_price * row.original.quantity,
+            { fallback: '0' }
+          )}đ
+        </span>
+      ),
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'batch_numbers',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Số lô' className='justify-end' />,
+      cell: ({ row }) => row.original.batch_numbers,
+      meta: { className: 'text-end', thClassName: 'text-end' },
+    },
+    {
+      accessorKey: 'location_name',
+      header: 'Cửa hàng',
+      cell: ({ row }) => row.original.location_name || '-',
+    },
+    {
       id: 'search',
-      accessorFn: (row) => row.productName,
+      accessorFn: (row) => row.product_name,
       header: () => null,
       cell: () => null,
       enableHiding: true,
@@ -80,76 +155,6 @@ function createColumns(
       header: () => null,
       cell: () => null,
       enableHiding: true,
-    },
-    {
-      accessorKey: 'productName',
-      header: 'Sản phẩm',
-      cell: ({ row }) => (
-        <div className='flex space-x-2'>
-          <span className='truncate font-medium'>{row.original.productName}</span>
-          {row.original.status === '3_INACTIVE' && <Badge variant='destructive'>Ngừng bán</Badge>}
-        </div>
-      ),
-    },
-    {
-      accessorKey: 'totalQuantity',
-      header: 'Tồn kho',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatQuantity(row.original.totalQuantity) + ' ' + row.original.base_unit_name}
-        </span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'totalCumulativeQuantity',
-      header: 'Tổng nhập',
-      cell: ({ row }) => formatQuantity(row.original.totalCumulativeQuantity),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'averageCostPrice',
-      header: 'Giá nhập TB',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatCurrency(row.original.averageCostPrice, { fallback: '0' })}đ
-        </span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'totalValue',
-      header: 'Giá trị tồn kho',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatCurrency(
-            row.original.averageCostPrice * row.original.totalQuantity,
-            { fallback: '0' }
-          )}đ
-        </span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'batchCount',
-      header: 'Số lô',
-      cell: ({ row }) => row.original.batchCount,
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      accessorKey: 'locations',
-      header: 'Cửa hàng',
-      cell: ({ row }) => row.original.locations.join(', ') || '-',
-    },
-    {
-      accessorKey: 'earliestExpiry',
-      header: 'HSD gần nhất',
-      cell: ({ row }) => (
-        <div className='flex items-center gap-2'>
-          <span>{formatDateLabel(row.original.earliestExpiry)}</span>
-          {getExpiryBadge(row.original.earliestExpiry)}
-        </div>
-      ),
     },
     ...(showActions
       ? [
@@ -184,7 +189,7 @@ export function InventoryProductTable({
   const handleAdjust = (row: InventoryProductsListItem) => {
     navigate({
       to: '/inventory/adjustments/new',
-      search: { productId: row.productId },
+      search: { productId: row.id },
     })
   }
 
@@ -199,12 +204,16 @@ export function InventoryProductTable({
     state: {
       pagination: tableState.pagination,
       columnFilters: tableState.columnFilters,
+      sorting: tableState.sorting,
     },
     onPaginationChange: tableState.onPaginationChange,
     onColumnFiltersChange: tableState.onColumnFiltersChange,
+    onSortingChange: tableState.onSortingChange,
     getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
     manualFiltering: true,
     manualPagination: true,
+    manualSorting: true,
     pageCount,
     rowCount: total,
   })

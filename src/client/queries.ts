@@ -465,9 +465,11 @@ export const getInventoryBatchesListQueryOptions = (
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         search: params.search ?? '',
-        locationIds: params.locationIds ?? [],
+        locationId: params.locationId ?? '',
         stockStatus: params.stockStatus ?? '',
         expiryStatus: params.expiryStatus ?? '',
+        sortBy: params.sortBy ?? '',
+        sortOrder: params.sortOrder ?? '',
       },
     ],
     queryFn: async () => {
@@ -488,9 +490,11 @@ export const getInventoryProductsListQueryOptions = (
         pageIndex: params.pageIndex,
         pageSize: params.pageSize,
         search: params.search ?? '',
-        locationIds: params.locationIds ?? [],
+        locationId: params.locationId ?? '',
         stockStatus: params.stockStatus ?? '',
         expiryStatus: params.expiryStatus ?? '',
+        sortBy: params.sortBy ?? '',
+        sortOrder: params.sortOrder ?? '',
       },
     ],
     queryFn: async () => {
@@ -509,7 +513,7 @@ export const getInventoryBatchesSummaryQueryOptions = (
       'summary',
       {
         search: params.search ?? '',
-        locationIds: params.locationIds ?? [],
+        locationId: params.locationId ?? '',
       },
     ],
     queryFn: async () => {

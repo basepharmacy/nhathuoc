@@ -61,7 +61,7 @@ export function Inventory() {
   const { data: summaryResult, isError: isSummaryError } = useQuery({
     ...getInventoryBatchesSummaryQueryOptions({
       tenantId,
-      locationIds: listQueryParams.locationIds,
+      locationId: listQueryParams.locationId,
     }),
     enabled: !!tenantId,
   })

@@ -2,8 +2,9 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type PaginationState,
+  type SortingState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 type Location = { id: string; name: string }
 
@@ -23,6 +24,7 @@ export function useInventoryTable({
     pageIndex: 0,
     pageSize: 10,
   })
+  const [sorting, setSorting] = useState<SortingState>([])
 
   // Extract filter values from columnFilters for server-side query
   const searchValue = useMemo(() => {
@@ -32,13 +34,14 @@ export function useInventoryTable({
     return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
   }, [columnFilters])
 
-  const locationIds = useMemo(() => {
+  const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
       (filter) => filter.id === 'location_id'
     )
-    return Array.isArray(locationFilter?.value)
-      ? (locationFilter?.value as string[])
-      : []
+    if (Array.isArray(locationFilter?.value) && locationFilter.value.length === 1) {
+      return locationFilter.value[0] as string
+    }
+    return undefined
   }, [columnFilters])
 
   const stockStatus = useMemo(() => {
@@ -61,15 +64,20 @@ export function useInventoryTable({
     return undefined
   }, [columnFilters])
 
+  const sortBy = sorting.length > 0 ? sorting[0].id as InventoryBatchSortField : undefined
+  const sortOrder = sorting.length > 0 ? (sorting[0].desc ? 'desc' as const : 'asc' as const) : undefined
+
   const listQueryParams: InventoryBatchesListQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
-    locationIds,
+    locationId,
     stockStatus,
     expiryStatus,
-  }), [tenantId, pagination, searchValue, locationIds, stockStatus, expiryStatus])
+    sortBy,
+    sortOrder,
+  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, sortBy, sortOrder])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -129,6 +137,7 @@ export function useInventoryTable({
       {
         columnId: 'location_id',
         title: 'Cửa hàng',
+        singleSelect: true,
         options: locationOptions,
       },
       {
@@ -150,8 +159,10 @@ export function useInventoryTable({
   const tableState = {
     pagination,
     columnFilters,
+    sorting,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,
+    onSortingChange: setSorting,
   }
 
   return { tableState, filters, listQueryParams }
