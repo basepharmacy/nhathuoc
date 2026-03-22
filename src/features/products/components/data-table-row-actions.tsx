@@ -33,7 +33,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
       label: 'Ngừng bán',
       icon: Ban,
       disabled: !isActive,
-      tooltip: 'Chỉ áp dụng cho sản phẩm đang bán',
+      tooltip: !isActive ? 'Chỉ áp dụng cho sản phẩm đang bán' : undefined,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('deactivate')
@@ -44,7 +44,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
       icon: Trash2,
       destructive: true,
       disabled: !isDraft,
-      tooltip: 'Chỉ được phép xoá sản phẩm ở trạng thái nháp',
+      tooltip: !isDraft ? 'Chỉ được phép xoá sản phẩm ở trạng thái nháp' : undefined,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('delete')

@@ -31,6 +31,7 @@ type PurchaseOrdersHistoryTableProps = {
   toDate?: Date | undefined
   onFromDateChange?: (date: Date | undefined) => void
   onToDateChange?: (date: Date | undefined) => void
+  onRowClick?: (row: PurchaseOrderWithRelations) => void
   deleteState?: {
     target: PurchaseOrderWithRelations | null
     open: boolean
@@ -49,6 +50,7 @@ export function PurchaseOrdersHistoryTable({
   toDate,
   onFromDateChange,
   onToDateChange,
+  onRowClick,
   deleteState,
 }: PurchaseOrdersHistoryTableProps) {
   const filterValue = (table.getColumn(searchKey)?.getFilterValue() as string) ?? ''
@@ -169,7 +171,8 @@ export function PurchaseOrdersHistoryTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className='group/row'
+                  className={cn('group/row', onRowClick && 'cursor-pointer')}
+                  onClick={onRowClick ? () => onRowClick(row.original) : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
@@ -179,6 +182,11 @@ export function PurchaseOrdersHistoryTable({
                         cell.column.columnDef.meta?.className,
                         cell.column.columnDef.meta?.tdClassName
                       )}
+                      onClick={
+                        cell.column.id === 'actions'
+                          ? (e) => e.stopPropagation()
+                          : undefined
+                      }
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>

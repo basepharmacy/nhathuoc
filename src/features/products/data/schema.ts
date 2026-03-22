@@ -79,6 +79,7 @@ export const productFormSchema = z.object({
   units: z
     .array(
       z.object({
+        id: z.string().optional(),
         unit_name: z
           .string()
           .min(1, 'Đơn vị là bắt buộc.')

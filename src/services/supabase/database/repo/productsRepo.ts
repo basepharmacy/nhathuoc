@@ -115,51 +115,51 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
 
       return data as Product
     },
-    async replaceProductUnits(params: {
-      productId: string
-      tenantId: string
-      units: Array<Omit<ProductUnitInsert, 'product_id' | 'tenant_id'>>
-    }): Promise<ProductUnit[]> {
-      const { error: deleteError } = await client
-        .from('product_units')
-        .delete()
-        .eq('product_id', params.productId)
-        .eq('tenant_id', params.tenantId)
-
-      if (deleteError) {
-        throw deleteError
-      }
-
-      const unitsPayload = params.units.map((unit) => ({
-        ...unit,
-        product_id: params.productId,
-        tenant_id: params.tenantId,
-      }))
-
-      const { data, error } = await client
-        .from('product_units')
-        .insert(unitsPayload)
-        .select('*')
-
-      if (error) {
-        throw error
-      }
-
-      return (data ?? []) as ProductUnit[]
-    },
     async updateProductWithUnits(params: {
       productId: string
       product: ProductUpdate
       tenantId: string
-      units: Array<Omit<ProductUnitInsert, 'product_id' | 'tenant_id'>>
+      units: Array<Omit<ProductUnitInsert, 'product_id' | 'tenant_id'> & { id?: string }>
     }): Promise<Product> {
       const product = await repo.updateProduct(params.productId, params.product)
 
-      await repo.replaceProductUnits({
-        productId: params.productId,
-        tenantId: params.tenantId,
-        units: params.units,
-      })
+      // Fetch existing units
+      const existingUnits = await repo.getProductUnitsByProductId(params.productId)
+      const existingIds = new Set(existingUnits.map((u) => u.id))
+      const incomingIds = new Set(params.units.filter((u) => u.id).map((u) => u.id!))
+
+      // Delete units that were removed
+      const toDelete = existingUnits.filter((u) => !incomingIds.has(u.id))
+      if (toDelete.length > 0) {
+        const { error } = await client
+          .from('product_units')
+          .delete()
+          .in('id', toDelete.map((u) => u.id))
+        if (error) throw error
+      }
+
+      // Update existing units
+      const toUpdate = params.units.filter((u) => u.id && existingIds.has(u.id))
+      for (const unit of toUpdate) {
+        const { id, ...fields } = unit
+        const { error } = await client
+          .from('product_units')
+          .update(fields)
+          .eq('id', id!)
+        if (error) throw error
+      }
+
+      // Insert new units
+      const toInsert = params.units.filter((u) => !u.id)
+      if (toInsert.length > 0) {
+        const payload = toInsert.map((unit) => ({
+          ...unit,
+          product_id: params.productId,
+          tenant_id: params.tenantId,
+        }))
+        const { error } = await client.from('product_units').insert(payload)
+        if (error) throw error
+      }
 
       return product
     },
@@ -214,6 +214,17 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
       const { error } = await client
         .from('product_units')
         .update({ cost_price: costPrice })
+        .eq('id', unitId)
+
+      if (error) {
+        throw error
+      }
+    },
+
+    async updateProductUnitSellPrice(unitId: string, sellPrice: number): Promise<void> {
+      const { error } = await client
+        .from('product_units')
+        .update({ sell_price: sellPrice })
         .eq('id', unitId)
 
       if (error) {

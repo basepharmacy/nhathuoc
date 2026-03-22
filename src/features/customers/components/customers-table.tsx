@@ -8,6 +8,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -27,6 +28,7 @@ type CustomersTableProps = {
 }
 
 export function CustomersTable({ data, isLoading }: CustomersTableProps) {
+  const navigate = useNavigate()
   const [rowSelection, setRowSelection] = useState({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
   const [sorting, setSorting] = useState<SortingState>([])
@@ -91,7 +93,13 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className='group/row'
+                  className='group/row cursor-pointer'
+                  onClick={() =>
+                    navigate({
+                      to: '/customers/$customerId',
+                      params: { customerId: row.original.id },
+                    })
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
@@ -101,6 +109,11 @@ export function CustomersTable({ data, isLoading }: CustomersTableProps) {
                         cell.column.columnDef.meta?.className,
                         cell.column.columnDef.meta?.tdClassName
                       )}
+                      onClick={
+                        cell.column.id === 'actions'
+                          ? (e) => e.stopPropagation()
+                          : undefined
+                      }
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>

@@ -160,7 +160,8 @@ function createColumns(
       ? [
         {
           id: 'actions',
-          cell: ({ row }: { row: import('@tanstack/react-table').Row<InventoryBatchWithRelations> }) => {
+          header: () => <div className='text-right'>Thao tác</div>,
+          cell: ({ row }) => {
             const actions: RowAction[] = [
               {
                 label: 'Điều chỉnh',
@@ -168,7 +169,11 @@ function createColumns(
                 onClick: () => onAdjust(row.original),
               },
             ]
-            return <DataTableRowActions actions={actions} />
+            return (
+              <div className='flex justify-end'>
+                <DataTableRowActions actions={actions} />
+              </div>
+            )
           },
           meta: {
             className: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',

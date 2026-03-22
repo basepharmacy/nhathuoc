@@ -1,76 +1,16 @@
-import { useState } from 'react'
 import { type ColumnDef } from '@tanstack/react-table'
-import { MoreHorizontalIcon } from 'lucide-react'
 import { formatCurrency, formatDateTimeLabel, formatQuantity } from '@/lib/utils'
 import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog'
 import { getReasonCodeLabel } from '../data/reason-code'
+import { StockAdjustmentsRowActions } from './stock-adjustments-row-actions'
 
-function CancelAdjustmentCell({
-  row,
-  onCancel,
-}: {
-  row: StockAdjustmentWithRelations
-  onCancel: (row: StockAdjustmentWithRelations) => void
-}) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant='ghost' className='h-8 w-8 p-0'>
-            <MoreHorizontalIcon className='h-4 w-4' />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align='end'>
-          <DropdownMenuItem onSelect={() => setOpen(true)}>
-            Huỷ điều chỉnh
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <AlertDialog open={open} onOpenChange={setOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Huỷ đơn điều chỉnh</AlertDialogTitle>
-            <AlertDialogDescription>
-              Bạn có chắc chắn muốn huỷ đơn điều chỉnh này không? Các điều chỉnh tồn kho thay đổi sẽ được cập nhật lại như cũ
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Đóng</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => onCancel(row)}
-            >
-              Xác nhận
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
-  )
+type StockAdjustmentsColumnHandlers = {
+  onCancel?: (row: StockAdjustmentWithRelations) => void
 }
 
 export function createStockAdjustmentsColumns(
-  onCancel: (row: StockAdjustmentWithRelations) => void
+  handlers: StockAdjustmentsColumnHandlers
 ): ColumnDef<StockAdjustmentWithRelations>[] {
   return [
     {
@@ -156,11 +96,21 @@ export function createStockAdjustmentsColumns(
     },
     {
       id: 'actions',
-      header: '',
+      header: () => <div className='text-right'>Thao tác</div>,
       cell: ({ row }) => (
-        <CancelAdjustmentCell row={row.original} onCancel={onCancel} />
+        <div className='flex justify-end'>
+          <StockAdjustmentsRowActions
+            row={row}
+            onCancel={handlers.onCancel}
+          />
+        </div>
       ),
-      meta: { className: 'w-10' },
+      meta: {
+        className: 'text-right',
+        thClassName: 'text-right',
+      },
+      enableSorting: false,
+      enableHiding: false,
     },
   ]
 }

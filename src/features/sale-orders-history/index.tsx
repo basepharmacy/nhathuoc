@@ -309,6 +309,7 @@ export function SaleOrdersHistory() {
           toDate={toDate}
           onFromDateChange={setFromDate}
           onToDateChange={setToDate}
+          onRowClick={handleEdit}
           deleteState={deleteState}
         />
       </Main>

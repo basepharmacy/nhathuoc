@@ -250,6 +250,7 @@ export function ProductsActionDialog({
             Number(right.is_base_unit) - Number(left.is_base_unit)
         )
         .map((unit) => ({
+          id: unit.id,
           unit_name: unit.unit_name,
           conversion_factor: unit.is_base_unit ? 1 : Number(unit.conversion_factor ?? 1),
           cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,
@@ -288,6 +289,7 @@ export function ProductsActionDialog({
 
   const normalizeUnits = (units: ProductForm['units']) =>
     units.map((unit, index) => ({
+      ...(unit.id ? { id: unit.id } : {}),
       unit_name: unit.unit_name.trim(),
       conversion_factor: index === 0 ? 1 : Number(unit.conversion_factor ?? 1),
       cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,

@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { Eye, SquarePen, Trash2 } from 'lucide-react'
+import { Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -8,29 +8,22 @@ import { type SaleOrderWithRelations } from '@/services/supabase/'
 
 type SaleOrdersHistoryRowActionsProps = {
   row: Row<SaleOrderWithRelations>
-  onEdit: (order: SaleOrderWithRelations) => void
   onDelete: (order: SaleOrderWithRelations) => void
 }
 
 export function SaleOrdersHistoryRowActions({
   row,
-  onEdit,
   onDelete,
 }: SaleOrdersHistoryRowActionsProps) {
   const isDraft = row.original.status === '1_DRAFT'
 
   const actions: RowAction[] = [
     {
-      label: isDraft ? 'Chỉnh sửa' : 'Xem chi tiết',
-      icon: isDraft ? SquarePen : Eye,
-      onClick: () => onEdit(row.original),
-    },
-    {
       label: 'Xóa',
       icon: Trash2,
       destructive: true,
       disabled: !isDraft,
-      tooltip: 'Chỉ được phép xoá đơn nháp',
+      tooltip: !isDraft ? 'Chỉ được phép xoá đơn nháp' : undefined,
       onClick: () => onDelete(row.original),
     },
   ]

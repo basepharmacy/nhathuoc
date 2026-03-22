@@ -81,23 +81,16 @@ export const suppliersColumns: ColumnDef<Supplier>[] = [
     },
   },
   {
-    accessorKey: 'created_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title='Ngày tạo' />
-    ),
-    meta: { label: 'Ngày tạo' },
-    cell: ({ row }) => {
-      const date = row.getValue('created_at') as string | null
-      if (!date) return <span>—</span>
-      return (
-        <span className='text-nowrap text-sm'>
-          {new Date(date).toLocaleDateString('vi-VN')}
-        </span>
-      )
-    },
-  },
-  {
     id: 'actions',
-    cell: DataTableRowActions,
+    header: () => <div className='text-right'>Thao tác</div>,
+    cell: ({ row }) => (
+      <div className='flex justify-end'>
+        <DataTableRowActions row={row} />
+      </div>
+    ),
+    meta: {
+      className: 'text-right',
+      thClassName: 'text-right',
+    },
   },
 ]

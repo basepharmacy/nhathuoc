@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { saleOrdersRepo } from '@/client'
+import { productsRepo, saleOrdersRepo } from '@/client'
 import { type SaleOrder } from '@/services/supabase'
 import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-queue'
 import { useOnlineStatus } from '@/hooks/use-online-status'
@@ -59,6 +59,33 @@ export function useSaleOrderMutations({
     toast.error(mapSupabaseError(error))
   }
 
+  const updateSellPricesForNullItems = async (): Promise<boolean> => {
+    const { items } = store.getState()
+    const updates: Array<{ unitId: string; sellPrice: number }> = []
+
+    for (const item of items) {
+      if (!item.productUnitId || item.unitPrice <= 0) continue
+      const units = item.product.product_units ?? []
+      const orderedUnit = units.find((u) => u.id === item.productUnitId)
+      if (!orderedUnit || orderedUnit.sell_price !== null) continue
+
+      const orderedCF = orderedUnit.conversion_factor || 1
+      for (const u of units) {
+        if (u.sell_price === null) {
+          const sellPrice = Math.round(item.unitPrice * (u.conversion_factor || 1) / orderedCF)
+          updates.push({ unitId: u.id, sellPrice })
+        }
+      }
+    }
+
+    if (updates.length === 0) return false
+
+    await Promise.all(
+      updates.map((u) => productsRepo.updateProductUnitSellPrice(u.unitId, u.sellPrice))
+    )
+    return true
+  }
+
   const createMutation = useMutation({
     mutationFn: async (status: SaleOrder['status']) => {
       validateOrder()
@@ -92,7 +119,9 @@ export function useSaleOrderMutations({
       }
 
       try {
-        return await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
+        const order = await saleOrdersRepo.createSaleOrderWithItemsV2(payload)
+        const didUpdateSellPrice = await updateSellPricesForNullItems()
+        return Object.assign(order, { _didUpdateSellPrice: didUpdateSellPrice })
       } catch (error) {
         if (isNetworkError(error)) {
           await addOfflineMutation({ type: 'create-sale-order', payload })
@@ -109,6 +138,9 @@ export function useSaleOrderMutations({
         return
       }
 
+      if ((order as any)._didUpdateSellPrice) {
+        queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
+      }
       if (status === '2_COMPLETE') {
         queryClient.invalidateQueries({ queryKey: ['dashboard-report', 'sales-statistics'] })
         queryClient.invalidateQueries({ queryKey: ['dashboard-report', 'low-stock-products'] })
@@ -158,7 +190,9 @@ export function useSaleOrderMutations({
 
       try {
         await saleOrdersRepo.deleteSaleOrder({ orderId: initialData.id })
-        return await saleOrdersRepo.createSaleOrderWithItemsV2({ ...createPayload, isOffline: false })
+        const order = await saleOrdersRepo.createSaleOrderWithItemsV2({ ...createPayload, isOffline: false })
+        const didUpdateSellPrice = await updateSellPricesForNullItems()
+        return Object.assign(order, { _didUpdateSellPrice: didUpdateSellPrice })
       } catch (error) {
         if (isNetworkError(error)) {
           await addOfflineMutation({ type: 'update-sale-order', payload: offlinePayload, orderId: initialData.id })
@@ -175,6 +209,10 @@ export function useSaleOrderMutations({
         toast.success('Đã lưu cập nhật offline. Sẽ tự đồng bộ khi có mạng.')
         onComplete?.(state.orderCode ?? '', status)
         return
+      }
+
+      if ((result as any)?._didUpdateSellPrice) {
+        queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
       }
 
       if (state.orderCode) {

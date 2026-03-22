@@ -10,6 +10,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from '@tanstack/react-table'
+import { useNavigate } from '@tanstack/react-router'
 import { cn } from '@/lib/utils'
 import {
   Table,
@@ -29,6 +30,7 @@ type SuppliersTableProps = {
 }
 
 export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
+  const navigate = useNavigate()
   const [rowSelection, setRowSelection] = useState({})
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     { id: 'is_active', value: ['true'] },
@@ -112,7 +114,13 @@ export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && 'selected'}
-                  className='group/row'
+                  className='group/row cursor-pointer'
+                  onClick={() =>
+                    navigate({
+                      to: '/suppliers/$supplierId',
+                      params: { supplierId: row.original.id },
+                    })
+                  }
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
@@ -122,6 +130,11 @@ export function SuppliersTable({ data, isLoading }: SuppliersTableProps) {
                         cell.column.columnDef.meta?.className,
                         cell.column.columnDef.meta?.tdClassName
                       )}
+                      onClick={
+                        cell.column.id === 'actions'
+                          ? (e) => e.stopPropagation()
+                          : undefined
+                      }
                     >
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>

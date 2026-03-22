@@ -93,7 +93,7 @@ export function StockAdjustmentsTable({
   )
 
   const columns = useMemo(
-    () => createStockAdjustmentsColumns(handleCancel),
+    () => createStockAdjustmentsColumns({ onCancel: handleCancel }),
     [handleCancel]
   )
 

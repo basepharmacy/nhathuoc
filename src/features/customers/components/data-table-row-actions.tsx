@@ -1,6 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { useNavigate } from '@tanstack/react-router'
-import { Eye, SquarePen, Trash2 } from 'lucide-react'
+import { SquarePen, Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -16,18 +15,8 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useCustomers()
   const { role } = usePermissions()
-  const navigate = useNavigate()
 
   const actions: RowAction[] = [
-    {
-      label: 'Xem chi tiết',
-      icon: Eye,
-      onClick: () =>
-        navigate({
-          to: '/customers/$customerId',
-          params: { customerId: row.original.id },
-        }),
-    },
     {
       label: 'Chỉnh sửa',
       icon: SquarePen,

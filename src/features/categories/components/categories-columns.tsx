@@ -66,6 +66,15 @@ export const categoriesColumns: ColumnDef<Category>[] = [
   },
   {
     id: 'actions',
-    cell: DataTableRowActions,
+    header: () => <div className='text-right'>Thao tác</div>,
+    cell: ({ row }) => (
+      <div className='flex justify-end'>
+        <DataTableRowActions row={row} />
+      </div>
+    ),
+    meta: {
+      className: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
+      thClassName: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
+    },
   },
 ]
