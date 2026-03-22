@@ -32,8 +32,12 @@ const timePeriodLabels: Record<TimePeriod, string> = {
 }
 
 export function Dashboard() {
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>('month')
-  const [activityTimePeriod, setActivityTimePeriod] = useState<ActivityTimePeriod>('month')
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>(
+    () => (localStorage.getItem('dashboard-time-period') as TimePeriod) || 'month'
+  )
+  const [activityTimePeriod, setActivityTimePeriod] = useState<ActivityTimePeriod>(
+    () => (localStorage.getItem('dashboard-activity-time-period') as ActivityTimePeriod) || 'month'
+  )
   const [activityFromDate, setActivityFromDate] = useState<Date | undefined>()
   const [activityToDate, setActivityToDate] = useState<Date | undefined>()
   const { tab: activeTab } = Route.useSearch()
@@ -69,7 +73,10 @@ export function Dashboard() {
             {activeTab === 'report' && (
               <Select
                 value={timePeriod}
-                onValueChange={(value) => setTimePeriod(value as TimePeriod)}
+                onValueChange={(value) => {
+                  setTimePeriod(value as TimePeriod)
+                  localStorage.setItem('dashboard-time-period', value)
+                }}
               >
                 <SelectTrigger className='w-[160px] shrink-0'>
                   <SelectValue />
@@ -89,6 +96,7 @@ export function Dashboard() {
                   value={activityTimePeriod}
                   onValueChange={(value) => {
                     setActivityTimePeriod(value as ActivityTimePeriod)
+                    localStorage.setItem('dashboard-activity-time-period', value)
                     setActivityFromDate(undefined)
                     setActivityToDate(undefined)
                   }}

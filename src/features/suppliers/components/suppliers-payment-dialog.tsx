@@ -9,7 +9,7 @@ import { mapSupabaseError } from '@/lib/error-mapper'
 import { Plus, Sparkles } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { supplierBankAccountsRepo, supplierPaymentsRepo } from '@/client'
-import { getSupplierBankAccountsQueryOptions } from '@/client/queries'
+import { getSupplierBankAccountsQueryOptions, getPurchasesStatisticsV2QueryOptions } from '@/client/queries'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -156,6 +156,7 @@ type SuppliersPaymentDialogProps = {
   suppliers?: Supplier[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  totalDebt?: number
 }
 
 export function SuppliersPaymentDialog({
@@ -163,6 +164,7 @@ export function SuppliersPaymentDialog({
   suppliers,
   open,
   onOpenChange,
+  totalDebt: totalDebtProp,
 }: SuppliersPaymentDialogProps) {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
@@ -179,6 +181,13 @@ export function SuppliersPaymentDialog({
     ...getSupplierBankAccountsQueryOptions(currentRow?.id ?? ''),
     enabled: !!currentRow?.id,
   })
+
+  const { data: fetchedStats } = useQuery({
+    ...getPurchasesStatisticsV2QueryOptions({ supplierId: currentRow?.id }),
+    enabled: !!currentRow?.id && totalDebtProp == null,
+  })
+
+  const totalDebt = totalDebtProp ?? fetchedStats?.totalDebt ?? null
 
   const selectedAccount = useMemo(() => {
     if (!bankAccounts.length) return null
@@ -313,6 +322,18 @@ export function SuppliersPaymentDialog({
               onSubmit={form.handleSubmit(onSubmit)}
               className='space-y-4'
             >
+              {totalDebt != null && currentRow && (
+                <div className='rounded-lg border bg-yellow-50 px-4 py-3 flex items-center justify-between'>
+                  <span className='text-sm text-muted-foreground'>Công nợ còn lại</span>
+                  <span className='text-lg font-semibold tabular-nums'>
+                    {formatCurrency(totalDebt, {
+                      style: 'currency',
+                      currency: 'VND',
+                      maximumFractionDigits: 0,
+                    })}
+                  </span>
+                </div>
+              )}
               {showSupplierSelect && (
                 <div className='grid grid-cols-6 items-center gap-x-4 gap-y-1'>
                   <label className='col-span-2 text-sm font-medium'>Nhà cung cấp</label>
@@ -353,6 +374,11 @@ export function SuppliersPaymentDialog({
                       />
                     </FormControl>
                     <FormMessage className='col-span-4 col-start-3' />
+                    {totalDebt != null && Number(watchedAmount) > totalDebt && (
+                      <p className='col-span-4 col-start-3 text-xs text-yellow-600'>
+                        Số tiền thanh toán vượt quá công nợ. Hệ thống vẫn ghi nhận thanh toán nhưng công nợ sẽ được tính thành 0.
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
