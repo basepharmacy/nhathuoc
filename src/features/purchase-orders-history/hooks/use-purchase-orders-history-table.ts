@@ -60,22 +60,22 @@ export function usePurchaseOrdersHistoryTable({
     return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
   }, [columnFilters])
 
-  const supplierIds = useMemo(() => {
+  const supplierId = useMemo(() => {
     const supplierFilter = columnFilters.find(
       (filter) => filter.id === 'supplier_name'
     )
     return Array.isArray(supplierFilter?.value)
-      ? (supplierFilter?.value as string[])
-      : []
+      ? (supplierFilter.value[0] as string | undefined)
+      : undefined
   }, [columnFilters])
 
-  const locationIds = useMemo(() => {
+  const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
       (filter) => filter.id === 'location_name'
     )
     return Array.isArray(locationFilter?.value)
-      ? (locationFilter?.value as string[])
-      : []
+      ? (locationFilter.value[0] as string | undefined)
+      : undefined
   }, [columnFilters])
 
   const statusFilters = useMemo(() => {
@@ -99,14 +99,14 @@ export function usePurchaseOrdersHistoryTable({
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
-    supplierIds,
-    locationIds,
+    supplierId,
+    locationId,
     statuses: statusFilters,
     paymentStatuses: paymentStatusFilters,
     fromDate: formatFromDateParam(fromDate),
     toDate: formatToDateParam(toDate),
     sorting,
-  }), [tenantId, pagination, searchValue, supplierIds, locationIds, statusFilters, paymentStatusFilters, fromDate, toDate, sorting])
+  }), [tenantId, pagination, searchValue, supplierId, locationId, statusFilters, paymentStatusFilters, fromDate, toDate, sorting])
 
   useEffect(() => {
     if (!selectedLocationId) {
@@ -145,16 +145,6 @@ export function usePurchaseOrdersHistoryTable({
     [locations]
   )
 
-  const statusOptions: FilterOption[] = useMemo(
-    () => [
-      { label: 'Nháp', value: '1_DRAFT' },
-      { label: 'Đã đặt', value: '2_ORDERED' },
-      { label: 'Đã nhập kho', value: '4_STORED' },
-      { label: 'Đã hủy', value: '9_CANCELLED' },
-    ],
-    []
-  )
-
   const paymentOptions: FilterOption[] = useMemo(
     () => [
       { label: 'Chưa thanh toán', value: '1_UNPAID' },
@@ -169,17 +159,14 @@ export function usePurchaseOrdersHistoryTable({
       {
         columnId: 'supplier_name',
         title: 'Nhà cung cấp',
+        singleSelect: true,
         options: supplierOptions,
       },
       {
         columnId: 'location_name',
         title: 'Cửa hàng',
+        singleSelect: true,
         options: locationOptions,
-      },
-      {
-        columnId: 'status',
-        title: 'Trạng thái',
-        options: statusOptions,
       },
       {
         columnId: 'payment_status',
@@ -187,7 +174,7 @@ export function usePurchaseOrdersHistoryTable({
         options: paymentOptions,
       },
     ],
-    [supplierOptions, locationOptions, statusOptions, paymentOptions]
+    [supplierOptions, locationOptions, paymentOptions]
   )
 
   // eslint-disable-next-line react-hooks/incompatible-library

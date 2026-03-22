@@ -13,7 +13,7 @@ export type StockAdjustmentsListQueryInput = {
   pageIndex: number
   pageSize: number
   search?: string
-  locationIds?: string[]
+  locationId?: string
   reasonCodes?: StockAdjustment['reason_code'][]
   adjustmentTypes?: Array<'increase' | 'decrease'>
   fromDate?: string
@@ -44,8 +44,8 @@ export const createStockAdjustmentRepository = (
         )
         .eq('tenant_id', params.tenantId)
 
-      if (params.locationIds?.length) {
-        query = query.in('location_id', params.locationIds)
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
       }
 
       if (searchValue) {

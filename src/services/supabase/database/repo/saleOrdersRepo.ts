@@ -14,8 +14,8 @@ export type SaleOrdersHistoryQueryInput = {
   pageIndex: number
   pageSize: number
   search?: string
-  customerIds?: string[]
-  locationIds?: string[]
+  customerId?: string
+  locationId?: string
   statuses?: Array<SaleOrder['status']>
   fromDate?: string
   toDate?: string
@@ -48,12 +48,12 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
         query = query.ilike('sale_order_code', `%${searchValue}%`)
       }
 
-      if (params.customerIds?.length) {
-        query = query.in('customer_id', params.customerIds)
+      if (params.customerId) {
+        query = query.eq('customer_id', params.customerId)
       }
 
-      if (params.locationIds?.length) {
-        query = query.in('location_id', params.locationIds)
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
       }
 
       if (params.statuses?.length) {

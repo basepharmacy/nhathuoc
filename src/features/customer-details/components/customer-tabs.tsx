@@ -113,7 +113,7 @@ export function CustomerTabs({ tenantId, customerId }: CustomerTabsProps) {
       pageIndex: orderPagination.pageIndex,
       pageSize: orderPagination.pageSize,
       search: orderSearchValue,
-      customerIds: customerId ? [customerId] : [],
+      customerId,
       statuses: statusFilters,
       sorting: orderSorting,
     }),

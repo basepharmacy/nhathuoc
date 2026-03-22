@@ -22,8 +22,8 @@ export type PurchaseOrdersHistoryQueryInput = {
   pageIndex: number
   pageSize: number
   search?: string
-  supplierIds?: string[]
-  locationIds?: string[]
+  supplierId?: string
+  locationId?: string
   statuses?: Array<PurchaseOrder['status']>
   paymentStatuses?: Array<PurchaseOrder['payment_status']>
   fromDate?: string
@@ -97,12 +97,12 @@ export const createPurchaseOrderRepository = (
         query = query.ilike('purchase_order_code', `%${searchValue}%`)
       }
 
-      if (params.supplierIds?.length) {
-        query = query.in('supplier_id', params.supplierIds)
+      if (params.supplierId) {
+        query = query.eq('supplier_id', params.supplierId)
       }
 
-      if (params.locationIds?.length) {
-        query = query.in('location_id', params.locationIds)
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
       }
 
       if (params.statuses?.length) {

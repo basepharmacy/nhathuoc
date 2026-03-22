@@ -50,13 +50,14 @@ export function useStockAdjustmentsTable({
     return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
   }, [columnFilters])
 
-  const locationIds = useMemo(() => {
+  const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
       (filter) => filter.id === 'location_id'
     )
-    return Array.isArray(locationFilter?.value)
-      ? (locationFilter?.value as string[])
-      : []
+    if (Array.isArray(locationFilter?.value)) {
+      return (locationFilter.value as string[])[0] ?? undefined
+    }
+    return undefined
   }, [columnFilters])
 
   const reasonCodes = useMemo<NonNullable<StockAdjustmentsListQueryInput['reasonCodes']>>(() => {
@@ -82,12 +83,12 @@ export function useStockAdjustmentsTable({
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
     search: searchValue,
-    locationIds,
+    locationId,
     reasonCodes,
     adjustmentTypes,
     fromDate: formatFromDateParam(fromDate),
     toDate: formatToDateParam(toDate),
-  }), [tenantId, pagination, searchValue, locationIds, reasonCodes, adjustmentTypes, fromDate, toDate])
+  }), [tenantId, pagination, searchValue, locationId, reasonCodes, adjustmentTypes, fromDate, toDate])
 
   useEffect(() => {
     if (!selectedLocationId) {
@@ -118,6 +119,7 @@ export function useStockAdjustmentsTable({
       {
         columnId: 'location_id',
         title: 'Cửa hàng',
+        singleSelect: true,
         options: locationOptions,
       },
       {
@@ -128,6 +130,7 @@ export function useStockAdjustmentsTable({
       {
         columnId: 'adjustment_type',
         title: 'Loại điều chỉnh',
+        singleSelect: true,
         options: [
           { label: 'Điều chỉnh tăng', value: 'increase' },
           { label: 'Điều chỉnh giảm', value: 'decrease' },

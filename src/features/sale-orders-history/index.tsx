@@ -158,13 +158,13 @@ export function SaleOrdersHistory() {
     return typeof searchFilter?.value === 'string' ? searchFilter.value : ''
   }, [columnFilters])
 
-  const customerIds = useMemo(() => {
+  const customerId = useMemo(() => {
     const customerFilter = columnFilters.find(
       (filter) => filter.id === 'customer_name'
     )
     return Array.isArray(customerFilter?.value)
-      ? (customerFilter?.value as string[])
-      : []
+      ? (customerFilter.value as string[])[0]
+      : undefined
   }, [columnFilters])
 
   const statusFilters = useMemo(() => {
@@ -174,13 +174,13 @@ export function SaleOrdersHistory() {
       : []
   }, [columnFilters])
 
-  const locationIds = useMemo(() => {
+  const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
       (filter) => filter.id === 'location_name'
     )
     return Array.isArray(locationFilter?.value)
-      ? (locationFilter?.value as string[])
-      : []
+      ? (locationFilter.value as string[])[0]
+      : undefined
   }, [columnFilters])
 
   useEffect(() => {
@@ -200,8 +200,8 @@ export function SaleOrdersHistory() {
       pageIndex: pagination.pageIndex,
       pageSize: pagination.pageSize,
       search: searchValue,
-      customerIds,
-      locationIds,
+      customerId,
+      locationId,
       statuses: statusFilters,
       fromDate: formatFromDateParam(fromDate),
       toDate: formatToDateParam(toDate),
@@ -259,11 +259,13 @@ export function SaleOrdersHistory() {
         columnId: 'customer_name',
         title: 'Khách hàng',
         options: customerOptions,
+        singleSelect: true,
       },
       {
         columnId: 'location_name',
         title: 'Cửa hàng',
         options: locationOptions,
+        singleSelect: true,
       },
       {
         columnId: 'status',
