@@ -3,8 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { purchaseOrdersRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
-import { type PurchaseOrder } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type ProductWithUnits, PurchaseOrderStatus } from '@/services/supabase/'
 import { type OrderItem, type PaymentStatus, getDefaultUnit } from '../data/types'
 
 type UsePurchaseOrderParams = {
@@ -15,7 +14,7 @@ type UsePurchaseOrderParams = {
   orderDetail?: {
     id: string
     purchase_order_code: string | null
-    status: PurchaseOrder['status']
+    status: PurchaseOrderStatus
     supplier_id: string | null
     discount: number | null
     paid_amount: number | null
@@ -23,7 +22,7 @@ type UsePurchaseOrderParams = {
     notes: string | null
     location_id: string | null
   }
-  navigate: (opts: { search?: { orderCode: string }; to?: string }) => void
+  onOrderSuccess?: (orderCode: string, status: '1_DRAFT' | '2_ORDERED') => void
 }
 
 export function usePurchaseOrder({
@@ -32,7 +31,7 @@ export function usePurchaseOrder({
   orderCode: orderCodeParam,
   userLocationId,
   orderDetail,
-  navigate,
+  onOrderSuccess,
 }: UsePurchaseOrderParams) {
   const queryClient = useQueryClient()
   const isEdit = Boolean(orderCodeParam)
@@ -41,8 +40,6 @@ export function usePurchaseOrder({
   const [items, setItems] = useState<OrderItem[]>([])
   const [supplierId, setSupplierId] = useState('')
   const [orderDiscount, setOrderDiscount] = useState(0)
-  const [paidAmount, setPaidAmount] = useState(0)
-  const [paymentStatus, setPaymentStatus] = useState<PaymentStatus>('1_UNPAID')
   const [notes, setNotes] = useState('')
   const [hasInitialized, setHasInitialized] = useState(false)
   const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId)
@@ -51,7 +48,7 @@ export function usePurchaseOrder({
   // ── Derived / computed ──────────────────────────────────────
   const generatedOrderCode = useMemo(() => {
     const timestamp = Date.now()
-    const encoded = timestamp.toString(36).toUpperCase() // Convert to base36 for shorter string
+    const encoded = timestamp.toString(36).toUpperCase()
     const random = Math.floor(Math.random() * 1000)
       .toString()
       .padStart(3, '0')
@@ -73,13 +70,10 @@ export function usePurchaseOrder({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isEdit, orderDetail?.purchase_order_code, generatedOrderCode])
 
-  const orderStatus: PurchaseOrder['status'] = orderDetail?.status ?? '1_DRAFT'
-  const isOrdered = orderStatus === '2_ORDERED'
-  const isReadOnly = orderStatus !== '1_DRAFT' && orderStatus !== '2_ORDERED'
-  const isItemsReadOnly = orderStatus !== '1_DRAFT'
+  const orderStatus: PurchaseOrderStatus = orderDetail?.status ?? '1_DRAFT'
 
   const subtotal = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice - item.discount, 0),
+    () => items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0),
     [items]
   )
 
@@ -91,25 +85,12 @@ export function usePurchaseOrder({
     prevSubtotalRef.current = subtotal
   }, [subtotal])
 
-  const prevTotalRef = useRef<number | null>(null)
-  useEffect(() => {
-    const total = Math.max(0, subtotal - orderDiscount)
-    if (prevTotalRef.current !== null && prevTotalRef.current !== total) {
-      if (total <= paidAmount) {
-        setPaidAmount(total)
-        setPaymentStatus('3_PAID')
-      }
-    }
-    prevTotalRef.current = total
-  }, [subtotal, orderDiscount, paidAmount])
-
   const totals = useMemo(
     () => {
       const total = Math.max(0, subtotal - orderDiscount)
-      const debt = Math.max(0, total - paidAmount)
-      return { subtotal, total, debt }
+      return { subtotal, total, debt: total }
     },
-    [subtotal, orderDiscount, paidAmount]
+    [subtotal, orderDiscount]
   )
 
   // ── Validation ──────────────────────────────────────────────
@@ -140,9 +121,6 @@ export function usePurchaseOrder({
       expiry_date: item.expiryDate || undefined,
     }))
 
-  const normalizePaymentStatus = (paid: number): PaymentStatus =>
-    paid <= 0 ? '1_UNPAID' : paid >= totals.total ? '3_PAID' : '2_PARTIALLY_PAID'
-
   const handleMutationError = (error: unknown) => {
     toast.error(mapSupabaseError(error))
   }
@@ -150,7 +128,6 @@ export function usePurchaseOrder({
   const createMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
       validateOrder(status !== '1_DRAFT')
-      const normalizedPaid = Math.min(paidAmount, totals.total)
       return await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
           purchase_order_code: orderCode,
@@ -160,8 +137,8 @@ export function usePurchaseOrder({
           location_id: selectedLocationId,
           issued_at: issuedAt,
           status,
-          payment_status: normalizePaymentStatus(normalizedPaid),
-          paid_amount: normalizedPaid,
+          payment_status: '1_UNPAID',
+          paid_amount: 0,
           discount: orderDiscount,
           total_amount: totals.total,
           notes: notes.trim().length > 0 ? notes.trim() : null,
@@ -169,18 +146,17 @@ export function usePurchaseOrder({
         items: buildOrderItems(),
       })
     },
-    onSuccess: (order) => {
+    onSuccess: (order, status) => {
       toast.success('Đã tạo đơn nhập hàng.')
-      navigate({ search: { orderCode: order.purchase_order_code ?? '' } })
+      onOrderSuccess?.(order.purchase_order_code ?? '', status)
     },
     onError: handleMutationError,
   })
 
   const updateMutation = useMutation({
-    mutationFn: async (status: '1_DRAFT' | '2_ORDERED' | '4_STORED') => {
+    mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
       if (!orderCodeParam || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
       validateOrder(status !== '1_DRAFT')
-      const normalizedPaid = Math.min(paidAmount, totals.total)
 
       await purchaseOrdersRepo.updatePurchaseOrderWithItems({
         orderId: orderDetail.id,
@@ -188,8 +164,8 @@ export function usePurchaseOrder({
         order: {
           supplier_id: supplierId,
           status,
-          payment_status: normalizePaymentStatus(normalizedPaid),
-          paid_amount: normalizedPaid,
+          payment_status: '1_UNPAID',
+          paid_amount: 0,
           discount: orderDiscount,
           total_amount: totals.total,
           location_id: selectedLocationId,
@@ -200,29 +176,19 @@ export function usePurchaseOrder({
     },
     onSuccess: (_data, status) => {
       queryClient.invalidateQueries({ queryKey: ['purchase-orders', tenantId] })
-      if (status === '4_STORED') {
-        queryClient.invalidateQueries({
-          queryKey: ['inventory-batches', tenantId, 'all', 'all-available'],
-        })
-      }
       toast.success('Đã cập nhật đơn nhập hàng.')
-      if (status === '1_DRAFT') {
-        return
-      }
-      navigate({ to: '/purchase-orders/history' })
+      onOrderSuccess?.(orderCodeParam ?? '', status)
     },
     onError: handleMutationError,
   })
 
   // ── Item actions ────────────────────────────────────────────
   const addProduct = (product: ProductWithUnits): string => {
-    if (isItemsReadOnly) return ''
     if (!selectedLocationId) {
       toast.error('Bạn cần phải chọn cửa hàng.')
       return ''
     }
 
-    // Check if product already exists in items
     const productExists = items.some((item) => item.product.id === product.id)
     if (productExists) {
       toast.error('Sản phẩm này đã có trong đơn hàng.')
@@ -250,44 +216,35 @@ export function usePurchaseOrder({
   }
 
   const updateItem = (itemId: string, next: Partial<OrderItem>) => {
-    if (isItemsReadOnly) return
     setItems((prev) => prev.map((item) => (item.id === itemId ? { ...item, ...next } : item)))
   }
 
   const removeItem = (itemId: string) => {
-    if (isItemsReadOnly) return
     setItems((prev) => prev.filter((item) => item.id !== itemId))
   }
 
   const resetItems = useCallback(() => {
-    if (isItemsReadOnly) return
     setItems([])
-  }, [isItemsReadOnly])
+  }, [])
 
   // ── Initialize from existing order ──────────────────────────
   const initializeFromOrder = useCallback((params: {
     mappedItems: OrderItem[]
     supplierId: string
     discount: number
-    paidAmount: number
-    paymentStatus: PaymentStatus
     notes: string
     locationId: string | null
   }) => {
     setItems(params.mappedItems)
     setSupplierId(params.supplierId)
     setOrderDiscount(params.discount)
-    setPaidAmount(params.paidAmount)
-    setPaymentStatus(params.paymentStatus)
     setNotes(params.notes)
     setSelectedLocationId(params.locationId)
-    // Sync subtotal ref so the discount reset effect doesn't fire on init
     const initSubtotal = params.mappedItems.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
+      (sum, item) => sum + item.quantity * item.unitPrice,
       0
     )
     prevSubtotalRef.current = initSubtotal
-    prevTotalRef.current = Math.max(0, initSubtotal - params.discount)
     setHasInitialized(true)
   }, [])
 
@@ -298,24 +255,17 @@ export function usePurchaseOrder({
     isEdit ? updateMutation.mutate('1_DRAFT') : createMutation.mutate('1_DRAFT')
 
   const submit = () =>
-    isEdit
-      ? updateMutation.mutate(isOrdered ? '4_STORED' : '2_ORDERED')
-      : createMutation.mutate('2_ORDERED')
+    isEdit ? updateMutation.mutate('2_ORDERED') : createMutation.mutate('2_ORDERED')
 
   const resetOrder = useCallback(() => {
     setItems([])
     setSupplierId('')
     setOrderDiscount(0)
-    setPaidAmount(0)
-    setPaymentStatus('1_UNPAID')
     setNotes('')
     setHasInitialized(false)
     prevSubtotalRef.current = 0
     // Generate new order code
-    const ts = Date.now()
-    const enc = ts.toString(36).toUpperCase()
-    const rnd = Math.floor(Math.random() * 1000).toString().padStart(3, '0')
-    setOrderCode(`${enc}-${rnd}`)
+    setOrderCode(generatedOrderCode)
     setIssuedAt(new Date().toISOString())
   }, [])
 
@@ -333,8 +283,6 @@ export function usePurchaseOrder({
     items,
     orderCode,
     orderStatus,
-    isReadOnly,
-    isItemsReadOnly,
     isEdit,
     isSubmitting,
     hasInitialized,
@@ -351,10 +299,6 @@ export function usePurchaseOrder({
     setSelectedLocationId,
     orderDiscount,
     setOrderDiscount,
-    paidAmount,
-    setPaidAmount,
-    paymentStatus,
-    setPaymentStatus,
     notes,
     setNotes,
     // Computed

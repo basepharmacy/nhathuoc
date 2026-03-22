@@ -40,8 +40,9 @@ export function PurchaseOrdersHistory() {
 
   const handleEdit = useCallback(
     (order: PurchaseOrderWithRelations) => {
+      const isDraft = order.status === '1_DRAFT'
       navigate({
-        to: '/purchase-orders',
+        to: isDraft ? '/purchase-orders' : '/purchase-orders/detail',
         search: { orderCode: order.purchase_order_code ?? '' },
       })
     },

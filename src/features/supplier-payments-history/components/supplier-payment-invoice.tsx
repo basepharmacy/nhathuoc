@@ -112,12 +112,12 @@ export function SupplierPaymentInvoice({
       <div className='mt-2 flex justify-between text-[11px]'>
         <div className='flex flex-col items-center'>
           <span className='font-semibold'>Nguoi thanh toan</span>
-          <span className='text-[10px] text-gray-600'>(Ky, ghi ro ho ten)</span>
+          <span className='text-[10px] text-gray-600'>(Chu ky)</span>
           <div className='mt-16' />
         </div>
         <div className='flex flex-col items-center'>
           <span className='font-semibold'>Nha cung cap</span>
-          <span className='text-[10px] text-gray-600'>(Ky, ghi ro ho ten)</span>
+          <span className='text-[10px] text-gray-600'>(Chu ky)</span>
           <div className='mt-16' />
         </div>
       </div>

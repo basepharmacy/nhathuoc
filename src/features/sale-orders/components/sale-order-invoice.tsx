@@ -87,7 +87,7 @@ export function SaleOrderInvoice({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const lineTotal = item.quantity * item.unitPrice - item.discount
+            const lineTotal = item.quantity * item.unitPrice
             const unitName =
               item.product.product_units?.find(
                 (u) => u.id === item.productUnitId

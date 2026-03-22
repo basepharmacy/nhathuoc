@@ -1,13 +1,5 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
-
-export type Product = Tables<'products'>
-export type ProductInsert = TablesInsert<'products'>
-export type ProductUpdate = TablesUpdate<'products'>
-export type ProductUnit = Tables<'product_units'>
-export type ProductUnitInsert = TablesInsert<'product_units'>
-export type ProductUnitUpdate = TablesUpdate<'product_units'>
-export type ProductWithUnits = Product & { product_units?: ProductUnit[] }
+import { Product, ProductInsert, ProductUnit, ProductUnitInsert, ProductUpdate, ProductWithUnits } from '../model'
 
 export const createProductRepository = (client: BasePharmacySupabaseClient) => {
   const insertProduct = async (params: ProductInsert): Promise<Product> => {

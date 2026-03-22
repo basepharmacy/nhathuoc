@@ -31,7 +31,7 @@ export function mapOrderToSaleOrderInCreate(
     .filter((item): item is SaleOrderItem => Boolean(item))
 
   const subTotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice - item.discount,
+    (sum, item) => sum + item.quantity * item.unitPrice,
     0,
   )
 

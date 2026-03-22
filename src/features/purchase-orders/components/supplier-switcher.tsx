@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
-import type { Supplier } from '@/services/supabase/database/repo/suppliersRepo'
+import type { Supplier } from '@/services/supabase'
 
 type SupplierSwitcherProps = {
   suppliers: Supplier[]

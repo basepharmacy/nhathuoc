@@ -118,6 +118,7 @@ export function SaleOrders() {
                 locationName={orderDetail.location?.name ?? '—'}
                 orderCode={orderDetail.sale_order_code}
                 status={orderDetail.status}
+                issuedAt={orderDetail.issued_at ?? ''}
               />
 
               <SaleOrdersItems

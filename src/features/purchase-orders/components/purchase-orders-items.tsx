@@ -1,11 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SquarePen, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover'
 import { QuantityStepper } from '@/components/quantity-stepper'
 import {
   Select,
@@ -25,100 +20,9 @@ import {
 } from '@/components/ui/table'
 import { formatCurrency } from '@/lib/utils'
 import { type OrderItem } from '../data/types'
-import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductUnit } from '@/services/supabase'
 import { BatchSelectDialog } from './batch-select-dialog'
-import { CurrencyInput } from '@/components/ui/currency-input'
-
-const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
-
-function UnitPriceInput({
-  originalPrice,
-  value,
-  onChange,
-  disabled,
-  forceOpen,
-  onOpenChange,
-}: {
-  originalPrice: number
-  value: number
-  onChange: (value: number) => void
-  disabled?: boolean
-  forceOpen?: boolean
-  onOpenChange?: (open: boolean) => void
-}) {
-  const [open, setOpen] = useState(false)
-
-  useEffect(() => {
-    if (forceOpen) setOpen(true)
-  }, [forceOpen])
-
-  const handleOpenChange = (next: boolean) => {
-    setOpen(next)
-    onOpenChange?.(next)
-  }
-
-  const discountPercent =
-    originalPrice > 0
-      ? Math.round(((originalPrice - value) / originalPrice) * 10000) / 100
-      : 0
-
-  return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <div className='flex items-center gap-1.5'>
-          {discountPercent > 0 && (
-            <span className='text-xs font-medium text-red-500 shrink-0'>
-              -{discountPercent}%
-            </span>
-          )}
-          <CurrencyInput
-            value={value}
-            onValueChange={onChange}
-            onClick={() => !disabled && handleOpenChange(true)}
-            className='h-8 w-full rounded-full text-end text-xs'
-            inputMode='numeric'
-            disabled={disabled}
-          />
-        </div>
-      </PopoverTrigger>
-      <PopoverContent
-        className='w-auto p-2'
-        align='end'
-        onOpenAutoFocus={(e) => e.preventDefault()}
-      >
-        <div className='flex flex-wrap gap-1.5'>
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            className='h-7 rounded-full px-2.5 text-xs'
-            onClick={() => {
-              onChange(originalPrice)
-              handleOpenChange(false)
-            }}
-          >
-            Giá gốc
-          </Button>
-          {DISCOUNT_PRESETS.map((p) => (
-            <Button
-              key={p}
-              type='button'
-              variant='outline'
-              size='sm'
-              className='h-7 rounded-full px-2.5 text-xs'
-              onClick={() => {
-                onChange(Math.round(originalPrice * (1 - p / 100)))
-                handleOpenChange(false)
-              }}
-            >
-              -{p}%
-            </Button>
-          ))}
-        </div>
-      </PopoverContent>
-    </Popover>
-  )
-}
+import { UnitPriceInput } from '@/components/unit-price-input'
 
 type PurchaseOrdersItemsProps = {
   items: OrderItem[]
@@ -196,10 +100,11 @@ export function PurchaseOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = item.quantity * item.unitPrice - item.discount
+                  const lineTotal = item.quantity * item.unitPrice
                   const unitOptions = item.product.product_units ?? []
                   const isSelected = index === selectedItemIndex
                   const isEditingPrice = editingPriceItemId === item.id
+                  const originalPrice = unitOptions.find((u) => u.id === item.productUnitId)?.cost_price ?? item.unitPrice
                   return (
                     <TableRow
                       key={item.id}
@@ -283,12 +188,9 @@ export function PurchaseOrdersItems({
                       </TableCell>
                       <TableCell className='align-middle'>
                         <UnitPriceInput
-                          originalPrice={
-                            unitOptions.find((u) => u.id === item.productUnitId)?.cost_price ??
-                            item.unitPrice
-                          }
+                          originalPrice={originalPrice}
                           value={item.unitPrice}
-                          onChange={(price) => onUpdateItem(item.id, { unitPrice: price })}
+                          onChange={(price) => onUpdateItem(item.id, { unitPrice: price, discount: Math.max(0, originalPrice - price) })}
                           disabled={readOnly}
                           forceOpen={isEditingPrice}
                           onOpenChange={(open) => {

@@ -250,6 +250,24 @@ export const getPurchaseOrderDetailQueryOptions = (
     },
   })
 
+export const getPurchaseOrderDetailWithRelationsQueryOptions = (
+  tenantId: string,
+  orderCode: string
+) =>
+  queryOptions({
+    queryKey: ["purchase-orders", tenantId, "detail-with-relations", orderCode],
+    queryFn: async () => {
+      if (!tenantId || !orderCode) {
+        return null
+      }
+      const order = await purchaseOrdersRepo.getPurchaseOrderByCodeWithRelations({
+        tenantId,
+        orderCode,
+      })
+      return order
+    },
+  })
+
 export const getSaleOrderDetailQueryOptions = (
   tenantId: string,
   orderCode: string

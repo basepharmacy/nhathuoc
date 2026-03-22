@@ -1,11 +1,13 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import {
+  PurchaseOrder,
+  PurchaseOrderDetailWithRelations,
+  PurchaseOrderInsert,
+  PurchaseOrderItem,
+  PurchaseOrderItemInsert,
+  PurchaseOrderUpdate,
+} from '../model'
 
-export type PurchaseOrder = Tables<'purchase_orders'>
-export type PurchaseOrderInsert = TablesInsert<'purchase_orders'>
-export type PurchaseOrderUpdate = TablesUpdate<'purchase_orders'>
-export type PurchaseOrderItem = Tables<'purchase_order_items'>
-export type PurchaseOrderItemInsert = TablesInsert<'purchase_order_items'>
 export type PurchaseOrderWithRelations = PurchaseOrder & {
   supplier?: { id: string; name: string } | null
   location?: { id: string; name: string } | null
@@ -298,6 +300,49 @@ export const createPurchaseOrderRepository = (
       }
 
       return order as PurchaseOrder
+    },
+    async getPurchaseOrderByCodeWithRelations(params: {
+      tenantId: string
+      orderCode: string
+    }): Promise<PurchaseOrderDetailWithRelations | null> {
+      const { data, error } = await client
+        .from('purchase_orders')
+        .select(`
+          *,
+          items:purchase_order_items(
+            *,
+            product:products(id, product_name),
+            product_unit:product_units(id, unit_name)
+          ),
+          supplier:suppliers(id, name),
+          location:locations(id, name, address, phone),
+          user:profiles(id, name)`)
+        .eq('tenant_id', params.tenantId)
+        .eq('purchase_order_code', params.orderCode)
+        .maybeSingle()
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? null) as PurchaseOrderDetailWithRelations | null
+    },
+    async updatePurchaseOrder(params: {
+      orderId: string
+      order: PurchaseOrderUpdate
+    }): Promise<PurchaseOrder> {
+      const { data, error } = await client
+        .from('purchase_orders')
+        .update(params.order)
+        .eq('id', params.orderId)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      return data as PurchaseOrder
     },
     async deletePurchaseOrder(params: {
       orderId: string

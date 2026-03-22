@@ -2,7 +2,14 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
-import { type OrderItem } from '../data/types'
+
+type InvoiceItem = {
+  product: { product_name: string }
+  product_unit?: { unit_name: string } | null
+  quantity: number
+  unit_price: number
+  discount: number | null
+}
 
 type PurchaseOrderInvoiceProps = {
   orderCode: string
@@ -10,7 +17,7 @@ type PurchaseOrderInvoiceProps = {
   storeAddress?: string
   storePhone?: string
   supplierName?: string
-  items: OrderItem[]
+  items: InvoiceItem[]
   totals: { subtotal: number; total: number }
   orderDiscount: number
   paidAmount: number
@@ -79,13 +86,11 @@ export function PurchaseOrderInvoice({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const lineTotal = item.quantity * item.unitPrice - item.discount
-            const unitName =
-              item.product.product_units?.find(
-                (u) => u.id === item.productUnitId
-              )?.unit_name ?? ''
+            const discount = item.discount ?? 0
+            const lineTotal = item.quantity * item.unit_price - discount
+            const unitName = item.product_unit?.unit_name ?? ''
             return (
-              <tr key={item.id} className='border-b border-dotted border-gray-400'>
+              <tr className='border-b border-dotted border-gray-400'>
                 <td className='max-w-[120px] py-1 text-left'>
                   <div className='truncate'>
                     {index + 1}. {item.product.product_name}
@@ -93,13 +98,13 @@ export function PurchaseOrderInvoice({
                   {unitName && (
                     <div className='text-[10px] text-gray-600'>({unitName})</div>
                   )}
-                  {item.discount > 0 && (
-                    <div className='text-[10px] text-gray-600'>CK: -{formatCurrency(item.discount)}d</div>
+                  {discount > 0 && (
+                    <div className='text-[10px] text-gray-600'>CK: -{formatCurrency(discount)}d</div>
                   )}
                 </td>
                 <td className='py-1 text-center'>{item.quantity}</td>
                 <td className='py-1 text-right whitespace-nowrap'>
-                  {formatCurrency(item.unitPrice)}
+                  {formatCurrency(item.unit_price)}
                 </td>
                 <td className='py-1 text-right whitespace-nowrap'>
                   {formatCurrency(lineTotal)}
@@ -153,12 +158,12 @@ export function PurchaseOrderInvoice({
       <div className='mt-2 flex justify-between text-[11px]'>
         <div className='flex flex-col items-center'>
           <span className='font-semibold'>Nguoi nhap hang</span>
-          <span className='text-[10px] text-gray-600'>(Ky, ghi ro ho ten)</span>
+          <span className='text-[10px] text-gray-600'>(Chu ky)</span>
           <div className='mt-16' />
         </div>
         <div className='flex flex-col items-center'>
           <span className='font-semibold'>Nha cung cap</span>
-          <span className='text-[10px] text-gray-600'>(Ky, ghi ro ho ten)</span>
+          <span className='text-[10px] text-gray-600'>(Chu ky)</span>
           <div className='mt-16' />
         </div>
       </div>

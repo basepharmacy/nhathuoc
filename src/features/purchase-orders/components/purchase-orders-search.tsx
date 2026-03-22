@@ -14,7 +14,7 @@ import {
   PopoverContent,
 } from '@/components/ui/popover'
 import { cn, normalizeSearchValue } from '@/lib/utils'
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductWithUnits } from '@/services/supabase/'
 
 export type PurchaseOrdersSearchHandle = {
   focus: () => void

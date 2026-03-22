@@ -6,6 +6,7 @@ type SaleOrdersMetaProps = {
   locationName: string
   orderCode: string
   status: SaleOrderStatus
+  issuedAt: string
 }
 
 const statusLabels: Record<SaleOrderStatus, string> = {
@@ -28,6 +29,7 @@ export function SaleOrdersMeta({
   locationName,
   orderCode,
   status,
+  issuedAt,
 }: SaleOrdersMetaProps) {
   return (
     <div className='flex flex-col gap-2 rounded-xl border bg-card p-3 shadow-sm'>
@@ -41,8 +43,8 @@ export function SaleOrdersMeta({
           <span className='font-medium text-foreground'>{orderCode}</span>
         </div>
         <div className='flex items-center gap-2 text-muted-foreground'>
-          {new Date().toLocaleDateString('vi-VN')}{' '}
-          {new Date().toLocaleTimeString('vi-VN')}
+          {new Date(issuedAt).toLocaleDateString('vi-VN')}{' '}
+          {new Date(issuedAt).toLocaleTimeString('vi-VN')}
         </div>
         <div className='ms-auto'>
           <Badge variant='outline' className={cn('text-sm font-medium', statusColors[status])}>

@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { getRouteApi } from '@tanstack/react-router'
+import { getRouteApi, useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
 import { Printer } from 'lucide-react'
 import { useUser } from '@/client/provider'
@@ -20,17 +20,18 @@ import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 import type { OrderItem } from './data/types'
 import { PurchaseOrdersItems } from './components/purchase-orders-items'
 import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
-import { PurchaseOrdersSearch, type PurchaseOrdersSearchHandle } from './components/purchase-orders-search'
+import { PurchaseOrdersSearch } from './components/purchase-orders-search'
 import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
 import { PurchaseOrderInvoice } from './components/purchase-order-invoice'
 import { SuppliersActionDialog } from '@/features/suppliers/components/suppliers-action-dialog'
 import { usePurchaseOrder } from './hooks/use-purchase-order'
+import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts'
 
 const route = getRouteApi('/_authenticated/purchase-orders/')
 
 export function PurchaseOrders() {
   const { orderCode } = route.useSearch()
-  const navigate = route.useNavigate()
+  const navigate = useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const userId = user?.profile?.id ?? ''
@@ -70,7 +71,13 @@ export function PurchaseOrders() {
     orderCode,
     userLocationId,
     orderDetail: orderDetail ?? undefined,
-    navigate,
+    onOrderSuccess: (code, status) => {
+      if (status === '2_ORDERED') {
+        navigate({ to: '/purchase-orders/detail', search: { orderCode: code } })
+      } else {
+        navigate({ to: '/purchase-orders', search: { orderCode: code } })
+      }
+    },
   })
 
   // ── Effects ─────────────────────────────────────────────────
@@ -82,6 +89,14 @@ export function PurchaseOrders() {
     }
   }, [orderDetail, orderCode, isOrderLoading, navigate])
 
+  // Redirect non-draft orders to detail page
+  useEffect(() => {
+    if (!orderDetail || isOrderLoading) return
+    if (orderDetail.status !== '1_DRAFT') {
+      navigate({ to: '/purchase-orders/detail', search: { orderCode: orderCode ?? '' } })
+    }
+  }, [orderDetail, isOrderLoading, orderCode, navigate])
+
   useEffect(() => {
     if (order.selectedLocationId || locations.length === 0) return
     order.setSelectedLocationId(sidebarLocationId ?? locations[0].id)
@@ -89,6 +104,7 @@ export function PurchaseOrders() {
 
   useEffect(() => {
     if (!orderDetail || order.hasInitialized || products.length === 0) return
+    if (orderDetail.status !== '1_DRAFT') return
 
     const productLookup = new Map(products.map((p) => [p.id, p]))
     const mappedItems = (orderDetail.items ?? [])
@@ -112,8 +128,6 @@ export function PurchaseOrders() {
       mappedItems,
       supplierId: orderDetail.supplier_id ?? '',
       discount: orderDetail.discount ?? 0,
-      paidAmount: orderDetail.paid_amount ?? 0,
-      paymentStatus: orderDetail.payment_status,
       notes: orderDetail.notes ?? '',
       locationId: orderDetail.location_id ?? userLocationId,
     })
@@ -133,130 +147,17 @@ export function PurchaseOrders() {
   const [pendingLocationId, setPendingLocationId] = useState<string | null>(null)
 
   // ── Keyboard shortcuts ─────────────────────────────────────
-  const searchRef = useRef<PurchaseOrdersSearchHandle>(null)
-  const [selectedItemIndex, setSelectedItemIndex] = useState<number>(-1)
-  const [editingPriceItemId, setEditingPriceItemId] = useState<string | null>(null)
-
-  const handleKeyboardShortcuts = useCallback(
-    (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement
-      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT'
-      const isFunctionKey = event.key.startsWith('F') && event.key.length <= 3
-
-      if (isInput && !isFunctionKey && event.key !== 'Escape' && event.key !== 'Delete') return
-
-      switch (event.key) {
-        case 'F1': {
-          event.preventDefault()
-          if (!order.isReadOnly) order.saveDraft()
-          break
-        }
-        case 'Escape': {
-          event.preventDefault()
-          const hasOpenDialog = document.querySelector('[role="dialog"], [role="alertdialog"]')
-          if (hasOpenDialog) {
-            setResetConfirmOpen(false)
-          } else if (!isInput && !order.isReadOnly) {
-            setResetConfirmOpen(true)
-          }
-          break
-        }
-        case 'F6': {
-          event.preventDefault()
-          setPrintOpen(true)
-          break
-        }
-        case 'F8': {
-          event.preventDefault()
-          if (order.isItemsReadOnly || order.items.length === 0) break
-          const idx = selectedItemIndex >= 0 && selectedItemIndex < order.items.length
-            ? selectedItemIndex
-            : 0
-          setEditingPriceItemId(order.items[idx].id)
-          break
-        }
-        case 'F9': {
-          event.preventDefault()
-          if (!order.isReadOnly) order.submit()
-          break
-        }
-        case 'ArrowDown': {
-          if (isInput) break
-          event.preventDefault()
-          if (event.shiftKey && order.items.length > 0) {
-            searchRef.current?.focus()
-          } else if (order.items.length > 0) {
-            setSelectedItemIndex((prev) =>
-              prev + 1 >= order.items.length ? 0 : prev + 1
-            )
-          }
-          break
-        }
-        case 'ArrowUp': {
-          if (isInput) break
-          event.preventDefault()
-          if (order.items.length > 0) {
-            setSelectedItemIndex((prev) =>
-              prev - 1 < 0 ? order.items.length - 1 : prev - 1
-            )
-          }
-          break
-        }
-        case 'Delete': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isItemsReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const itemToRemove = order.items[selectedItemIndex]
-            order.removeItem(itemToRemove.id)
-            setSelectedItemIndex((prev) =>
-              Math.min(prev, order.items.length - 2)
-            )
-          }
-          break
-        }
-        case '+':
-        case 'ArrowRight': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isItemsReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const item = order.items[selectedItemIndex]
-            order.updateItem(item.id, { quantity: item.quantity + 1 })
-          }
-          break
-        }
-        case '-':
-        case 'ArrowLeft': {
-          if (isInput) break
-          event.preventDefault()
-          if (
-            !order.isItemsReadOnly &&
-            selectedItemIndex >= 0 &&
-            selectedItemIndex < order.items.length
-          ) {
-            const item = order.items[selectedItemIndex]
-            if (item.quantity > 1) {
-              order.updateItem(item.id, { quantity: item.quantity - 1 })
-            }
-          }
-          break
-        }
-      }
-    },
-    [order, selectedItemIndex]
-  )
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyboardShortcuts)
-    return () => window.removeEventListener('keydown', handleKeyboardShortcuts)
-  }, [handleKeyboardShortcuts])
+  const {
+    searchRef,
+    selectedItemIndex,
+    setSelectedItemIndex,
+    editingPriceItemId,
+    setEditingPriceItemId,
+  } = useKeyboardShortcuts({
+    order,
+    setPrintOpen,
+    setResetConfirmOpen,
+  })
 
   const handleLocationChange = (nextLocationId: string) => {
     if (nextLocationId === (order.selectedLocationId ?? '')) return
@@ -313,7 +214,6 @@ export function PurchaseOrders() {
             ref={searchRef}
             products={activeProducts}
             onAddProduct={handleAddProduct}
-            readOnly={order.isItemsReadOnly}
             autoFocus={!order.isEdit}
           />
           <Button
@@ -341,12 +241,10 @@ export function PurchaseOrders() {
                 locations={locations}
                 locationId={order.selectedLocationId ?? ''}
                 onLocationChange={handleLocationChange}
-                locationDisabled={order.isReadOnly}
                 orderCode={order.orderCode}
                 onOrderCodeChange={order.setOrderCode}
                 issuedAt={order.issuedAt}
                 onIssuedAtChange={order.setIssuedAt}
-                isEdit={order.isEdit}
                 status={order.orderStatus}
               />
 
@@ -358,7 +256,6 @@ export function PurchaseOrders() {
                 locationId={order.selectedLocationId}
                 pendingBatchItemId={pendingBatchItemId}
                 onPendingBatchHandled={() => setPendingBatchItemId(null)}
-                readOnly={order.isItemsReadOnly}
                 selectedItemIndex={selectedItemIndex}
                 onSelectedItemIndexChange={setSelectedItemIndex}
                 editingPriceItemId={editingPriceItemId}
@@ -367,20 +264,14 @@ export function PurchaseOrders() {
             </div>
 
             <PurchaseOrdersSummary
-              orderCode={order.orderCode}
               suppliers={activeSuppliers}
               supplierId={order.supplierId}
               onSupplierChange={order.setSupplierId}
               totals={order.totals}
               orderDiscount={order.orderDiscount}
               onOrderDiscountChange={order.setOrderDiscount}
-              paymentStatus={order.paymentStatus}
-              onPaymentStatusChange={order.setPaymentStatus}
-              paidAmount={order.paidAmount}
-              onPaidAmountChange={order.setPaidAmount}
               notes={order.notes}
               onNotesChange={order.setNotes}
-              orderStatus={order.orderStatus}
               onSaveDraft={order.saveDraft}
               onSubmit={order.submit}
               isSubmitting={order.isSubmitting}
@@ -407,10 +298,17 @@ export function PurchaseOrders() {
           storeAddress={selectedLocation?.address ?? undefined}
           storePhone={selectedLocation?.phone ?? undefined}
           supplierName={supplierName}
-          items={order.items}
+          items={order.items.map((item) => ({
+            id: item.id,
+            product: item.product,
+            product_unit: item.product.product_units?.find((u) => u.id === item.productUnitId) ?? null,
+            quantity: item.quantity,
+            unit_price: item.unitPrice,
+            discount: item.discount,
+          }))}
           totals={order.totals}
           orderDiscount={order.orderDiscount}
-          paidAmount={order.paidAmount}
+          paidAmount={0}
           notes={order.notes}
         />
       </PrintPreviewDialog>
@@ -436,20 +334,18 @@ export function PurchaseOrders() {
         handleConfirm={handleConfirmResetOrder}
       />
 
-      {!order.isReadOnly && (
-        <OrderKeyboardFooter
-          shortcuts={[
-            { key: 'F1', label: 'Lưu nháp' },
-            { key: 'ESC', label: 'Huỷ đơn' },
-            { key: 'F6', label: 'In hoá đơn' },
-            { key: 'F9', label: 'Thanh toán' },
-            { key: '↑/↓', label: 'Chọn sản phẩm' },
-            { key: 'F8', label: 'Sửa đơn giá' },
-            { key: '←/→', label: 'Tăng giảm số lượng' },
-            { key: 'Del', label: 'Xoá sản phẩm' },
-          ]}
-        />
-      )}
+      <OrderKeyboardFooter
+        shortcuts={[
+          { key: 'F1', label: 'Lưu nháp' },
+          { key: 'ESC', label: 'Huỷ đơn' },
+          { key: 'F6', label: 'In hoá đơn' },
+          { key: 'F9', label: 'Đặt hàng' },
+          { key: '↑/↓', label: 'Chọn sản phẩm' },
+          { key: 'F8', label: 'Sửa đơn giá' },
+          { key: '←/→', label: 'Tăng giảm số lượng' },
+          { key: 'Del', label: 'Xoá sản phẩm' },
+        ]}
+      />
     </>
   )
 }
