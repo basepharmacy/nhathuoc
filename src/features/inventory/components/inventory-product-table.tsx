@@ -170,6 +170,10 @@ function createColumns(
             ]
             return <DataTableRowActions actions={actions} />
           },
+          meta: {
+            className: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
+            thClassName: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
+          },
         } satisfies ColumnDef<InventoryProductsListItem>,
       ]
       : []),

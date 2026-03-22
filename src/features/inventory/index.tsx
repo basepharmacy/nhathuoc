@@ -32,7 +32,7 @@ export function Inventory() {
   })
 
   // Table state + filters
-  const { tableState, filters, listQueryParams } = useInventoryTable({
+  const { tableState, filters, batchListQueryParams, productListQueryParams } = useInventoryTable({
     tenantId,
     locations,
     defaultLocationId: sidebarLocationId,
@@ -44,7 +44,7 @@ export function Inventory() {
     isLoading: isBatchLoading,
     isError: isBatchError,
   } = useQuery({
-    ...getInventoryBatchesListQueryOptions(listQueryParams),
+    ...getInventoryBatchesListQueryOptions(batchListQueryParams),
     enabled: !!tenantId && viewMode === 'batch',
   })
 
@@ -53,7 +53,7 @@ export function Inventory() {
     isLoading: isProductLoading,
     isError: isProductError,
   } = useQuery({
-    ...getInventoryProductsListQueryOptions(listQueryParams),
+    ...getInventoryProductsListQueryOptions(productListQueryParams),
     enabled: !!tenantId && viewMode === 'product',
   })
 
@@ -61,18 +61,18 @@ export function Inventory() {
   const { data: summaryResult, isError: isSummaryError } = useQuery({
     ...getInventoryBatchesSummaryQueryOptions({
       tenantId,
-      locationId: listQueryParams.locationId,
+      locationId: batchListQueryParams.locationId,
     }),
     enabled: !!tenantId,
   })
 
   const batchRows = batchListResult?.data ?? []
   const batchTotal = batchListResult?.total ?? 0
-  const batchPageCount = Math.max(1, Math.ceil(batchTotal / listQueryParams.pageSize))
+  const batchPageCount = Math.max(1, Math.ceil(batchTotal / batchListQueryParams.pageSize))
 
   const productRows = productListResult?.data ?? []
   const productTotal = productListResult?.total ?? 0
-  const productPageCount = Math.max(1, Math.ceil(productTotal / listQueryParams.pageSize))
+  const productPageCount = Math.max(1, Math.ceil(productTotal / productListQueryParams.pageSize))
   const summary = {
     totalBatches: summaryResult?.totalBatches ?? 0,
     totalProducts: summaryResult?.totalProducts ?? 0,

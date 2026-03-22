@@ -4,7 +4,7 @@ import {
   type PaginationState,
   type SortingState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 
 type Location = { id: string; name: string }
 
@@ -19,7 +19,9 @@ export function useInventoryTable({
   locations,
   defaultLocationId,
 }: UseInventoryTableInput) {
-  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
+    { id: 'stock_status', value: ['in_stock'] },
+  ])
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
@@ -64,10 +66,11 @@ export function useInventoryTable({
     return undefined
   }, [columnFilters])
 
-  const sortBy = sorting.length > 0 ? sorting[0].id as InventoryBatchSortField : undefined
+  const batchSortBy = sorting.length > 0 ? sorting[0].id as InventoryBatchSortField : undefined
+  const productSortBy = sorting.length > 0 ? sorting[0].id as InventoryProductSortField : undefined
   const sortOrder = sorting.length > 0 ? (sorting[0].desc ? 'desc' as const : 'asc' as const) : undefined
 
-  const listQueryParams: InventoryBatchesListQueryInput = useMemo(() => ({
+  const batchListQueryParams: InventoryBatchesListQueryInput = useMemo(() => ({
     tenantId,
     pageIndex: pagination.pageIndex,
     pageSize: pagination.pageSize,
@@ -75,9 +78,21 @@ export function useInventoryTable({
     locationId,
     stockStatus,
     expiryStatus,
-    sortBy,
+    sortBy: batchSortBy,
     sortOrder,
-  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, sortBy, sortOrder])
+  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, batchSortBy, sortOrder])
+
+  const productListQueryParams: InventoryProductsListQueryInput = useMemo(() => ({
+    tenantId,
+    pageIndex: pagination.pageIndex,
+    pageSize: pagination.pageSize,
+    search: searchValue,
+    locationId,
+    stockStatus,
+    expiryStatus,
+    sortBy: productSortBy,
+    sortOrder,
+  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, productSortBy, sortOrder])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -165,5 +180,5 @@ export function useInventoryTable({
     onSortingChange: setSorting,
   }
 
-  return { tableState, filters, listQueryParams }
+  return { tableState, filters, batchListQueryParams, productListQueryParams }
 }
