@@ -1,5 +1,5 @@
 import { type Row } from '@tanstack/react-table'
-import { SquarePen, Trash2 } from 'lucide-react'
+import { Ban, SquarePen, Trash2 } from 'lucide-react'
 import {
   DataTableRowActions as RowActions,
   type RowAction,
@@ -16,6 +16,7 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useProducts()
   const { canEdit } = usePermissions()
   const isDraft = row.original.status === '1_DRAFT'
+  const isActive = row.original.status === '2_ACTIVE'
 
   if (!canEdit('products')) return null
 
@@ -26,6 +27,16 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('edit')
+      },
+    },
+    {
+      label: 'Ngừng bán',
+      icon: Ban,
+      disabled: !isActive,
+      tooltip: 'Chỉ áp dụng cho sản phẩm đang bán',
+      onClick: () => {
+        setCurrentRow(row.original)
+        setOpen('deactivate')
       },
     },
     {

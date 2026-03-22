@@ -95,8 +95,8 @@ export function ProductsActionDialog({
       {
         unit_name: '',
         conversion_factor: 1,
-        cost_price: 0,
-        sell_price: 0,
+        cost_price: null as number | null,
+        sell_price: null as number | null,
         is_base_unit: true,
       },
     ],
@@ -220,8 +220,8 @@ export function ProductsActionDialog({
         const units = sorted.map((u) => ({
           unit_name: u.unit_name,
           conversion_factor: u.is_base_unit ? 1 : Number(u.conversion_factor ?? 1),
-          cost_price: 0,
-          sell_price: 0,
+          cost_price: null as number | null,
+          sell_price: null as number | null,
           is_base_unit: u.is_base_unit,
         }))
         form.setValue('units', units, { shouldDirty: true })
@@ -257,8 +257,8 @@ export function ProductsActionDialog({
         .map((unit) => ({
           unit_name: unit.unit_name,
           conversion_factor: unit.is_base_unit ? 1 : Number(unit.conversion_factor ?? 1),
-          cost_price: Number(unit.cost_price ?? 0),
-          sell_price: Number(unit.sell_price ?? 0),
+          cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,
+          sell_price: unit.sell_price != null ? Number(unit.sell_price) : null,
           is_base_unit: unit.is_base_unit,
         }))
       : defaultUnits
@@ -296,8 +296,8 @@ export function ProductsActionDialog({
       const factor = factors[index]
       if (!Number.isFinite(factor) || factor <= 0) return
 
-      const nextCost = baseCost * factor
-      const nextSell = baseSell * factor
+      const nextCost = baseUnit?.cost_price != null ? baseCost * factor : null
+      const nextSell = baseUnit?.sell_price != null ? baseSell * factor : null
 
       if (unit?.cost_price !== nextCost) {
         form.setValue(`units.${index}.cost_price`, nextCost, {
@@ -321,8 +321,8 @@ export function ProductsActionDialog({
     units.map((unit, index) => ({
       unit_name: unit.unit_name.trim(),
       conversion_factor: index === 0 ? 1 : Number(unit.conversion_factor ?? 1),
-      cost_price: Number(unit.cost_price ?? 0),
-      sell_price: Number(unit.sell_price ?? 0),
+      cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,
+      sell_price: unit.sell_price != null ? Number(unit.sell_price) : null,
       is_base_unit: index === 0,
     }))
 
@@ -579,8 +579,8 @@ export function ProductsActionDialog({
                         appendUnit({
                           unit_name: '',
                           conversion_factor: 1,
-                          cost_price: 0,
-                          sell_price: 0,
+                          cost_price: null,
+                          sell_price: null,
                           is_base_unit: false,
                         })
                       }

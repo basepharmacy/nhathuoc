@@ -95,23 +95,25 @@ export const productFormSchema = z.object({
         ),
         cost_price: z.preprocess(
           (value) => {
-            if (value === '' || value === null || value === undefined) return 0
+            if (value === '' || value === null || value === undefined) return null
             const numberValue = Number(value)
-            return Number.isNaN(numberValue) ? 0 : numberValue
+            return Number.isNaN(numberValue) ? null : numberValue
           },
           z
             .number()
             .min(0, 'Giá nhập không được âm.')
+            .nullable()
         ),
         sell_price: z.preprocess(
           (value) => {
-            if (value === '' || value === null || value === undefined) return 0
+            if (value === '' || value === null || value === undefined) return null
             const numberValue = Number(value)
-            return Number.isNaN(numberValue) ? 0 : numberValue
+            return Number.isNaN(numberValue) ? null : numberValue
           },
           z
             .number()
             .min(0, 'Giá bán không được âm.')
+            .nullable()
         ),
         is_base_unit: z.boolean().optional(),
       })

@@ -515,34 +515,34 @@ export type Database = {
       product_units: {
         Row: {
           conversion_factor: number
-          cost_price: number
+          cost_price: number | null
           created_at: string | null
           id: string
           is_base_unit: boolean
           product_id: string
-          sell_price: number
+          sell_price: number | null
           tenant_id: string
           unit_name: string
         }
         Insert: {
           conversion_factor: number
-          cost_price: number
+          cost_price?: number | null
           created_at?: string | null
           id?: string
           is_base_unit?: boolean
           product_id: string
-          sell_price: number
+          sell_price?: number | null
           tenant_id: string
           unit_name: string
         }
         Update: {
           conversion_factor?: number
-          cost_price?: number
+          cost_price?: number | null
           created_at?: string | null
           id?: string
           is_base_unit?: boolean
           product_id?: string
-          sell_price?: number
+          sell_price?: number | null
           tenant_id?: string
           unit_name?: string
         }

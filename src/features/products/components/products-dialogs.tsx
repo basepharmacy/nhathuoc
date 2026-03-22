@@ -1,4 +1,5 @@
 import { ProductsActionDialog } from './products-action-dialog'
+import { ProductsDeactivateDialog } from './products-deactivate-dialog'
 import { ProductsDeleteDialog } from './products-delete-dialog'
 import { useProducts } from './products-provider'
 import { type Category } from '@/services/supabase'
@@ -26,6 +27,18 @@ export function ProductsDialogs({ categories }: ProductsDialogsProps) {
             open={open === 'edit'}
             onOpenChange={() => {
               setOpen('edit')
+              setTimeout(() => {
+                setCurrentRow(null)
+              }, 500)
+            }}
+            currentRow={currentRow}
+          />
+
+          <ProductsDeactivateDialog
+            key={`product-deactivate-${currentRow.id}`}
+            open={open === 'deactivate'}
+            onOpenChange={() => {
+              setOpen('deactivate')
               setTimeout(() => {
                 setCurrentRow(null)
               }, 500)

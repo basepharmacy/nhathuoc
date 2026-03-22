@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
 import { type ProductWithUnits } from '@/services/supabase'
 
-type ProductsDialogType = 'add' | 'edit' | 'delete'
+type ProductsDialogType = 'add' | 'edit' | 'delete' | 'deactivate'
 
 type ProductsContextType = {
   open: ProductsDialogType | null
