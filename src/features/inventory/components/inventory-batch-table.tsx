@@ -12,8 +12,6 @@ import {
 import {
   formatCurrency,
   formatDateLabel,
-  formatDateTimeLabel,
-  formatQuantity,
 } from '@/lib/utils'
 import { SquarePen } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +20,7 @@ import {
   DataTableRowActions,
   type RowAction,
 } from '@/components/data-table-row-actions'
+import { QuantityWithUnitCell } from './quantity-with-unit-cell'
 import { usePermissions } from '@/hooks/use-permissions'
 import { type InventoryBatchWithRelations } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import {
@@ -96,7 +95,7 @@ function createColumns(
       accessorKey: 'quantity',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Tồn kho' className='justify-end' />,
       cell: ({ row }) => (
-        <span className='tabular-nums'>{formatQuantity(row.original.quantity) + ' ' + (row.original.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}</span>
+        <QuantityWithUnitCell value={row.original.quantity} units={row.original.product_units ?? []} />
       ),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
@@ -104,7 +103,9 @@ function createColumns(
       id: 'cumulative_quantity',
       accessorKey: 'cumulative_quantity',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Tổng nhập' className='justify-end' />,
-      cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
+      cell: ({ row }) => (
+        <QuantityWithUnitCell value={row.original.cumulative_quantity} units={row.original.product_units ?? []} />
+      ),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
@@ -122,11 +123,6 @@ function createColumns(
       id: 'Cửa hàng',
       header: 'Cửa hàng',
       cell: ({ row }) => row.original.location_name ?? '-',
-    },
-    {
-      accessorKey: 'Cập nhật',
-      header: 'Cập nhật',
-      cell: ({ row }) => formatDateTimeLabel(row.original.updated_at),
     },
     {
       id: 'search',

@@ -11,7 +11,7 @@ import {
 } from '@tanstack/react-table'
 import { useNavigate } from '@tanstack/react-router'
 import { SquarePen } from 'lucide-react'
-import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
+import { formatCurrency, formatDateLabel } from '@/lib/utils'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +24,7 @@ import {
   InventoryTable,
   type FilterOption,
 } from './inventory-tables'
+import { QuantityWithUnitCell } from './quantity-with-unit-cell'
 
 type Props = {
   rows: InventoryProductsListItem[]
@@ -82,16 +83,16 @@ function createColumns(
       accessorKey: 'quantity',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Tồn kho' className='justify-end' />,
       cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatQuantity(row.original.quantity) + ' ' + (row.original.product_units?.find(unit => unit.is_base_unit)?.unit_name ?? '')}
-        </span>
+        <QuantityWithUnitCell value={row.original.quantity} units={row.original.product_units ?? []} />
       ),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
       accessorKey: 'cumulative_quantity',
       header: ({ column }) => <DataTableColumnHeader column={column} title='Tổng nhập' className='justify-end' />,
-      cell: ({ row }) => formatQuantity(row.original.cumulative_quantity),
+      cell: ({ row }) => (
+        <QuantityWithUnitCell value={row.original.cumulative_quantity} units={row.original.product_units ?? []} />
+      ),
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
@@ -100,19 +101,6 @@ function createColumns(
       cell: ({ row }) => (
         <span className='tabular-nums'>
           {formatCurrency(row.original.average_cost_price, { fallback: '0' })}đ
-        </span>
-      ),
-      meta: { className: 'text-end', thClassName: 'text-end' },
-    },
-    {
-      id: 'totalValue',
-      header: 'Giá trị tồn kho',
-      cell: ({ row }) => (
-        <span className='tabular-nums'>
-          {formatCurrency(
-            row.original.average_cost_price * row.original.quantity,
-            { fallback: '0' }
-          )}đ
         </span>
       ),
       meta: { className: 'text-end', thClassName: 'text-end' },

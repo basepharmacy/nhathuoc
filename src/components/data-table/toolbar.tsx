@@ -89,6 +89,9 @@ export function DataTableToolbar<TData>({
           onChange={(event) => setLocalValue(event.target.value)}
           className='h-8 w-[150px] lg:w-[250px]'
         />
+        {filters.length > 0 && (
+          <span className='text-sm text-muted-foreground whitespace-nowrap'>Bộ lọc:</span>
+        )}
         <div className='flex gap-x-2'>
           {filters.map((filter) => {
             const column = table.getColumn(filter.columnId)
