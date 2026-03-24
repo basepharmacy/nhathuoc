@@ -487,6 +487,7 @@ export type Database = {
           product_type: Database["public"]["Enums"]["product_type"]
           regis_number: string | null
           sale_company_name: string | null
+          source: string | null
         }
         Insert: {
           active_ingredient?: string | null
@@ -498,6 +499,7 @@ export type Database = {
           product_type?: Database["public"]["Enums"]["product_type"]
           regis_number?: string | null
           sale_company_name?: string | null
+          source?: string | null
         }
         Update: {
           active_ingredient?: string | null
@@ -509,6 +511,7 @@ export type Database = {
           product_type?: Database["public"]["Enums"]["product_type"]
           regis_number?: string | null
           sale_company_name?: string | null
+          source?: string | null
         }
         Relationships: []
       }
@@ -573,6 +576,7 @@ export type Database = {
           jan_code: string | null
           made_company_name: string | null
           min_stock: number | null
+          product_master_id: string | null
           product_name: string
           product_type: Database["public"]["Enums"]["product_type"]
           regis_number: string | null
@@ -590,6 +594,7 @@ export type Database = {
           jan_code?: string | null
           made_company_name?: string | null
           min_stock?: number | null
+          product_master_id?: string | null
           product_name: string
           product_type?: Database["public"]["Enums"]["product_type"]
           regis_number?: string | null
@@ -607,6 +612,7 @@ export type Database = {
           jan_code?: string | null
           made_company_name?: string | null
           min_stock?: number | null
+          product_master_id?: string | null
           product_name?: string
           product_type?: Database["public"]["Enums"]["product_type"]
           regis_number?: string | null
@@ -621,6 +627,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_product_master_id_fkey"
+            columns: ["product_master_id"]
+            isOneToOne: false
+            referencedRelation: "product_masters"
             referencedColumns: ["id"]
           },
           {

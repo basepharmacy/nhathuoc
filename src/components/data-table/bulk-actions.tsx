@@ -97,7 +97,7 @@ export function DataTableBulkActions<TData>({
         const isFromDropdownTrigger =
           target?.getAttribute('data-slot') === 'dropdown-menu-trigger' ||
           activeElement?.getAttribute('data-slot') ===
-            'dropdown-menu-trigger' ||
+          'dropdown-menu-trigger' ||
           target?.closest('[data-slot="dropdown-menu-trigger"]') ||
           activeElement?.closest('[data-slot="dropdown-menu-trigger"]')
 
@@ -192,11 +192,10 @@ export function DataTableBulkActions<TData>({
             >
               {selectedCount}
             </Badge>{' '}
+            Đã chọn
             <span className='hidden sm:inline'>
               {entityName}
-              {selectedCount > 1 ? 's' : ''}
             </span>{' '}
-            selected
           </div>
 
           <Separator

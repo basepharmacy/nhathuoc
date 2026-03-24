@@ -30,6 +30,7 @@ import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authen
 import { Route as AuthenticatedSaleOrdersIndexRouteImport } from './routes/_authenticated/sale-orders/index'
 import { Route as AuthenticatedPurchaseOrdersIndexRouteImport } from './routes/_authenticated/purchase-orders/index'
 import { Route as AuthenticatedProductsIndexRouteImport } from './routes/_authenticated/products/index'
+import { Route as AuthenticatedProductMastersIndexRouteImport } from './routes/_authenticated/product-masters/index'
 import { Route as AuthenticatedLocationsIndexRouteImport } from './routes/_authenticated/locations/index'
 import { Route as AuthenticatedInventoryIndexRouteImport } from './routes/_authenticated/inventory/index'
 import { Route as AuthenticatedDataMigrationIndexRouteImport } from './routes/_authenticated/data-migration/index'
@@ -158,6 +159,12 @@ const AuthenticatedProductsIndexRoute =
   AuthenticatedProductsIndexRouteImport.update({
     id: '/products/',
     path: '/products/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedProductMastersIndexRoute =
+  AuthenticatedProductMastersIndexRouteImport.update({
+    id: '/product-masters/',
+    path: '/product-masters/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedLocationsIndexRoute =
@@ -300,6 +307,7 @@ export interface FileRoutesByFullPath {
   '/data-migration/': typeof AuthenticatedDataMigrationIndexRoute
   '/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/locations/': typeof AuthenticatedLocationsIndexRoute
+  '/product-masters/': typeof AuthenticatedProductMastersIndexRoute
   '/products/': typeof AuthenticatedProductsIndexRoute
   '/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
@@ -339,6 +347,7 @@ export interface FileRoutesByTo {
   '/data-migration': typeof AuthenticatedDataMigrationIndexRoute
   '/inventory': typeof AuthenticatedInventoryIndexRoute
   '/locations': typeof AuthenticatedLocationsIndexRoute
+  '/product-masters': typeof AuthenticatedProductMastersIndexRoute
   '/products': typeof AuthenticatedProductsIndexRoute
   '/purchase-orders': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/sale-orders': typeof AuthenticatedSaleOrdersIndexRoute
@@ -381,6 +390,7 @@ export interface FileRoutesById {
   '/_authenticated/data-migration/': typeof AuthenticatedDataMigrationIndexRoute
   '/_authenticated/inventory/': typeof AuthenticatedInventoryIndexRoute
   '/_authenticated/locations/': typeof AuthenticatedLocationsIndexRoute
+  '/_authenticated/product-masters/': typeof AuthenticatedProductMastersIndexRoute
   '/_authenticated/products/': typeof AuthenticatedProductsIndexRoute
   '/_authenticated/purchase-orders/': typeof AuthenticatedPurchaseOrdersIndexRoute
   '/_authenticated/sale-orders/': typeof AuthenticatedSaleOrdersIndexRoute
@@ -423,6 +433,7 @@ export interface FileRouteTypes {
     | '/data-migration/'
     | '/inventory/'
     | '/locations/'
+    | '/product-masters/'
     | '/products/'
     | '/purchase-orders/'
     | '/sale-orders/'
@@ -462,6 +473,7 @@ export interface FileRouteTypes {
     | '/data-migration'
     | '/inventory'
     | '/locations'
+    | '/product-masters'
     | '/products'
     | '/purchase-orders'
     | '/sale-orders'
@@ -503,6 +515,7 @@ export interface FileRouteTypes {
     | '/_authenticated/data-migration/'
     | '/_authenticated/inventory/'
     | '/_authenticated/locations/'
+    | '/_authenticated/product-masters/'
     | '/_authenticated/products/'
     | '/_authenticated/purchase-orders/'
     | '/_authenticated/sale-orders/'
@@ -678,6 +691,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/product-masters/': {
+      id: '/_authenticated/product-masters/'
+      path: '/product-masters'
+      fullPath: '/product-masters/'
+      preLoaderRoute: typeof AuthenticatedProductMastersIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/locations/': {
       id: '/_authenticated/locations/'
       path: '/locations'
@@ -841,6 +861,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDataMigrationIndexRoute: typeof AuthenticatedDataMigrationIndexRoute
   AuthenticatedInventoryIndexRoute: typeof AuthenticatedInventoryIndexRoute
   AuthenticatedLocationsIndexRoute: typeof AuthenticatedLocationsIndexRoute
+  AuthenticatedProductMastersIndexRoute: typeof AuthenticatedProductMastersIndexRoute
   AuthenticatedProductsIndexRoute: typeof AuthenticatedProductsIndexRoute
   AuthenticatedPurchaseOrdersIndexRoute: typeof AuthenticatedPurchaseOrdersIndexRoute
   AuthenticatedSaleOrdersIndexRoute: typeof AuthenticatedSaleOrdersIndexRoute
@@ -871,6 +892,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDataMigrationIndexRoute: AuthenticatedDataMigrationIndexRoute,
   AuthenticatedInventoryIndexRoute: AuthenticatedInventoryIndexRoute,
   AuthenticatedLocationsIndexRoute: AuthenticatedLocationsIndexRoute,
+  AuthenticatedProductMastersIndexRoute: AuthenticatedProductMastersIndexRoute,
   AuthenticatedProductsIndexRoute: AuthenticatedProductsIndexRoute,
   AuthenticatedPurchaseOrdersIndexRoute: AuthenticatedPurchaseOrdersIndexRoute,
   AuthenticatedSaleOrdersIndexRoute: AuthenticatedSaleOrdersIndexRoute,

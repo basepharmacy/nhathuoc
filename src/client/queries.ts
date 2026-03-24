@@ -31,6 +31,9 @@ import {
 import {
   type ActivityHistoryQueryInput,
 } from '@/services/supabase/database/repo/activityHistoryRepo'
+import {
+  productMastersRepo,
+} from '.'
 import { type SalesPeriod, type TopProductType, type TopSupplierType, type TopPurchasedProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 
@@ -697,6 +700,32 @@ export const getExpiredInventoryBatchesQueryOptions = (params: {
         locationId: params.locationId ?? undefined,
         limit: params.limit,
       })
+    },
+  })
+
+export type ProductMastersBySourceQueryInput = {
+  source: string
+  search?: string
+  pageIndex: number
+  pageSize: number
+}
+
+export const getProductMastersBySourceQueryOptions = (
+  params: ProductMastersBySourceQueryInput
+) =>
+  queryOptions({
+    queryKey: [
+      'product-masters',
+      params.source,
+      {
+        search: params.search ?? '',
+        pageIndex: params.pageIndex,
+        pageSize: params.pageSize,
+      },
+    ],
+    queryFn: async () => {
+      const result = await productMastersRepo.getBySource(params)
+      return result
     },
   })
 

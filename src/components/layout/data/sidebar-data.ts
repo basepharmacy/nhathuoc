@@ -16,6 +16,7 @@ import {
   Truck,
   Warehouse,
   CreditCard,
+  Pill,
 } from 'lucide-react'
 import { type NavGroup, type SidebarData } from '../types'
 import { useUser } from '@/client/provider'
@@ -169,6 +170,12 @@ const staticNavGroups: NavGroup[] = [
         url: '/data-migration',
         icon: Database,
         feature: 'data_migration',
+      },
+      {
+        title: 'Danh sách thuốc BYT',
+        url: '/product-masters',
+        icon: Pill,
+        feature: 'product_masters',
       },
     ],
   },

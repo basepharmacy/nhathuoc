@@ -29,6 +29,7 @@ export type Feature =
   | 'staffs'
   | 'bank_accounts'
   | 'data_migration'
+  | 'product_masters'
 
 /**
  * Ma trận quyền:
@@ -60,6 +61,7 @@ const PERMISSIONS: Record<Feature, Record<StaffRole, Permission>> = {
   staffs:                 { OWNER: 'full', MANAGER: 'view', STAFF: 'none' },
   bank_accounts:          { OWNER: 'full', MANAGER: 'view', STAFF: 'view' },
   data_migration:         { OWNER: 'full', MANAGER: 'none', STAFF: 'none' },
+  product_masters:        { OWNER: 'full', MANAGER: 'full', STAFF: 'none' },
 }
 
 /**
@@ -109,6 +111,7 @@ const ROUTE_FEATURE_MAP: Record<string, Feature> = {
   '/staffs': 'staffs',
   '/bank-accounts': 'bank_accounts',
   '/data-migration': 'data_migration',
+  '/product-masters': 'product_masters',
 }
 
 export function getPermission(role: StaffRole, feature: Feature, tenantType?: TenantType): Permission {
