@@ -4,11 +4,15 @@ import { parseFile } from './file-parser'
 
 function validateColumns(
   rows: Record<string, string>[],
-  type: MigrationType
+  type: MigrationType,
+  sourceSystem: string
 ): string | null {
   if (rows.length === 0) return null
 
-  const requiredColumns = REQUIRED_COLUMNS[type]
+  const systemColumns = REQUIRED_COLUMNS[sourceSystem]
+  if (!systemColumns) return null
+
+  const requiredColumns = systemColumns[type]
   if (!requiredColumns) return null
 
   const fileColumns = Object.keys(rows[0])
@@ -25,12 +29,13 @@ function validateColumns(
 
 export function createFileSelectHandler(
   setter: React.Dispatch<React.SetStateAction<FileUploadState>>,
-  type: MigrationType
+  type: MigrationType,
+  sourceSystem: string
 ) {
   return async (file: File) => {
     try {
       const rows = await parseFile(file)
-      const error = validateColumns(rows, type)
+      const error = validateColumns(rows, type, sourceSystem)
       if (error) {
         setter({ file: null, fileName: '', rowCount: null, error })
       } else {
@@ -60,7 +65,9 @@ export function canGoNext(currentStep: number, sourceSystem: string) {
 }
 
 export function getSourceSystemLabel(sourceSystem: string) {
-  return sourceSystem === 'kiotviet' ? 'KiotViet' : 'hệ thống gốc'
+  if (sourceSystem === 'kiotviet') return 'KiotViet'
+  if (sourceSystem === 'webnhathuoc') return 'Web Nhà Thuốc'
+  return 'hệ thống gốc'
 }
 
 export function simulateMigration(

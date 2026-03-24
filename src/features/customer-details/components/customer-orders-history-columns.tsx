@@ -117,7 +117,6 @@ export const getCustomerOrdersHistoryColumns = (
         <div className='flex justify-end'>
           <SaleOrdersHistoryRowActions
             row={row}
-            onEdit={handlers.onEdit}
             onDelete={handlers.onDelete}
           />
         </div>

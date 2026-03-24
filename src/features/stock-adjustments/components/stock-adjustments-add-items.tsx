@@ -24,7 +24,7 @@ import { formatCurrency, normalizeNumber } from '@/lib/utils'
 import { getInventoryBatchesQueryOptions } from '@/client/queries'
 import { BatchSelectDialog } from '@/features/purchase-orders/components/batch-select-dialog'
 import { type AdjustmentItem } from '../data/types'
-import { type ProductUnit } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductUnit } from '@/services/supabase/'
 import { ALL_REASON_CODE_OPTIONS } from '../data/reason-code'
 import { type StockAdjustmentReasonCode } from '../data/reason-code'
 

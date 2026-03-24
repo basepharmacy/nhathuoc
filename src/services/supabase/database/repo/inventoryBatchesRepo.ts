@@ -22,7 +22,7 @@ export type InventoryBatchesListQueryInput = {
   sortOrder?: 'asc' | 'desc'
 }
 
-export type ProductUnit = {
+type ProductUnit = {
   unit_name: string
   is_base_unit: boolean
   conversion_factor: number

@@ -58,7 +58,14 @@ export function NavGroup({ title, items }: NavGroupProps) {
   )
 }
 
-function NavBadge({ children }: { children: ReactNode }) {
+function NavBadge({ children, variant }: { children: ReactNode; variant?: 'default' | 'pro' }) {
+  if (variant === 'pro') {
+    return (
+      <span className='ms-auto rounded-full bg-gradient-to-r from-red-500 to-orange-400 px-1.5 py-0 text-[10px] font-semibold text-white'>
+        {children}
+      </span>
+    )
+  }
   return <Badge className='rounded-full px-1 py-0 text-xs'>{children}</Badge>
 }
 
@@ -74,7 +81,7 @@ function SidebarMenuLink({ item, href }: { item: NavLink; href: string }) {
         <Link to={item.url} onClick={() => setOpenMobile(false)}>
           {item.icon && <item.icon />}
           <span>{item.title}</span>
-          {item.badge && <NavBadge>{item.badge}</NavBadge>}
+          {item.badge && <NavBadge variant={item.badge === 'PRO' ? 'pro' : 'default'}>{item.badge}</NavBadge>}
         </Link>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -100,7 +107,7 @@ function SidebarMenuCollapsible({
           <SidebarMenuButton tooltip={item.title}>
             {item.icon && <item.icon />}
             <span>{item.title}</span>
-            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+            {item.badge && <NavBadge variant={item.badge === 'PRO' ? 'pro' : 'default'}>{item.badge}</NavBadge>}
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 rtl:rotate-180' />
           </SidebarMenuButton>
         </CollapsibleTrigger>
@@ -115,7 +122,7 @@ function SidebarMenuCollapsible({
                   <Link to={subItem.url} onClick={() => setOpenMobile(false)}>
                     {subItem.icon && <subItem.icon />}
                     <span>{subItem.title}</span>
-                    {subItem.badge && <NavBadge>{subItem.badge}</NavBadge>}
+                    {subItem.badge && <NavBadge variant={subItem.badge === 'PRO' ? 'pro' : 'default'}>{subItem.badge}</NavBadge>}
                   </Link>
                 </SidebarMenuSubButton>
               </SidebarMenuSubItem>
@@ -144,7 +151,7 @@ function SidebarMenuCollapsedDropdown({
           >
             {item.icon && <item.icon />}
             <span>{item.title}</span>
-            {item.badge && <NavBadge>{item.badge}</NavBadge>}
+            {item.badge && <NavBadge variant={item.badge === 'PRO' ? 'pro' : 'default'}>{item.badge}</NavBadge>}
             <ChevronRight className='ms-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
           </SidebarMenuButton>
         </DropdownMenuTrigger>

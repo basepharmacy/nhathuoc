@@ -20,13 +20,13 @@ function getErrorMessage(error: unknown): string {
   return String(error)
 }
 
-function parseKiotVietNumber(value: string): number {
+function parseNumber(value: string): number {
   if (!value) return 0
   const num = parseFloat(value.replace(/,/g, ''))
   return Number.isNaN(num) ? 0 : num
 }
 
-function parseKiotVietDate(value: string): string | null {
+function parseDate(value: string): string | null {
   if (!value) return null
   // Format: dd/mm/yyyy
   const parts = value.split('/')
@@ -35,29 +35,23 @@ function parseKiotVietDate(value: string): string | null {
   return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
 }
 
-interface GroupedProduct {
-  baseRow: Record<string, string>
-  allRows: Record<string, string>[]
-  hasBaseUnit: boolean
-}
-
 export async function migrateProducts(
   file: File,
   tenantId: string,
   locationId: string | null,
   addLog: (log: Omit<ProcessLog, 'timestamp'>) => void
 ): Promise<{ success: number; failed: number }> {
-  addLog({ message: 'Đang đọc file CSV sản phẩm...', type: 'info' })
+  addLog({ message: 'Đang đọc file sản phẩm...', type: 'info' })
 
   const rows = await parseFile(file)
 
   if (rows.length === 0) {
-    addLog({ message: 'File CSV không có dữ liệu', type: 'error' })
+    addLog({ message: 'File không có dữ liệu', type: 'error' })
     return { success: 0, failed: 0 }
   }
 
   addLog({
-    message: `Đã đọc ${rows.length} dòng từ file CSV`,
+    message: `Đã đọc ${rows.length} dòng từ file`,
     type: 'success',
   })
 
@@ -74,7 +68,7 @@ export async function migrateProducts(
 
   const csvCategories = new Set<string>()
   for (const row of rows) {
-    const categoryName = row['Nhóm hàng(3 Cấp)']?.trim()
+    const categoryName = row['Nhóm Thuốc']?.trim()
     if (categoryName) {
       csvCategories.add(categoryName)
     }
@@ -104,40 +98,7 @@ export async function migrateProducts(
     type: 'success',
   })
 
-  // Step 2: Group rows by product name (Tên hàng)
-  addLog({ message: 'Đang nhóm sản phẩm theo tên...', type: 'info' })
-
-  const productGroups = new Map<string, GroupedProduct>()
-
-  for (const row of rows) {
-    const productName = row['Tên hàng']?.trim()
-    if (!productName) continue
-
-    const conversionFactor = parseKiotVietNumber(row['Quy đổi'])
-    const existing = productGroups.get(productName)
-
-    if (!existing) {
-      productGroups.set(productName, {
-        baseRow: row,
-        allRows: [row],
-        hasBaseUnit: conversionFactor === 1.0,
-      })
-    } else {
-      existing.allRows.push(row)
-      // Prefer the row with conversion factor = 1.0 as base
-      if (conversionFactor === 1.0 && !existing.hasBaseUnit) {
-        existing.baseRow = row
-        existing.hasBaseUnit = true
-      }
-    }
-  }
-
-  addLog({
-    message: `Đã nhóm thành ${productGroups.size} sản phẩm`,
-    type: 'success',
-  })
-
-  // Step 3: Check existing products by name
+  // Step 2: Check existing products by name
   addLog({ message: 'Đang kiểm tra sản phẩm đã tồn tại...', type: 'info' })
 
   const existingProducts = await productsRepo.getAllProductsByTenantId(tenantId)
@@ -147,16 +108,17 @@ export async function migrateProducts(
       .filter(Boolean)
   )
 
-  let skipped = 0
-  for (const productName of productGroups.keys()) {
-    if (existingProductNames.has(productName.toLowerCase())) {
-      skipped++
+  const newRows = rows.filter(
+    (row) => {
+      const name = row['Tên Thuốc']?.trim()
+      return name && !existingProductNames.has(name.toLowerCase())
     }
-  }
+  )
 
+  const skipped = rows.length - newRows.length
   if (skipped > 0) {
     addLog({
-      message: `${skipped} sản phẩm đã tồn tại trong hệ thống, sẽ bỏ qua`,
+      message: `${skipped} sản phẩm đã tồn tại hoặc không có tên, sẽ bỏ qua`,
       type: 'info',
     })
   }
@@ -168,99 +130,86 @@ export async function migrateProducts(
     })
   }
 
-  // Step 4: Prepare all data with pre-generated UUIDs
+  // Step 3: Prepare all data
   addLog({ message: 'Đang chuẩn bị dữ liệu sản phẩm...', type: 'info' })
-
-  const newEntries = Array.from(productGroups.entries()).filter(
-    ([name]) => !existingProductNames.has(name.toLowerCase())
-  )
 
   type ProductWithId = ProductInsert & { id: string }
   const allProducts: ProductWithId[] = []
   const allUnits: ProductUnitInsert[] = []
   const allAdjustments: StockAdjustmentInsert[] = []
 
-  for (const [productName, group] of newEntries) {
+  for (const row of newRows) {
     const productId = crypto.randomUUID()
-    const baseRow = group.baseRow
-    const categoryName = baseRow['Nhóm hàng(3 Cấp)']?.trim()
+    const productName = row['Tên Thuốc']?.trim()
+    if (!productName) continue
+
+    const categoryName = row['Nhóm Thuốc']?.trim()
     const categoryId = categoryName
       ? categoryMap.get(categoryName.toLowerCase()) ?? null
       : null
-
-    const isActive = baseRow['Đang kinh doanh'] === '1'
 
     allProducts.push({
       id: productId,
       tenant_id: tenantId,
       product_name: productName,
       product_type: '1_OTC',
-      status: isActive ? '2_ACTIVE' : '3_INACTIVE',
+      status: '2_ACTIVE',
       category_id: categoryId,
-      min_stock: parseKiotVietNumber(baseRow['Tồn nhỏ nhất']) > 0 ? parseKiotVietNumber(baseRow['Tồn nhỏ nhất']) : null,
-      active_ingredient: baseRow['Hoạt chất'] || null,
-      regis_number: baseRow['Số đăng ký'] || null,
-      jan_code: baseRow['Mã hàng'] || null,
-      made_company_name: baseRow['Hãng sản xuất'] || null,
-      description: baseRow['Mô tả'] || null,
+      min_stock: parseNumber(row['Số lượng cảnh báo']) > 0 ? parseNumber(row['Số lượng cảnh báo']) : null,
+      active_ingredient: row['Hoạt Chất'] || null,
+      regis_number: row['Số ĐK'] || null,
+      jan_code: row['Mã Thuốc'] || row['Barcode'] || null,
+      made_company_name: row['Hãng SX'] || null,
+      description: row['Thông Tin'] || null,
     })
 
-    for (const row of group.allRows) {
-      const conversionFactor = parseKiotVietNumber(row['Quy đổi'])
+    // Base unit (Đơn Vị Lẻ)
+    const baseUnitName = row['Đơn Vị Lẻ']?.trim() || 'Đơn vị'
+    const costPrice = Math.round(parseNumber(row['Giá Nhập']))
+    const sellPrice = Math.round(parseNumber(row['Giá Bán Lẻ']))
+
+    allUnits.push({
+      product_id: productId,
+      tenant_id: tenantId,
+      unit_name: baseUnitName,
+      conversion_factor: 1,
+      cost_price: costPrice,
+      sell_price: sellPrice,
+      is_base_unit: true,
+    })
+
+    // Secondary unit (Đơn Vị Thứ Nguyên) if exists and different from base
+    const secondaryUnitName = row['Đơn Vị Thứ Nguyên']?.trim()
+    const conversionFactor = parseNumber(row['Hệ Số'])
+    if (secondaryUnitName && conversionFactor > 1 && secondaryUnitName !== baseUnitName) {
       allUnits.push({
         product_id: productId,
         tenant_id: tenantId,
-        unit_name: row['ĐVT']?.trim() || 'Đơn vị',
-        conversion_factor: conversionFactor || 1,
-        cost_price: Math.round(parseKiotVietNumber(row['Giá vốn'])),
-        sell_price: Math.round(parseKiotVietNumber(row['Giá bán'])),
-        is_base_unit: conversionFactor === 1.0,
+        unit_name: secondaryUnitName,
+        conversion_factor: conversionFactor,
+        cost_price: Math.round(costPrice * conversionFactor),
+        sell_price: Math.round(sellPrice * conversionFactor),
+        is_base_unit: false,
       })
     }
 
-    // Tạo stock adjustments từ baseRow (dù baseRow có conversion != 1, vẫn đọc batch data)
-    {
-      let hasBatch = false
-      for (let batchIdx = 1; batchIdx <= 30; batchIdx++) {
-        const batchCode = baseRow[`Lô ${batchIdx}`]?.trim()
-        const expiryDateStr = baseRow[`Hạn sử dụng ${batchIdx}`]?.trim()
-        const quantity = parseKiotVietNumber(baseRow[`Tồn ${batchIdx}`])
+    // Stock adjustment from batch info
+    const batchCode = row['Số Lô']?.trim()
+    const expiryDateStr = row['Hạn Dùng']?.trim()
+    const stockQuantity = parseNumber(row['Tồn kho'])
 
-        if (!batchCode && !expiryDateStr) continue
-        if (!batchCode) continue
-        if (quantity <= 0) continue
-
-        hasBatch = true
-        allAdjustments.push({
-          tenant_id: tenantId,
-          product_id: productId,
-          batch_code: batchCode,
-          expiry_date: parseKiotVietDate(expiryDateStr),
-          quantity: Math.round(quantity),
-          cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
-          location_id: locationId,
-          reason_code: '1_FIRST_STOCK',
-          reason: 'Nhập tồn đầu kỳ từ KiotViet',
-        })
-      }
-
-      // Sản phẩm không có thông tin lô -> tạo lô mặc định từ tồn kho
-      if (!hasBatch) {
-        const stockQuantity = parseKiotVietNumber(baseRow['Tồn kho'])
-        if (stockQuantity > 0) {
-          allAdjustments.push({
-            tenant_id: tenantId,
-            product_id: productId,
-            batch_code: 'LO00000',
-            expiry_date: null,
-            quantity: Math.round(stockQuantity),
-            cost_price: Math.round(parseKiotVietNumber(baseRow['Giá vốn'])),
-            location_id: locationId,
-            reason_code: '1_FIRST_STOCK',
-            reason: 'Nhập tồn đầu kỳ từ KiotViet',
-          })
-        }
-      }
+    if (stockQuantity > 0) {
+      allAdjustments.push({
+        tenant_id: tenantId,
+        product_id: productId,
+        batch_code: batchCode || 'LO00000',
+        expiry_date: parseDate(expiryDateStr),
+        quantity: Math.round(stockQuantity),
+        cost_price: costPrice,
+        location_id: locationId,
+        reason_code: '1_FIRST_STOCK',
+        reason: 'Nhập tồn đầu kỳ từ Web Nhà Thuốc',
+      })
     }
   }
 
@@ -269,7 +218,7 @@ export async function migrateProducts(
     type: 'success',
   })
 
-  // Step 5: Batch insert products
+  // Step 4: Batch insert products
   addLog({ message: 'Đang nhập sản phẩm...', type: 'info' })
 
   let success = 0
@@ -298,7 +247,7 @@ export async function migrateProducts(
     })
   }
 
-  // Step 6: Batch insert product units (only for successfully created products)
+  // Step 5: Batch insert product units
   const validUnits = allUnits.filter((u) => successProductIds.has(u.product_id))
   addLog({ message: `Đang nhập ${validUnits.length} đơn vị tính...`, type: 'info' })
 
@@ -319,7 +268,7 @@ export async function migrateProducts(
     type: 'success',
   })
 
-  // Step 7: Batch insert stock adjustments (only for successfully created products)
+  // Step 6: Batch insert stock adjustments
   const validAdjustments = allAdjustments.filter((a) => successProductIds.has(a.product_id))
   let adjustmentsCreated = 0
 

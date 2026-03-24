@@ -82,6 +82,7 @@ export function StepContent({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value='kiotviet'>KiotViet</SelectItem>
+                  <SelectItem value='webnhathuoc'>Web Nhà Thuốc</SelectItem>
                 </SelectContent>
               </Select>
             </div>

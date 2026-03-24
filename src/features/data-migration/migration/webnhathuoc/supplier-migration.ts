@@ -3,21 +3,17 @@ import type { SupplierInsert } from '@/services/supabase/'
 import type { ProcessLog } from '../../utils/types'
 import { parseFile } from '../../utils/file-parser'
 
-function mapKiotVietSupplier(
+function mapWebNhaThuocSupplier(
   row: Record<string, string>,
   tenantId: string
 ): SupplierInsert {
-  const address = [row['Địa chỉ'], row['Phường/Xã'], row['Khu vực']]
-    .filter(Boolean)
-    .join(', ')
-
   return {
     tenant_id: tenantId,
     name: row['Tên nhà cung cấp'] || row['Mã nhà cung cấp'] || 'Không tên',
-    phone: row['Điện thoại'] || null,
-    address: address || null,
+    phone: row['Số điện thoại'] || null,
+    address: row['Địa chỉ'] || null,
     description: row['Ghi chú'] || null,
-    is_active: row['Trạng thái'] === '1',
+    is_active: true,
   }
 }
 
@@ -26,17 +22,17 @@ export async function migrateSuppliers(
   tenantId: string,
   addLog: (log: Omit<ProcessLog, 'timestamp'>) => void
 ): Promise<{ success: number; failed: number }> {
-  addLog({ message: 'Đang đọc file CSV nhà cung cấp...', type: 'info' })
+  addLog({ message: 'Đang đọc file nhà cung cấp...', type: 'info' })
 
   const rows = await parseFile(file)
 
   if (rows.length === 0) {
-    addLog({ message: 'File CSV không có dữ liệu', type: 'error' })
+    addLog({ message: 'File không có dữ liệu', type: 'error' })
     return { success: 0, failed: 0 }
   }
 
   addLog({
-    message: `Đã đọc ${rows.length} nhà cung cấp từ file CSV`,
+    message: `Đã đọc ${rows.length} nhà cung cấp từ file`,
     type: 'success',
   })
 
@@ -48,7 +44,7 @@ export async function migrateSuppliers(
 
   for (let i = 0; i < rows.length; i += BATCH_SIZE) {
     const batch = rows.slice(i, i + BATCH_SIZE)
-    const batchData = batch.map((row) => mapKiotVietSupplier(row, tenantId))
+    const batchData = batch.map((row) => mapWebNhaThuocSupplier(row, tenantId))
 
     try {
       const created = await suppliersRepo.createBatchSuppliers(batchData)

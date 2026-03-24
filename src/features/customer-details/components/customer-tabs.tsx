@@ -65,12 +65,17 @@ export function CustomerTabs({ tenantId, customerId }: CustomerTabsProps) {
 
   const handleEdit = useCallback(
     (order: SaleOrderWithRelations) => {
-      navigate({
-        to: '/sale-orders',
-        search: {
-          orderCode: order.sale_order_code,
-        },
-      })
+      if (order.status === '1_DRAFT') {
+        navigate({
+          to: '/sale-orders',
+          search: { orderCode: order.sale_order_code },
+        })
+      } else {
+        navigate({
+          to: '/sale-orders/detail',
+          search: { orderCode: order.sale_order_code },
+        })
+      }
     },
     [navigate]
   )
@@ -198,6 +203,7 @@ export function CustomerTabs({ tenantId, customerId }: CustomerTabsProps) {
               isLoading={isLoading}
               searchKey='sale_order_code'
               filters={orderFiltersConfig}
+              onRowClick={handleEdit}
               deleteState={deleteState}
             />
           </CardContent>

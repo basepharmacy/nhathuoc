@@ -21,10 +21,15 @@ import {
   createFileRemoveHandler,
 } from './utils/migration'
 import {
-  migrateProducts,
-  migrateSuppliers,
-  migrateCustomers,
+  migrateProducts as migrateKiotVietProducts,
+  migrateSuppliers as migrateKiotVietSuppliers,
+  migrateCustomers as migrateKiotVietCustomers,
 } from './migration/kiotviet'
+import {
+  migrateProducts as migrateWebNhaThuocProducts,
+  migrateSuppliers as migrateWebNhaThuocSuppliers,
+  migrateCustomers as migrateWebNhaThuocCustomers,
+} from './migration/webnhathuoc'
 import type { FileUploadState, ProcessLog } from './utils/types'
 
 export function DataMigration() {
@@ -47,7 +52,7 @@ export function DataMigration() {
   const setterMap = { products: setProducts, suppliers: setSuppliers, customers: setCustomers }
 
   const handleFileSelect = (type: 'products' | 'suppliers' | 'customers') =>
-    createFileSelectHandler(setterMap[type], type)
+    createFileSelectHandler(setterMap[type], type, sourceSystem)
 
   const handleFileRemove = (type: 'products' | 'suppliers' | 'customers') =>
     createFileRemoveHandler(setterMap[type])
@@ -78,21 +83,25 @@ export function DataMigration() {
     let completedSteps = 0
 
     try {
-      // Products - real migration
+      const migrateProducts = sourceSystem === 'webnhathuoc' ? migrateWebNhaThuocProducts : migrateKiotVietProducts
+      const migrateSuppliers = sourceSystem === 'webnhathuoc' ? migrateWebNhaThuocSuppliers : migrateKiotVietSuppliers
+      const migrateCustomers = sourceSystem === 'webnhathuoc' ? migrateWebNhaThuocCustomers : migrateKiotVietCustomers
+
+      // Products
       if (hasProductFile) {
         await migrateProducts(products.file!, tenantId, productLocationId || null, addLog)
         completedSteps++
         setProgress((completedSteps / totalSteps) * 100)
       }
 
-      // Suppliers - real migration
+      // Suppliers
       if (hasSupplierFile) {
         await migrateSuppliers(suppliers.file!, tenantId, addLog)
         completedSteps++
         setProgress((completedSteps / totalSteps) * 100)
       }
 
-      // Customers - real migration
+      // Customers
       if (hasCustomerFile) {
         await migrateCustomers(customers.file!, tenantId, addLog)
         completedSteps++

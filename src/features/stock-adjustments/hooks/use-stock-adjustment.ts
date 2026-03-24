@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { stockAdjustmentsRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductWithUnits } from '@/services/supabase'
 import { type AdjustmentItem, getDefaultUnit } from '../data/types'
 
 type UseStockAdjustmentParams = {

@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { DatePicker } from '@/components/date-picker'
+import { usePermissions } from '@/hooks/use-permissions'
 import { ReportOverview } from './components/report-overview'
 import { PurchaseReport } from './components/purchase-report'
 import {
@@ -42,6 +43,7 @@ export function Dashboard() {
   const [activityToDate, setActivityToDate] = useState<Date | undefined>()
   const { tab: activeTab } = Route.useSearch()
   const navigate = useNavigate({ from: '/dashboard' })
+  const { tenantType } = usePermissions()
 
   function setActiveTab(tab: DashboardTab) {
     navigate({ search: { tab } })
@@ -66,8 +68,15 @@ export function Dashboard() {
               <TabsList>
                 <TabsTrigger value='report'>Báo cáo</TabsTrigger>
                 <TabsTrigger value='summary'>Nhập hàng</TabsTrigger>
-                <TabsTrigger value='advanced'>Báo cáo nâng cao</TabsTrigger>
                 <TabsTrigger value='activity-history'>Lịch sử hoạt động</TabsTrigger>
+                <TabsTrigger value='advanced'>
+                  Báo cáo nâng cao
+                  {tenantType === '1_NORMAL' && (
+                    <span className='ms-1.5 rounded-full bg-gradient-to-r from-red-500 to-orange-400 px-1.5 py-0 text-[10px] font-semibold text-white'>
+                      PRO
+                    </span>
+                  )}
+                </TabsTrigger>
               </TabsList>
             </div>
             {activeTab === 'report' && (

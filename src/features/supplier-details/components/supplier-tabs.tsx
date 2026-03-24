@@ -150,8 +150,9 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
 
   const handleEditOrder = useCallback(
     (order: PurchaseOrderWithRelations) => {
+      const isDraft = order.status === '1_DRAFT'
       navigate({
-        to: '/purchase-orders',
+        to: isDraft ? '/purchase-orders' : '/purchase-orders/detail',
         search: { orderCode: order.purchase_order_code ?? '' },
       })
     },
@@ -202,7 +203,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       pageIndex: orderPagination.pageIndex,
       pageSize: orderPagination.pageSize,
       search: orderSearchValue,
-      supplierIds: supplierId ? [supplierId] : [],
+      supplierId,
       statuses: statusFilters,
       paymentStatuses: paymentStatusFilters,
       fromDate: formatDateParam(orderFromDate),
@@ -272,83 +273,84 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
 
   return (
     <>
-    <Tabs defaultValue={canView('supplier_payments') ? 'payments' : 'orders'} className='gap-4'>
-      <div className='flex flex-wrap items-center justify-between gap-2'>
-        <TabsList>
-          {canView('supplier_payments') && (
-            <TabsTrigger value='payments'>Thanh toán</TabsTrigger>
+      <Tabs defaultValue={canView('supplier_payments') ? 'payments' : 'orders'} className='gap-4'>
+        <div className='flex flex-wrap items-center justify-between gap-2'>
+          <TabsList>
+            {canView('supplier_payments') && (
+              <TabsTrigger value='payments'>Thanh toán</TabsTrigger>
+            )}
+            <TabsTrigger value='orders'>Lịch sử đặt hàng</TabsTrigger>
+          </TabsList>
+          {canEdit('supplier_payments') && (
+            <Button
+              size='sm'
+              disabled={!supplier}
+              onClick={() => {
+                if (!supplier) return
+                setCurrentRow(supplier)
+                setOpen('payment')
+              }}
+            >
+              Thanh toán
+            </Button>
           )}
-          <TabsTrigger value='orders'>Lịch sử đặt hàng</TabsTrigger>
-        </TabsList>
-        {canEdit('supplier_payments') && (
-          <Button
-            size='sm'
-            disabled={!supplier}
-            onClick={() => {
-              if (!supplier) return
-              setCurrentRow(supplier)
-              setOpen('payment')
-            }}
-          >
-            Thanh toán
-          </Button>
+        </div>
+
+        {canView('supplier_payments') && (
+          <TabsContent value='payments'>
+            <Card className='py-4'>
+              <CardContent className='px-4'>
+                <SupplierPaymentsHistoryTable
+                  table={paymentsTable}
+                  isLoading={isPaymentsLoading}
+                  searchKey='reference_code'
+                  searchPlaceholder='Tìm mã đơn, ghi chú...'
+                  fromDate={paymentFromDate}
+                  toDate={paymentToDate}
+                  onFromDateChange={setPaymentFromDate}
+                  onToDateChange={setPaymentToDate}
+                  deleteState={canEdit('supplier_payments') ? (deleteState ? {
+                    ...deleteState,
+                    title: 'Xóa thanh toán',
+                    desc: (
+                      <>
+                        Bạn có chắc chắn muốn xóa thanh toán
+                        {deleteState.target?.reference_code ? (
+                          <> mã <span className='font-bold'>{deleteState.target.reference_code}</span></>
+                        ) : null}
+                        ?
+                        <br />
+                        Số tiền sẽ tự động được hoàn lại vào công nợ của nhà cung cấp.
+                        <br />
+                        Các đơn hàng liên quan sẽ được cập nhật lại trạng thái thanh toán.
+                      </>
+                    ),
+                  } : null) : null}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
         )}
-      </div>
 
-      {canView('supplier_payments') && (
-      <TabsContent value='payments'>
-        <Card className='py-4'>
-          <CardContent className='px-4'>
-            <SupplierPaymentsHistoryTable
-              table={paymentsTable}
-              isLoading={isPaymentsLoading}
-              searchKey='reference_code'
-              searchPlaceholder='Tìm mã đơn, ghi chú...'
-              fromDate={paymentFromDate}
-              toDate={paymentToDate}
-              onFromDateChange={setPaymentFromDate}
-              onToDateChange={setPaymentToDate}
-              deleteState={canEdit('supplier_payments') ? (deleteState ? {
-                ...deleteState,
-                title: 'Xóa thanh toán',
-                desc: (
-                  <>
-                    Bạn có chắc chắn muốn xóa thanh toán
-                    {deleteState.target?.reference_code ? (
-                      <> mã <span className='font-bold'>{deleteState.target.reference_code}</span></>
-                    ) : null}
-                    ?
-                    <br />
-                    Số tiền sẽ tự động được hoàn lại vào công nợ của nhà cung cấp.
-                    <br />
-                    Các đơn hàng liên quan sẽ được cập nhật lại trạng thái thanh toán.
-                  </>
-                ),
-              } : null) : null}
-            />
-          </CardContent>
-        </Card>
-      </TabsContent>
-      )}
-
-      <TabsContent value='orders'>
-        <Card className='py-4'>
-          <CardContent className='px-4'>
-            <PurchaseOrdersHistoryTable
-              table={ordersTable}
-              isLoading={isOrdersLoading}
-              searchKey='purchase_order_code'
-              filters={orderFiltersConfig}
-              fromDate={orderFromDate}
-              toDate={orderToDate}
-              onFromDateChange={setOrderFromDate}
-              onToDateChange={setOrderToDate}
-              deleteState={orderDeleteState}
-            />
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+        <TabsContent value='orders'>
+          <Card className='py-4'>
+            <CardContent className='px-4'>
+              <PurchaseOrdersHistoryTable
+                table={ordersTable}
+                isLoading={isOrdersLoading}
+                searchKey='purchase_order_code'
+                filters={orderFiltersConfig}
+                fromDate={orderFromDate}
+                toDate={orderToDate}
+                onFromDateChange={setOrderFromDate}
+                onToDateChange={setOrderToDate}
+                onRowClick={handleEditOrder}
+                deleteState={orderDeleteState}
+              />
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {printTarget && (
         <PrintPreviewDialog

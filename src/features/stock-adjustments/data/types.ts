@@ -1,4 +1,4 @@
-import { type ProductWithUnits } from '@/services/supabase/database/repo/productsRepo'
+import { type ProductWithUnits } from '@/services/supabase/'
 import { type StockAdjustmentReasonCode } from './reason-code'
 
 export type AdjustmentItem = {

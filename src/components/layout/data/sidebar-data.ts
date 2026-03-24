@@ -19,7 +19,7 @@ import {
 } from 'lucide-react'
 import { type NavGroup, type SidebarData } from '../types'
 import { useUser } from '@/client/provider'
-import { canView, type Feature, type StaffRole } from '@/lib/permissions'
+import { canView, type Feature, type StaffRole, type TenantType } from '@/lib/permissions'
 
 const staticNavGroups: NavGroup[] = [
   {
@@ -174,27 +174,34 @@ const staticNavGroups: NavGroup[] = [
   },
 ]
 
-function filterNavByRole(navGroups: NavGroup[], role: StaffRole): NavGroup[] {
+/** Features cần gắn badge "PRO" khi tenant là gói 1_NORMAL */
+const PRO_BADGE_FEATURES: Feature[] = ['locations', 'staffs']
+
+function filterNavByRole(navGroups: NavGroup[], role: StaffRole, tenantType?: TenantType): NavGroup[] {
+  const isNormal = tenantType === '1_NORMAL'
+
   return navGroups
     .map((group) => ({
       ...group,
       items: group.items
         .map((item) => {
           const feature = item.feature as Feature | undefined
-          if (feature && !canView(role, feature)) return null
+          if (feature && !canView(role, feature, tenantType)) return null
+
+          const badge = isNormal && feature && PRO_BADGE_FEATURES.includes(feature) ? 'PRO' : item.badge
 
           // Filter sub-items by their own feature
           if (item.items) {
             const filteredSubItems = item.items.filter((sub) => {
               const subFeature = (sub as { feature?: Feature }).feature
               if (!subFeature) return true
-              return canView(role, subFeature)
+              return canView(role, subFeature, tenantType)
             })
             if (filteredSubItems.length === 0) return null
-            return { ...item, items: filteredSubItems }
+            return { ...item, badge, items: filteredSubItems }
           }
 
-          return item
+          return { ...item, badge }
         })
         .filter(Boolean) as NavGroup['items'],
     }))
@@ -205,6 +212,7 @@ export function useSidebarData(): SidebarData {
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const role = (user?.profile?.role as StaffRole) ?? 'STAFF'
+  const tenantType = (user?.tenant?.type as TenantType) ?? '1_NORMAL'
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
@@ -219,8 +227,8 @@ export function useSidebarData(): SidebarData {
         avatar: '/avatars/shadcn.jpg',
       },
       locations,
-      navGroups: filterNavByRole(staticNavGroups, role),
+      navGroups: filterNavByRole(staticNavGroups, role, tenantType),
     }),
-    [user, locations, role]
+    [user, locations, role, tenantType]
   )
 }

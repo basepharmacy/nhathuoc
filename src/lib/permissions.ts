@@ -1,6 +1,7 @@
 import type { Enums } from '@/services/supabase/database.types'
 
 export type StaffRole = Enums<'staff_role'>
+export type TenantType = Enums<'tenant_type'>
 
 export type Permission = 'full' | 'view' | 'none'
 
@@ -62,6 +63,26 @@ const PERMISSIONS: Record<Feature, Record<StaffRole, Permission>> = {
 }
 
 /**
+ * Gói 1_NORMAL: chỉ có 1 owner + 1 cửa hàng.
+ * Các feature trong map này bị giới hạn permission tối đa (cap).
+ * Ví dụ: locations → 'view' nghĩa là dù OWNER có 'full', kết quả cuối cùng chỉ là 'view'.
+ */
+const NORMAL_TENANT_CAP: Partial<Record<Feature, Permission>> = {
+  locations: 'view',
+  staffs: 'view',
+}
+
+const PERMISSION_RANK: Record<Permission, number> = {
+  none: 0,
+  view: 1,
+  full: 2,
+}
+
+function capPermission(permission: Permission, cap: Permission): Permission {
+  return PERMISSION_RANK[permission] <= PERMISSION_RANK[cap] ? permission : cap
+}
+
+/**
  * Map route path segments to features.
  * Matches the first segment of the pathname (e.g. /sale-orders → sales)
  */
@@ -90,16 +111,21 @@ const ROUTE_FEATURE_MAP: Record<string, Feature> = {
   '/data-migration': 'data_migration',
 }
 
-export function getPermission(role: StaffRole, feature: Feature): Permission {
-  return PERMISSIONS[feature]?.[role] ?? 'none'
+export function getPermission(role: StaffRole, feature: Feature, tenantType?: TenantType): Permission {
+  const base = PERMISSIONS[feature]?.[role] ?? 'none'
+  if (tenantType === '1_NORMAL') {
+    const cap = NORMAL_TENANT_CAP[feature]
+    if (cap) return capPermission(base, cap)
+  }
+  return base
 }
 
-export function canView(role: StaffRole, feature: Feature): boolean {
-  return getPermission(role, feature) !== 'none'
+export function canView(role: StaffRole, feature: Feature, tenantType?: TenantType): boolean {
+  return getPermission(role, feature, tenantType) !== 'none'
 }
 
-export function canEdit(role: StaffRole, feature: Feature): boolean {
-  return getPermission(role, feature) === 'full'
+export function canEdit(role: StaffRole, feature: Feature, tenantType?: TenantType): boolean {
+  return getPermission(role, feature, tenantType) === 'full'
 }
 
 export function getLocationScope(role: StaffRole): 'all' | 'own' {
@@ -123,8 +149,8 @@ export function getFeatureFromPath(pathname: string): Feature | null {
   return null
 }
 
-export function canAccessRoute(role: StaffRole, pathname: string): boolean {
+export function canAccessRoute(role: StaffRole, pathname: string, tenantType?: TenantType): boolean {
   const feature = getFeatureFromPath(pathname)
   if (!feature) return true // unknown routes are allowed
-  return canView(role, feature)
+  return canView(role, feature, tenantType)
 }
