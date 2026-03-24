@@ -463,7 +463,7 @@ export function ProductsActionDialog({
                                   {masterResults.map((master) => (
                                     <CommandItem
                                       key={master.id}
-                                      value={master.product_name}
+                                      value={master.id}
                                       onSelect={() => fillFromMaster(master)}
                                       className='cursor-pointer'
                                     >
