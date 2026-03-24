@@ -9,6 +9,7 @@ import {
   createCustomerRepository,
   createProductRepository,
   createPurchaseOrderRepository,
+  createPurchasePeriodRepository,
   createInventoryBatchRepository,
   createSaleOrderRepository,
   createBankAccountRepository,
@@ -32,6 +33,7 @@ export const supplierPaymentsRepo = createSupplierPaymentRepository(supabaseClie
 export const customersRepo = createCustomerRepository(supabaseClient)
 export const productsRepo = createProductRepository(supabaseClient)
 export const purchaseOrdersRepo = createPurchaseOrderRepository(supabaseClient)
+export const purchasePeriodsRepo = createPurchasePeriodRepository(supabaseClient)
 export const inventoryBatchesRepo = createInventoryBatchRepository(supabaseClient)
 export const saleOrdersRepo = createSaleOrderRepository(supabaseClient)
 export const bankAccountsRepo = createBankAccountRepository(supabaseClient)

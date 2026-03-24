@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { toast } from 'sonner'
@@ -13,6 +13,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 
 import { type PurchaseOrderWithRelations } from '@/services/supabase'
+import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
 import { getPurchaseOrdersHistoryColumns } from './components/purchase-orders-history-columns'
 import { PurchaseOrdersHistoryTable } from './components/purchase-orders-history-table'
 import { usePurchaseOrdersHistoryTable } from './hooks/use-purchase-orders-history-table'
@@ -23,6 +24,7 @@ export function PurchaseOrdersHistory() {
   const tenantId = user?.profile?.tenant_id ?? ''
   const { selectedLocationId } = useLocationContext()
   const navigate = useNavigate()
+  const [selectedPeriodId, setSelectedPeriodId] = useState('')
 
   // Data queries
   const { data: suppliers = [], isError: isSuppliersError } = useQuery({
@@ -61,6 +63,7 @@ export function PurchaseOrdersHistory() {
     suppliers,
     locations,
     selectedLocationId,
+    purchasePeriodId: selectedPeriodId ? Number(selectedPeriodId) : undefined,
   })
 
   // History query (driven by table's queryParams)
@@ -96,6 +99,10 @@ export function PurchaseOrdersHistory() {
               Quản lý lịch sử nhập hàng tại đây.
             </p>
           </div>
+          <PurchasePeriodSelector
+            periodId={selectedPeriodId}
+            onPeriodChange={setSelectedPeriodId}
+          />
         </div>
       </Header>
 

@@ -13,6 +13,7 @@ export type SupplierPaymentsHistoryQueryInput = {
   search?: string
   fromDate?: string
   toDate?: string
+  purchasePeriodId?: number
   sorting?: Array<{ id: string; desc: boolean }>
 }
 
@@ -33,6 +34,7 @@ export type AllSupplierPaymentsHistoryQueryInput = {
   supplierIds?: string[]
   fromDate?: string
   toDate?: string
+  purchasePeriodId?: number
   sorting?: Array<{ id: string; desc: boolean }>
 }
 
@@ -95,11 +97,18 @@ export const createSupplierPaymentRepository = (
       const end = start + params.pageSize - 1
       const searchValue = params.search?.trim()
 
+      const selectBase = '*, supplier:suppliers!supplier_payments_supplier_id_fkey(id, name)'
+      const selectWithPeriod = `${selectBase}, purchase_order:purchase_orders!supplier_payments_purchase_order_id_fkey!inner(id)`
+
       let query = client
         .from('supplier_payments')
-        .select('*, supplier:suppliers!supplier_payments_supplier_id_fkey(id, name)', { count: 'exact' })
+        .select(params.purchasePeriodId ? selectWithPeriod : selectBase, { count: 'exact' })
         .eq('tenant_id', params.tenantId)
         .eq('supplier_id', params.supplierId)
+
+      if (params.purchasePeriodId) {
+        query = query.eq('purchase_order.purchase_period_id', params.purchasePeriodId)
+      }
 
       if (searchValue) {
         query = query.or(`reference_code.ilike.%${searchValue}%,note.ilike.%${searchValue}%`)
@@ -146,10 +155,17 @@ export const createSupplierPaymentRepository = (
       const end = start + params.pageSize - 1
       const searchValue = params.search?.trim()
 
+      const selectBase = '*, supplier:suppliers!supplier_payments_supplier_id_fkey(id, name)'
+      const selectWithPeriod = `${selectBase}, purchase_order:purchase_orders!supplier_payments_purchase_order_id_fkey!inner(id)`
+
       let query = client
         .from('supplier_payments')
-        .select('*, supplier:suppliers!supplier_payments_supplier_id_fkey(id, name)', { count: 'exact' })
+        .select(params.purchasePeriodId ? selectWithPeriod : selectBase, { count: 'exact' })
         .eq('tenant_id', params.tenantId)
+
+      if (params.purchasePeriodId) {
+        query = query.eq('purchase_order.purchase_period_id', params.purchasePeriodId)
+      }
 
       if (params.supplierIds && params.supplierIds.length > 0) {
         query = query.in('supplier_id', params.supplierIds)

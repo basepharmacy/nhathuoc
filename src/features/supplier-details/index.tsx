@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useUser } from '@/client/provider'
@@ -20,6 +21,9 @@ function SupplierDetailContent() {
 	const { supplierId } = route.useParams()
 	const { user } = useUser()
 	const tenantId = user?.profile?.tenant_id ?? ''
+	const [selectedPeriodId, setSelectedPeriodId] = useState('')
+
+	const purchasePeriodId = selectedPeriodId ? Number(selectedPeriodId) : undefined
 
 	const {
 		data: supplier,
@@ -37,7 +41,7 @@ function SupplierDetailContent() {
 		isError: isStatisticsError,
 		error: statisticsError,
 	} = useQuery({
-		...getPurchasesStatisticsV2QueryOptions({ supplierId }),
+		...getPurchasesStatisticsV2QueryOptions({ supplierId, purchasePeriodId }),
 		enabled: !!supplierId,
 	})
 
@@ -55,7 +59,11 @@ function SupplierDetailContent() {
 	return (
 		<>
 			<Header fixed className='h-auto'>
-				<SupplierHeader supplier={supplier ?? null} />
+				<SupplierHeader
+					supplier={supplier ?? null}
+					periodId={selectedPeriodId}
+					onPeriodChange={setSelectedPeriodId}
+				/>
 			</Header>
 
 			<Main className='flex flex-1 flex-col gap-6'>
@@ -85,6 +93,7 @@ function SupplierDetailContent() {
 							tenantId={tenantId}
 							supplierId={supplierId}
 							supplier={supplier}
+							purchasePeriodId={purchasePeriodId}
 						/>
 					</>
 				)}

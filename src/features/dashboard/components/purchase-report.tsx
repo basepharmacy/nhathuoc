@@ -37,7 +37,11 @@ const supplierTabToType = {
 
 type SupplierTab = keyof typeof supplierTabToType
 
-export function PurchaseReport() {
+type PurchaseReportProps = {
+  purchasePeriodId?: number
+}
+
+export function PurchaseReport({ purchasePeriodId }: PurchaseReportProps) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const locationId = selectedLocationId ?? user?.location?.id ?? undefined
@@ -46,17 +50,17 @@ export function PurchaseReport() {
   const [productTab, setProductTab] = useState<ProductTab>('amount')
 
   const { data: stats } = useQuery({
-    ...getPurchasesStatisticsV2QueryOptions({ locationId }),
+    ...getPurchasesStatisticsV2QueryOptions({ locationId, purchasePeriodId }),
     enabled: !!user,
   })
 
   const { data: topSuppliers = [] } = useQuery({
-    ...getTopSuppliersQueryOptions({ locationId, type: supplierTabToType[supplierTab] }),
+    ...getTopSuppliersQueryOptions({ locationId, type: supplierTabToType[supplierTab], purchasePeriodId }),
     enabled: !!user,
   })
 
   const { data: topProductsByAmount = [] } = useQuery({
-    ...getTopPurchasedProductsQueryOptions({ locationId, type: productTabToType[productTab] }),
+    ...getTopPurchasedProductsQueryOptions({ locationId, type: productTabToType[productTab], purchasePeriodId }),
     enabled: !!user,
   })
 

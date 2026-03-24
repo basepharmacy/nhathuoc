@@ -1,12 +1,14 @@
 import { Badge } from '@/components/ui/badge'
 import { type Supplier } from '@/features/suppliers/data/schema'
-import { SupplierActions } from './supplier-actions'
+import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
 
 type SupplierHeaderProps = {
   supplier: Supplier | null
+  periodId: string
+  onPeriodChange: (periodId: string) => void
 }
 
-export function SupplierHeader({ supplier }: SupplierHeaderProps) {
+export function SupplierHeader({ supplier, periodId, onPeriodChange }: SupplierHeaderProps) {
   return (
     <div className='flex w-full flex-wrap items-center gap-4'>
       <div className='flex min-w-0 items-center gap-3'>
@@ -19,10 +21,10 @@ export function SupplierHeader({ supplier }: SupplierHeaderProps) {
           </Badge>
         )}
       </div>
-      <div className='ms-auto'>
-        <SupplierActions
-          isActive={supplier?.is_active ?? null}
-          supplier={supplier}
+      <div className='ms-auto flex items-center gap-2'>
+        <PurchasePeriodSelector
+          periodId={periodId}
+          onPeriodChange={onPeriodChange}
         />
       </div>
     </div>

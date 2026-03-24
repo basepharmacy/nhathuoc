@@ -16,6 +16,7 @@ import {
   stockAdjustmentsRepo,
   dashboardReportRepo,
   activityHistoryRepo,
+  purchasePeriodsRepo,
 } from '.'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 import { type SupplierPaymentsHistoryQueryInput, type AllSupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
@@ -208,6 +209,7 @@ export const getPurchaseOrdersHistoryQueryOptions = (
         paymentStatuses: params.paymentStatuses ?? [],
         fromDate: params.fromDate ?? '',
         toDate: params.toDate ?? '',
+        purchasePeriodId: params.purchasePeriodId ?? 0,
         sorting: params.sorting ?? [],
       },
     ],
@@ -215,6 +217,16 @@ export const getPurchaseOrdersHistoryQueryOptions = (
       const result = await purchaseOrdersRepo.getPurchaseOrdersHistory(params)
       return result
     },
+  })
+
+export const getPurchasePeriodsQueryOptions = (tenantId: string) =>
+  queryOptions({
+    queryKey: ["purchase-periods", tenantId],
+    queryFn: async () => {
+      const periods = await purchasePeriodsRepo.getPurchasePeriodsByTenantId(tenantId)
+      return periods
+    },
+    staleTime: 5 * 60 * 1000,
   })
 
 export const getPurchaseOrdersBySupplierIdQueryOptions = (
@@ -398,6 +410,7 @@ export const getSupplierPaymentsHistoryQueryOptions = (
         search: params.search ?? '',
         fromDate: params.fromDate ?? '',
         toDate: params.toDate ?? '',
+        purchasePeriodId: params.purchasePeriodId ?? 0,
         sorting: params.sorting ?? [],
       },
     ],
@@ -426,6 +439,7 @@ export const getAllSupplierPaymentsHistoryQueryOptions = (
         fromDate: params.fromDate ?? '',
         toDate: params.toDate ?? '',
         sorting: params.sorting ?? [],
+        purchasePeriodId: params.purchasePeriodId ?? 0,
       },
     ],
     queryFn: async () => {
@@ -607,39 +621,45 @@ export const getTopProductsQueryOptions = (params: {
 export const getPurchasesStatisticsV2QueryOptions = (params: {
   locationId?: string | null
   supplierId?: string
+  purchasePeriodId?: number
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'purchases-statistics-v2', params.locationId ?? 'all', params.supplierId ?? 'supplier-all'],
+    queryKey: ['dashboard-report', 'purchases-statistics-v2', params.locationId ?? 'all', params.supplierId ?? 'supplier-all', params.purchasePeriodId ?? 0],
     queryFn: async () =>
       dashboardReportRepo.getPurchasesStatisticsV2({
         locationId: params.locationId ?? undefined,
         supplierId: params.supplierId ?? undefined,
+        purchasePeriodId: params.purchasePeriodId ?? undefined,
       }),
   })
 
 export const getTopSuppliersQueryOptions = (params: {
   locationId?: string | null
   type: TopSupplierType
+  purchasePeriodId?: number
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'top-suppliers', params.type, params.locationId ?? 'all'],
+    queryKey: ['dashboard-report', 'top-suppliers', params.type, params.locationId ?? 'all', params.purchasePeriodId ?? 0],
     queryFn: async () =>
       dashboardReportRepo.getTopSuppliers({
         locationId: params.locationId ?? undefined,
         type: params.type,
+        purchasePeriodId: params.purchasePeriodId,
       }),
   })
 
 export const getTopPurchasedProductsQueryOptions = (params: {
   locationId?: string | null
   type: TopPurchasedProductType
+  purchasePeriodId?: number
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'top-purchased-products', params.type, params.locationId ?? 'all'],
+    queryKey: ['dashboard-report', 'top-purchased-products', params.type, params.locationId ?? 'all', params.purchasePeriodId ?? 0],
     queryFn: async () =>
       dashboardReportRepo.getTopPurchasedProducts({
         locationId: params.locationId ?? undefined,
         type: params.type,
+        purchasePeriodId: params.purchasePeriodId,
       }),
   })
 

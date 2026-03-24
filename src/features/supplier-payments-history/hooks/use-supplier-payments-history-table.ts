@@ -20,12 +20,14 @@ export type SupplierPaymentsHistoryTableInput = {
   tenantId: string
   columns: ColumnDef<SupplierPaymentWithSupplier, unknown>[]
   suppliers: Supplier[]
+  purchasePeriodId?: number
 }
 
 export function useSupplierPaymentsHistoryTable({
   tenantId,
   columns,
   suppliers,
+  purchasePeriodId,
 }: SupplierPaymentsHistoryTableInput) {
   const [rowSelection, setRowSelection] = useState({})
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
@@ -63,15 +65,16 @@ export function useSupplierPaymentsHistoryTable({
     supplierIds,
     fromDate: formatFromDateParam(fromDate),
     toDate: formatToDateParam(toDate),
+    purchasePeriodId,
     sorting,
-  }), [tenantId, pagination, searchValue, supplierIds, fromDate, toDate, sorting])
+  }), [tenantId, pagination, searchValue, supplierIds, fromDate, toDate, purchasePeriodId, sorting])
 
   useEffect(() => {
     setPagination((prev) => ({
       ...prev,
       pageIndex: 0,
     }))
-  }, [columnFilters, sorting, fromDate, toDate])
+  }, [columnFilters, sorting, fromDate, toDate, purchasePeriodId])
 
   // Filter options
   const supplierOptions: FilterOption[] = useMemo(

@@ -36,9 +36,10 @@ type SupplierTabsProps = {
   tenantId: string
   supplierId: string
   supplier?: Supplier | null
+  purchasePeriodId?: number
 }
 
-export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsProps) {
+export function SupplierTabs({ tenantId, supplierId, supplier, purchasePeriodId }: SupplierTabsProps) {
   const { setCurrentRow, setOpen } = useSuppliers()
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
@@ -103,6 +104,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       search: paymentSearchValue,
       fromDate: formatDateParam(paymentFromDate),
       toDate: formatDateParam(paymentToDate),
+      purchasePeriodId,
       sorting: paymentSorting,
     }),
     enabled: !!tenantId && !!supplierId,
@@ -208,6 +210,7 @@ export function SupplierTabs({ tenantId, supplierId, supplier }: SupplierTabsPro
       paymentStatuses: paymentStatusFilters,
       fromDate: formatDateParam(orderFromDate),
       toDate: formatDateParam(orderToDate),
+      purchasePeriodId,
       sorting: orderSorting,
     }),
     enabled: !!tenantId && !!supplierId,

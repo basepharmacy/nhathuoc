@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
 import { usePermissions } from '@/hooks/use-permissions'
+import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
 import { SuppliersPaymentDialog } from '@/features/suppliers/components/suppliers-payment-dialog'
 import { SupplierPaymentInvoice } from './components/supplier-payment-invoice'
 import { getSupplierPaymentsHistoryColumns } from './components/supplier-payments-history-columns'
@@ -27,6 +28,8 @@ export function SupplierPaymentsHistory() {
   const tenantId = user?.profile?.tenant_id ?? ''
   const { selectedLocationId } = useLocationContext()
   const { canEdit } = usePermissions()
+  const [selectedPeriodId, setSelectedPeriodId] = useState('')
+  const purchasePeriodId = selectedPeriodId ? Number(selectedPeriodId) : undefined
 
   // Data queries
   const { data: suppliers = [], isError: isSuppliersError } = useQuery({
@@ -69,6 +72,7 @@ export function SupplierPaymentsHistory() {
       tenantId,
       columns,
       suppliers,
+      purchasePeriodId,
     })
 
   // History query (driven by table's queryParams)
@@ -104,15 +108,23 @@ export function SupplierPaymentsHistory() {
               Quản lý lịch sử thanh toán nhà cung cấp tại đây.
             </p>
           </div>
+          <div className='flex items-center gap-2'>
+            <PurchasePeriodSelector
+              periodId={selectedPeriodId}
+              onPeriodChange={setSelectedPeriodId}
+            />
+          </div>
+        </div>
+      </Header>
+
+      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
+        <div className='flex items-center gap-2'>
           {canEdit('supplier_payments') && (
             <Button className='space-x-1' onClick={() => setPaymentOpen(true)}>
               <span>Thanh toán</span> <Wallet size={18} />
             </Button>
           )}
         </div>
-      </Header>
-
-      <Main className='flex flex-1 flex-col gap-4 sm:gap-6'>
         <SupplierPaymentsHistoryTable
           table={table}
           isLoading={isLoading}

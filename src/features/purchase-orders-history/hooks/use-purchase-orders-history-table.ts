@@ -24,6 +24,7 @@ export type PurchaseOrdersHistoryTableInput = {
   suppliers: Supplier[]
   locations: Location[]
   selectedLocationId?: string | null
+  purchasePeriodId?: number
 }
 
 export function usePurchaseOrdersHistoryTable({
@@ -32,6 +33,7 @@ export function usePurchaseOrdersHistoryTable({
   suppliers,
   locations,
   selectedLocationId,
+  purchasePeriodId,
 }: PurchaseOrdersHistoryTableInput) {
   const { locationScope } = usePermissions()
   const [rowSelection, setRowSelection] = useState({})
@@ -109,8 +111,9 @@ export function usePurchaseOrdersHistoryTable({
     paymentStatuses: paymentStatusFilters,
     fromDate: formatFromDateParam(fromDate),
     toDate: formatToDateParam(toDate),
+    purchasePeriodId,
     sorting,
-  }), [tenantId, pagination, searchValue, supplierId, locationId, statusFilters, paymentStatusFilters, fromDate, toDate, sorting])
+  }), [tenantId, pagination, searchValue, supplierId, locationId, statusFilters, paymentStatusFilters, fromDate, toDate, purchasePeriodId, sorting])
 
   useEffect(() => {
     if (!selectedLocationId) {
@@ -128,7 +131,7 @@ export function usePurchaseOrdersHistoryTable({
       ...prev,
       pageIndex: 0,
     }))
-  }, [columnFilters, sorting, fromDate, toDate])
+  }, [columnFilters, sorting, fromDate, toDate, purchasePeriodId])
 
   // Filter options
   const supplierOptions: FilterOption[] = useMemo(

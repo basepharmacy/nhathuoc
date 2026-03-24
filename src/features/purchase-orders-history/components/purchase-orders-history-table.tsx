@@ -132,7 +132,7 @@ export function PurchaseOrdersHistoryTable({
                         cell.column.columnDef.meta?.tdClassName
                       )}
                       onClick={
-                        cell.column.id === 'actions'
+                        cell.column.id === 'actions' || cell.column.id === 'supplier_name'
                           ? (e) => e.stopPropagation()
                           : undefined
                       }

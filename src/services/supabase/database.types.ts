@@ -1201,6 +1201,7 @@ export type Database = {
           note: string | null
           payment_date: string | null
           purchase_order_id: string | null
+          purchase_period_id: number | null
           reference_code: string | null
           supplier_id: string
           tenant_id: string
@@ -1212,6 +1213,7 @@ export type Database = {
           note?: string | null
           payment_date?: string | null
           purchase_order_id?: string | null
+          purchase_period_id?: number | null
           reference_code?: string | null
           supplier_id: string
           tenant_id: string
@@ -1223,6 +1225,7 @@ export type Database = {
           note?: string | null
           payment_date?: string | null
           purchase_order_id?: string | null
+          purchase_period_id?: number | null
           reference_code?: string | null
           supplier_id?: string
           tenant_id?: string
@@ -1233,6 +1236,13 @@ export type Database = {
             columns: ["purchase_order_id"]
             isOneToOne: false
             referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplier_payments_purchase_period_id_fkey"
+            columns: ["purchase_period_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_periods"
             referencedColumns: ["id"]
           },
           {

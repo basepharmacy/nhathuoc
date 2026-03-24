@@ -13,6 +13,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { DatePicker } from '@/components/date-picker'
 import { usePermissions } from '@/hooks/use-permissions'
+import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
 import { ReportOverview } from './components/report-overview'
 import { PurchaseReport } from './components/purchase-report'
 import {
@@ -39,6 +40,7 @@ export function Dashboard() {
   const [activityTimePeriod, setActivityTimePeriod] = useState<ActivityTimePeriod>(
     () => (localStorage.getItem('dashboard-activity-time-period') as ActivityTimePeriod) || 'month'
   )
+  const [selectedPeriodId, setSelectedPeriodId] = useState('')
   const [activityFromDate, setActivityFromDate] = useState<Date | undefined>()
   const [activityToDate, setActivityToDate] = useState<Date | undefined>()
   const { tab: activeTab } = Route.useSearch()
@@ -79,6 +81,12 @@ export function Dashboard() {
                 </TabsTrigger>
               </TabsList>
             </div>
+            {activeTab === 'summary' && (
+              <PurchasePeriodSelector
+                periodId={selectedPeriodId}
+                onPeriodChange={setSelectedPeriodId}
+              />
+            )}
             {activeTab === 'report' && (
               <Select
                 value={timePeriod}
@@ -148,7 +156,7 @@ export function Dashboard() {
           </TabsContent>
 
           <TabsContent value='summary'>
-            <PurchaseReport />
+            <PurchaseReport purchasePeriodId={selectedPeriodId ? Number(selectedPeriodId) : undefined} />
           </TabsContent>
 
           <TabsContent value='advanced'>

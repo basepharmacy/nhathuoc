@@ -28,6 +28,7 @@ export type PurchaseOrdersHistoryQueryInput = {
   paymentStatuses?: Array<PurchaseOrder['payment_status']>
   fromDate?: string
   toDate?: string
+  purchasePeriodId?: number
   sorting?: Array<{ id: string; desc: boolean }>
 }
 
@@ -103,6 +104,10 @@ export const createPurchaseOrderRepository = (
 
       if (params.locationId) {
         query = query.eq('location_id', params.locationId)
+      }
+
+      if (params.purchasePeriodId) {
+        query = query.eq('purchase_period_id', params.purchasePeriodId)
       }
 
       if (params.statuses?.length) {

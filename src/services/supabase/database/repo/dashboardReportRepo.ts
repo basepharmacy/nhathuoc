@@ -162,10 +162,12 @@ export const createDashboardReportRepository = (
     async getPurchasesStatisticsV2(params: {
       locationId?: string | null
       supplierId?: string
+      purchasePeriodId?: number
     }): Promise<PurchasesStatisticsV2Result> {
       const { data, error } = await client.rpc('get_purchases_statistics_v2', {
         p_location_id: params.locationId ?? undefined,
         p_supplier_id: params.supplierId ?? undefined,
+        p_purchase_period_id: params.purchasePeriodId ?? undefined,
       })
 
       if (error) {
@@ -190,10 +192,12 @@ export const createDashboardReportRepository = (
     async getTopSuppliers(params: {
       locationId?: string | null
       type: TopSupplierType
+      purchasePeriodId?: number
     }): Promise<PurchaseTopSupplier[]> {
       const { data, error } = await client.rpc('get_top_suppliers', {
         p_location_id: params.locationId ?? undefined,
         p_type: params.type,
+        p_purchase_period_id: params.purchasePeriodId ?? undefined,
       })
 
       if (error) {
@@ -210,10 +214,12 @@ export const createDashboardReportRepository = (
     async getTopPurchasedProducts(params: {
       locationId?: string | null
       type: TopPurchasedProductType
+      purchasePeriodId?: number
     }): Promise<PurchaseTopProduct[]> {
       const { data, error } = await client.rpc('get_top_purchased_products', {
         p_location_id: params.locationId ?? undefined,
         p_type: params.type,
+        p_purchase_period_id: params.purchasePeriodId ?? undefined,
       })
 
       if (error) {

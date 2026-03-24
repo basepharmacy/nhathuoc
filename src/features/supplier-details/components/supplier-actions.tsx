@@ -15,7 +15,7 @@ type SupplierActionsProps = {
 
 export function SupplierActions({ isActive, supplier }: SupplierActionsProps) {
   const { setOpen, setCurrentRow } = useSuppliers()
-  const { canEdit, canView } = usePermissions()
+  const { canEdit } = usePermissions()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
   const queryClient = useQueryClient()
@@ -54,19 +54,6 @@ export function SupplierActions({ isActive, supplier }: SupplierActionsProps) {
   return (
     <>
       <div className='flex flex-wrap items-center gap-2'>
-        {canView('supplier_payments') && (
-          <Button
-            variant='outline'
-            disabled={!supplier}
-            onClick={() => {
-              if (!supplier) return
-              setCurrentRow(supplier)
-              setOpen('payment')
-            }}
-          >
-            Thanh toán
-          </Button>
-        )}
         {canEdit('suppliers') && (
           <>
             <Button
