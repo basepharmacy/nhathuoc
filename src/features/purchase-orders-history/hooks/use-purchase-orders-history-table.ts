@@ -9,6 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type PurchaseOrderWithRelations } from '@/services/supabase'
 import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
 
@@ -32,13 +33,16 @@ export function usePurchaseOrdersHistoryTable({
   locations,
   selectedLocationId,
 }: PurchaseOrdersHistoryTableInput) {
+  const { locationScope } = usePermissions()
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    locationScope === 'only' ? { location_id: false } : {}
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
     selectedLocationId
       ? [
         {
-          id: 'location_name',
+          id: 'location_id',
           value: [selectedLocationId],
         },
       ]
@@ -71,7 +75,7 @@ export function usePurchaseOrdersHistoryTable({
 
   const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
-      (filter) => filter.id === 'location_name'
+      (filter) => filter.id === 'location_id'
     )
     return Array.isArray(locationFilter?.value)
       ? (locationFilter.value[0] as string | undefined)
@@ -110,12 +114,12 @@ export function usePurchaseOrdersHistoryTable({
 
   useEffect(() => {
     if (!selectedLocationId) {
-      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_name'))
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
       return
     }
     setColumnFilters((prev) => {
-      const withoutLocation = prev.filter((filter) => filter.id !== 'location_name')
-      return [...withoutLocation, { id: 'location_name', value: [selectedLocationId] }]
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
+      return [...withoutLocation, { id: 'location_id', value: [selectedLocationId] }]
     })
   }, [selectedLocationId])
 
@@ -163,7 +167,7 @@ export function usePurchaseOrdersHistoryTable({
         options: supplierOptions,
       },
       {
-        columnId: 'location_name',
+        columnId: 'location_id',
         title: 'Cửa hàng',
         singleSelect: true,
         options: locationOptions,

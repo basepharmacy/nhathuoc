@@ -1,9 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Cross2Icon } from '@radix-ui/react-icons'
 import { type Table } from '@tanstack/react-table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useDebouncedValue } from '@/hooks/use-debounced-value'
+import { usePermissions } from '@/hooks/use-permissions'
 import { DataTableFacetedFilter } from './faceted-filter'
 import { DataTableViewOptions } from './view-options'
 
@@ -68,17 +69,32 @@ export function DataTableToolbar<TData>({
   extraIsFiltered = false,
   onReset,
 }: DataTableToolbarProps<TData>) {
+  const { locationScope } = usePermissions()
+
+  const hideLocationFilter = locationScope === 'only'
+  const visibleFilters = useMemo(
+    () =>
+      hideLocationFilter
+        ? filters.filter((f) => !f.columnId.toLowerCase().includes('location'))
+        : filters,
+    [filters, hideLocationFilter]
+  )
+
   const { localValue, setLocalValue } = useDebouncedSearch(
     table,
     searchKey,
     searchDebounceMs,
   )
 
-  const isFiltered =
-    localValue.length > 0 ||
-    table.getState().columnFilters.length > 0 ||
-    table.getState().globalFilter ||
-    extraIsFiltered
+  const isFiltered = useMemo(() => {
+    if (localValue.length > 0 || table.getState().globalFilter || extraIsFiltered)
+      return true
+    const activeFilters = table.getState().columnFilters
+    if (hideLocationFilter) {
+      return activeFilters.some((f) => !f.id.toLowerCase().includes('location'))
+    }
+    return activeFilters.length > 0
+  }, [localValue, table.getState().columnFilters, table.getState().globalFilter, extraIsFiltered, hideLocationFilter])
 
   return (
     <div className='flex flex-wrap items-center justify-between gap-2'>
@@ -89,11 +105,11 @@ export function DataTableToolbar<TData>({
           onChange={(event) => setLocalValue(event.target.value)}
           className='h-8 w-[150px] lg:w-[250px]'
         />
-        {filters.length > 0 && (
+        {visibleFilters.length > 0 && (
           <span className='text-sm text-muted-foreground whitespace-nowrap'>Bộ lọc:</span>
         )}
         <div className='flex gap-x-2'>
-          {filters.map((filter) => {
+          {visibleFilters.map((filter) => {
             const column = table.getColumn(filter.columnId)
             if (!column) return null
             return (
@@ -112,7 +128,13 @@ export function DataTableToolbar<TData>({
             variant='ghost'
             onClick={() => {
               setLocalValue('')
-              table.resetColumnFilters()
+              if (hideLocationFilter) {
+                table.setColumnFilters((prev) =>
+                  prev.filter((f) => f.id.toLowerCase().includes('location'))
+                )
+              } else {
+                table.resetColumnFilters()
+              }
               table.setGlobalFilter('')
               onReset?.()
             }}

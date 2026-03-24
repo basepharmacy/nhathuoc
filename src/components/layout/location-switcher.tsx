@@ -1,4 +1,4 @@
-import * as React from 'react'
+import { useEffect } from 'react'
 import { ChevronsUpDown, Building2, Store, Warehouse } from 'lucide-react'
 import {
   DropdownMenu,
@@ -52,7 +52,7 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
   const { locationScope } = usePermissions()
 
   // Sync locations from sidebar data into the context
-  React.useEffect(() => {
+  useEffect(() => {
     if (locations.length > 0) {
       setLocations(locations)
     }
@@ -62,8 +62,8 @@ export function LocationSwitcher({ locations }: LocationSwitcherProps) {
     ? getLocationIcon(selectedLocation.type)
     : Building2
 
-  // STAFF: chỉ hiển thị location của mình, không cho chuyển
-  if (locationScope === 'own') {
+  // STAFF or 1_NORMAL: chỉ hiển thị location, không cho chuyển
+  if (locationScope === 'only') {
     return (
       <SidebarMenu>
         <SidebarMenuItem>

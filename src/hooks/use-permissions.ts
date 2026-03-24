@@ -17,7 +17,7 @@ export function usePermissions() {
   return {
     role,
     tenantType,
-    locationScope: getLocationScope(role),
+    locationScope: getLocationScope(role, tenantType),
     canView: useCallback((feature: Feature) => canView(role, feature, tenantType), [role, tenantType]),
     canEdit: useCallback((feature: Feature) => canEdit(role, feature, tenantType), [role, tenantType]),
   }

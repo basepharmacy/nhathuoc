@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   type ColumnFiltersState,
   type SortingState,
+  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFacetedRowModel,
@@ -21,6 +22,7 @@ import {
 } from '@/components/ui/table'
 import { DataTableToolbar } from '@/components/data-table'
 import { useLocationContext } from '@/context/location-provider'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type Location } from '@/services/supabase'
 import { roles } from '../data/staff-data'
 import { type StaffUser } from '../data/staff-schema'
@@ -40,24 +42,28 @@ export function StaffTable({
   isError,
 }: DataTableProps) {
   const { selectedLocationId } = useLocationContext()
+  const { locationScope } = usePermissions()
 
   // Local UI-only states
   const [rowSelection, setRowSelection] = useState({})
   const [sorting, setSorting] = useState<SortingState>([])
+  const [columnVisibility] = useState<VisibilityState>(
+    locationScope === 'only' ? { location_id: false } : {}
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
     selectedLocationId
-      ? [{ id: 'location', value: [selectedLocationId] }]
+      ? [{ id: 'location_id', value: [selectedLocationId] }]
       : []
   )
 
   useEffect(() => {
     if (!selectedLocationId) {
-      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location'))
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
       return
     }
     setColumnFilters((prev) => {
-      const withoutLocation = prev.filter((filter) => filter.id !== 'location')
-      return [...withoutLocation, { id: 'location', value: [selectedLocationId] }]
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
+      return [...withoutLocation, { id: 'location_id', value: [selectedLocationId] }]
     })
   }, [selectedLocationId])
 
@@ -79,6 +85,7 @@ export function StaffTable({
       sorting,
       rowSelection,
       columnFilters,
+      columnVisibility,
     },
     enableRowSelection: true,
     onColumnFiltersChange: setColumnFilters,
@@ -109,7 +116,7 @@ export function StaffTable({
             options: roles.map((role) => ({ ...role })),
           },
           {
-            columnId: 'location',
+            columnId: 'location_id',
             title: 'Cửa hàng',
             options: locationOptions,
           },

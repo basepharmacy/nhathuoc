@@ -5,6 +5,7 @@ import {
   type OnChangeFn,
   type PaginationState,
   type SortingState,
+  type VisibilityState,
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
@@ -37,6 +38,7 @@ type Props = {
   tableState: {
     pagination: PaginationState
     columnFilters: ColumnFiltersState
+    columnVisibility: VisibilityState
     sorting: SortingState
     onPaginationChange: OnChangeFn<PaginationState>
     onColumnFiltersChange: OnChangeFn<ColumnFiltersState>
@@ -120,20 +122,15 @@ function createColumns(
       meta: { className: 'text-end', thClassName: 'text-end' },
     },
     {
-      id: 'Cửa hàng',
-      header: 'Cửa hàng',
-      cell: ({ row }) => row.original.location_name ?? '-',
+      id: 'location_id',
+      header: ({ column }) => <DataTableColumnHeader column={column} title='Cửa hàng' />,
+      cell: ({ row }) => <span className='text-sm'>{row.original.location_name ?? '—'}</span>,
+      meta: { label: 'Cửa hàng' },
+      enableSorting: false,
     },
     {
       id: 'search',
       accessorFn: (row) => `${row.batch_code} ${row.product_name ?? ''}`,
-      header: () => null,
-      cell: () => null,
-      enableHiding: true,
-    },
-    {
-      id: 'location_id',
-      accessorFn: (row) => row.location_id ?? '',
       header: () => null,
       cell: () => null,
       enableHiding: true,
@@ -217,6 +214,7 @@ export function InventoryBatchTable({
     state: {
       pagination: tableState.pagination,
       columnFilters: tableState.columnFilters,
+      columnVisibility: tableState.columnVisibility,
       sorting: tableState.sorting,
     },
     onPaginationChange: tableState.onPaginationChange,

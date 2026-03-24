@@ -69,7 +69,7 @@ export const getPurchaseOrdersHistoryColumns = (
       filterFn: (row, id, value) => value.includes(row.getValue(id)),
     },
     {
-      id: 'location_name',
+      id: 'location_id',
       header: ({ column }) => (
         <DataTableColumnHeader column={column} title='Cửa hàng' />
       ),

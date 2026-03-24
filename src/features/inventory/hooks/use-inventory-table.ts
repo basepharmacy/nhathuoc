@@ -3,8 +3,10 @@ import {
   type ColumnFiltersState,
   type PaginationState,
   type SortingState,
+  type VisibilityState,
 } from '@tanstack/react-table'
 import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { usePermissions } from '@/hooks/use-permissions'
 
 type Location = { id: string; name: string }
 
@@ -19,6 +21,10 @@ export function useInventoryTable({
   locations,
   defaultLocationId,
 }: UseInventoryTableInput) {
+  const { locationScope } = usePermissions()
+  const [columnVisibility] = useState<VisibilityState>(
+    locationScope === 'only' ? { location_id: false } : {}
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([
     { id: 'stock_status', value: ['in_stock'] },
   ])
@@ -174,6 +180,7 @@ export function useInventoryTable({
   const tableState = {
     pagination,
     columnFilters,
+    columnVisibility,
     sorting,
     onPaginationChange: setPagination,
     onColumnFiltersChange: setColumnFilters,

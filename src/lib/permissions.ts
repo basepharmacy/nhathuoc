@@ -131,8 +131,11 @@ export function canEdit(role: StaffRole, feature: Feature, tenantType?: TenantTy
   return getPermission(role, feature, tenantType) === 'full'
 }
 
-export function getLocationScope(role: StaffRole): 'all' | 'own' {
-  return role === 'STAFF' ? 'own' : 'all'
+export function getLocationScope(role: StaffRole, tenantType?: TenantType): 'all' | 'only' {
+  if (tenantType === '1_NORMAL') {
+    return 'only'
+  }
+  return role === 'STAFF' ? 'only' : 'all'
 }
 
 /**

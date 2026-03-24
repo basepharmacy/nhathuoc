@@ -1,5 +1,6 @@
 import { get, set, del } from 'idb-keyval'
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client'
+import { OFFLINE_MUTATIONS_IDB_KEY } from './mutation-queue'
 
 const IDB_KEY = 'basepharmacy-query-cache'
 
@@ -15,4 +16,11 @@ export function createIdbPersister(): Persister {
       await del(IDB_KEY)
     },
   }
+}
+
+export async function clearAllOfflineData(): Promise<void> {
+  await Promise.all([
+    del(IDB_KEY),
+    del(OFFLINE_MUTATIONS_IDB_KEY),
+  ])
 }

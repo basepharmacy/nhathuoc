@@ -60,7 +60,7 @@ export const staffColumns: ColumnDef<StaffUser>[] = [
     filterFn: (row, id, value) => value.includes(row.getValue(id)),
   },
   {
-    id: 'location',
+    id: 'location_id',
     accessorFn: (row) => row.location?.id ?? 'ALL',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title='Chi nhánh' />

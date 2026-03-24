@@ -35,6 +35,13 @@ export function LocationProvider({ children }: LocationProviderProps) {
     setLocationsState(locs)
   }, [])
 
+  // Reset state when user changes (e.g. logout then login as different user)
+  useEffect(() => {
+    setSelectedLocationId(null)
+    setLocationsState([])
+    setHasUserSelected(false)
+  }, [user?.id])
+
   const handleSetSelectedLocationId = useCallback((id: string | null) => {
     setHasUserSelected(true)
     setSelectedLocationId(id)
@@ -47,6 +54,13 @@ export function LocationProvider({ children }: LocationProviderProps) {
     }
 
     const role = user?.role?.toUpperCase() ?? null
+    const tenantType = user?.tenant?.type ?? null
+
+    if (tenantType === '1_NORMAL') {
+      setHasUserSelected(true)
+      setSelectedLocationId(locations[0].id)
+      return
+    }
 
     if (role === 'OWNER') {
       setHasUserSelected(true)

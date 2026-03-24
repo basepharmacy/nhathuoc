@@ -1,6 +1,6 @@
 import { get, set } from 'idb-keyval'
 
-const IDB_KEY = 'basepharmacy-offline-mutations'
+export const OFFLINE_MUTATIONS_IDB_KEY = 'basepharmacy-offline-mutations'
 
 export type OfflineMutation = {
   id: string
@@ -12,7 +12,7 @@ export type OfflineMutation = {
 }
 
 export async function getOfflineMutations(): Promise<OfflineMutation[]> {
-  return (await get<OfflineMutation[]>(IDB_KEY)) ?? []
+  return (await get<OfflineMutation[]>(OFFLINE_MUTATIONS_IDB_KEY)) ?? []
 }
 
 export async function addOfflineMutation(
@@ -32,13 +32,13 @@ export async function addOfflineMutation(
     id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: new Date().toISOString(),
   })
-  await set(IDB_KEY, queue)
+  await set(OFFLINE_MUTATIONS_IDB_KEY, queue)
 }
 
 export async function removeOfflineMutation(id: string): Promise<void> {
   const queue = await getOfflineMutations()
   await set(
-    IDB_KEY,
+    OFFLINE_MUTATIONS_IDB_KEY,
     queue.filter((m) => m.id !== id)
   )
 }

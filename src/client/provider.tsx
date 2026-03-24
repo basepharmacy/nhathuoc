@@ -7,6 +7,7 @@ import {
 } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { isNetworkError } from '@/services/offline/mutation-queue'
+import { clearAllOfflineData } from '@/services/offline/persister'
 import { supabaseAuth } from '@/services/supabase'
 import { getProfilesQueryOptions } from './queries'
 import type {
@@ -65,6 +66,7 @@ export function AuthUserProvider({ children }: AuthUserProviderProps) {
         // Only clear state on explicit sign-out, not on transient failures
         setAuthUser(null)
         queryClient.clear()
+        clearAllOfflineData()
       }
     })
 

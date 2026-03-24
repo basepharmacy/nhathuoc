@@ -23,6 +23,7 @@ import { Header } from '@/components/layout/header'
 import { Main } from '@/components/layout/main'
 import { useLocationContext } from '@/context/location-provider'
 import { useOfflineMutations } from '@/hooks/use-offline-mutations'
+import { usePermissions } from '@/hooks/use-permissions'
 import { type SaleOrderWithRelations } from '@/services/supabase'
 import { getSaleOrdersHistoryColumns } from './components/sale-orders-history-columns.tsx'
 import { SaleOrdersHistoryTable } from './components/sale-orders-history-table.tsx'
@@ -36,13 +37,16 @@ export function SaleOrdersHistory() {
   const queryClient = useQueryClient()
   const { mutations: offlineMutations } = useOfflineMutations()
 
+  const { locationScope } = usePermissions()
   const [rowSelection, setRowSelection] = useState({})
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({})
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
+    locationScope === 'only' ? { location_id: false } : {}
+  )
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>(() =>
     selectedLocationId
       ? [
         {
-          id: 'location_name',
+          id: 'location_id',
           value: [selectedLocationId],
         },
       ]
@@ -176,7 +180,7 @@ export function SaleOrdersHistory() {
 
   const locationId = useMemo(() => {
     const locationFilter = columnFilters.find(
-      (filter) => filter.id === 'location_name'
+      (filter) => filter.id === 'location_id'
     )
     return Array.isArray(locationFilter?.value)
       ? (locationFilter.value as string[])[0]
@@ -185,12 +189,12 @@ export function SaleOrdersHistory() {
 
   useEffect(() => {
     if (!selectedLocationId) {
-      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_name'))
+      setColumnFilters((prev) => prev.filter((filter) => filter.id !== 'location_id'))
       return
     }
     setColumnFilters((prev) => {
-      const withoutLocation = prev.filter((filter) => filter.id !== 'location_name')
-      return [...withoutLocation, { id: 'location_name', value: [selectedLocationId] }]
+      const withoutLocation = prev.filter((filter) => filter.id !== 'location_id')
+      return [...withoutLocation, { id: 'location_id', value: [selectedLocationId] }]
     })
   }, [selectedLocationId])
 
@@ -262,7 +266,7 @@ export function SaleOrdersHistory() {
         singleSelect: true,
       },
       {
-        columnId: 'location_name',
+        columnId: 'location_id',
         title: 'Cửa hàng',
         options: locationOptions,
         singleSelect: true,

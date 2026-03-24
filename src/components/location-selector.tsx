@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,6 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { usePermissions } from '@/hooks/use-permissions'
+import { useUser } from '@/client/provider'
 import type { Location } from '@/services/supabase/database/repo/locationsRepo'
 
 type LocationSelectorProps = {
@@ -31,9 +33,26 @@ export function LocationSelector({
   disabled = false,
 }: LocationSelectorProps) {
   const [inactiveAlertOpen, setInactiveAlertOpen] = useState(false)
+  const { role } = usePermissions()
+  const { user } = useUser()
+
+  const currentLocation = locations.find((l) => l.id === locationId)
+  useEffect(() => {
+    if (currentLocation?.status === '2_INACTIVE') {
+      onLocationChange('')
+    }
+  }, [currentLocation, onLocationChange])
+
+  const isStaff = role === 'STAFF'
+  const filteredLocations = useMemo(() => {
+    if (isStaff && user?.location) {
+      return locations.filter((l) => l.id === user.location!.id)
+    }
+    return locations
+  }, [locations, isStaff, user?.location])
 
   const handleValueChange = (value: string) => {
-    const location = locations.find((l) => l.id === value)
+    const location = filteredLocations.find((l) => l.id === value)
     if (location?.status === '2_INACTIVE') {
       setInactiveAlertOpen(true)
       return
@@ -43,12 +62,12 @@ export function LocationSelector({
 
   return (
     <>
-      <Select value={locationId} onValueChange={handleValueChange} disabled={disabled}>
+      <Select value={locationId} onValueChange={handleValueChange} disabled={disabled || isStaff}>
         <SelectTrigger className='h-8 min-w-[180px] rounded-full'>
           <SelectValue placeholder='Chọn chi nhánh' />
         </SelectTrigger>
         <SelectContent>
-          {locations.map((location) => {
+          {filteredLocations.map((location) => {
             const isInactive = location.status === '2_INACTIVE'
             return (
               <SelectItem key={location.id} value={location.id}>

@@ -4,6 +4,7 @@ import { type StockAdjustmentWithRelations } from '@/services/supabase/database/
 import { Badge } from '@/components/ui/badge'
 import { getReasonCodeLabel } from '../data/reason-code'
 import { StockAdjustmentsRowActions } from './stock-adjustments-row-actions'
+import { DataTableColumnHeader } from '@/components/data-table/column-header'
 
 type StockAdjustmentsColumnHandlers = {
   onCancel?: (row: StockAdjustmentWithRelations) => void
@@ -16,13 +17,6 @@ export function createStockAdjustmentsColumns(
     {
       id: 'search',
       accessorFn: (row) => `${row.batch_code} ${row.products?.product_name ?? ''}`,
-      header: () => null,
-      cell: () => null,
-      enableHiding: true,
-    },
-    {
-      id: 'location_id',
-      accessorFn: (row) => row.location_id ?? '',
       header: () => null,
       cell: () => null,
       enableHiding: true,
@@ -85,9 +79,15 @@ export function createStockAdjustmentsColumns(
       ),
     },
     {
-      id: 'location_name',
-      header: 'Cửa hàng',
-      cell: ({ row }) => row.original.locations?.name ?? '-',
+      id: 'location_id',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Cửa hàng' />
+      ),
+      cell: ({ row }) => (
+        <span className='text-sm'>{row.original.locations?.name ?? '—'}</span>
+      ),
+      meta: { label: 'Cửa hàng' },
+      enableSorting: false,
     },
     {
       accessorKey: 'created_at',
@@ -106,8 +106,8 @@ export function createStockAdjustmentsColumns(
         </div>
       ),
       meta: {
-        className: 'text-right',
-        thClassName: 'text-right',
+        className: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
+        thClassName: 'sticky right-0 bg-background shadow-[-4px_0_8px_-4px_rgba(0,0,0,0.1)]',
       },
       enableSorting: false,
       enableHiding: false,
