@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { CheckCircle2, Circle } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { Checkbox } from '@/components/ui/checkbox'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/ui/long-text'
@@ -140,13 +140,12 @@ export const productMastersColumns: ColumnDef<ProductMasterWithUnits>[] = [
       const regis = row.original.regis_number
       const isAdded = !!regis && !!addedRegisNumbers?.has(regis)
       return isAdded ? (
-        <span className='inline-flex items-center gap-1 text-sm text-green-600'>
+        <span className='inline-flex items-center gap-1 text-sm text-green-700'>
           <CheckCircle2 className='h-4 w-4' />
           Đã thêm
         </span>
       ) : (
         <span className='inline-flex items-center gap-1 text-sm text-muted-foreground'>
-          <Circle className='h-4 w-4' />
           Chưa thêm
         </span>
       )

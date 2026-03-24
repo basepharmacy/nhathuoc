@@ -66,7 +66,7 @@ export function canGoNext(currentStep: number, sourceSystem: string) {
 
 export function getSourceSystemLabel(sourceSystem: string) {
   if (sourceSystem === 'kiotviet') return 'KiotViet'
-  if (sourceSystem === 'webnhathuoc') return 'Web Nhà Thuốc'
+  if (sourceSystem === 'webnhathuoc') return 'Webnhathuoc'
   return 'hệ thống gốc'
 }
 

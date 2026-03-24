@@ -51,10 +51,8 @@ export function ProductMasterDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className='sm:max-w-2xl max-h-[85vh] overflow-hidden'>
         <DialogHeader className='text-start'>
-          <DialogTitle>{master.product_name}</DialogTitle>
-          <DialogDescription>
-            Chi tiết sản phẩm mẫu
-          </DialogDescription>
+          <DialogTitle>Thông tin chi tiết thuốc</DialogTitle>
+          <DialogDescription>Bạn có thể thêm thuốc vào danh sách thuốc của mình.</DialogDescription>
         </DialogHeader>
 
         <ScrollArea className='max-h-[60vh] pr-3'>

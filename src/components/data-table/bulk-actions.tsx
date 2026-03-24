@@ -167,11 +167,11 @@ export function DataTableBulkActions<TData>({
                 title='Clear selection (Escape)'
               >
                 <X />
-                <span className='sr-only'>Clear selection</span>
+                <span className='sr-only'>Bỏ chọn</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Clear selection (Escape)</p>
+              <p>Bỏ chọn</p>
             </TooltipContent>
           </Tooltip>
 
