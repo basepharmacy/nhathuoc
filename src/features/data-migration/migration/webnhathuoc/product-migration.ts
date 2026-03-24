@@ -1,14 +1,14 @@
 import {
   categoriesRepo,
+  inventoryBatchesRepo,
   productsRepo,
-  stockAdjustmentsRepo,
 } from '@/client'
 import type { CategoryInsert } from '@/services/supabase/database/repo/categoriesRepo'
 import type {
   ProductInsert,
   ProductUnitInsert,
 } from '@/services/supabase/'
-import type { StockAdjustmentInsert } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import type { InventoryBatchInsert } from '@/services/supabase/database/repo/inventoryBatchesRepo'
 import type { ProcessLog } from '../../utils/types'
 import { parseFile } from '../../utils/file-parser'
 
@@ -43,7 +43,9 @@ export async function migrateProducts(
 ): Promise<{ success: number; failed: number }> {
   addLog({ message: 'Đang đọc file sản phẩm...', type: 'info' })
 
-  const rows = await parseFile(file)
+  const allRows = await parseFile(file)
+  // Dòng thứ 2 trong file (allRows[0]) là header tiếng Anh, bỏ qua
+  const rows = allRows.slice(1)
 
   if (rows.length === 0) {
     addLog({ message: 'File không có dữ liệu', type: 'error' })
@@ -136,7 +138,7 @@ export async function migrateProducts(
   type ProductWithId = ProductInsert & { id: string }
   const allProducts: ProductWithId[] = []
   const allUnits: ProductUnitInsert[] = []
-  const allAdjustments: StockAdjustmentInsert[] = []
+  const allInventoryBatches: InventoryBatchInsert[] = []
 
   for (const row of newRows) {
     const productId = crypto.randomUUID()
@@ -199,22 +201,21 @@ export async function migrateProducts(
     const stockQuantity = parseNumber(row['Tồn kho'])
 
     if (stockQuantity > 0) {
-      allAdjustments.push({
+      allInventoryBatches.push({
         tenant_id: tenantId,
         product_id: productId,
         batch_code: batchCode || 'LO00000',
         expiry_date: parseDate(expiryDateStr),
         quantity: Math.round(stockQuantity),
-        cost_price: costPrice,
+        cumulative_quantity: Math.round(stockQuantity),
+        average_cost_price: costPrice,
         location_id: locationId,
-        reason_code: '1_FIRST_STOCK',
-        reason: 'Nhập tồn đầu kỳ từ Web Nhà Thuốc',
       })
     }
   }
 
   addLog({
-    message: `Chuẩn bị xong: ${allProducts.length} sản phẩm, ${allUnits.length} đơn vị, ${allAdjustments.length} phiếu điều chỉnh`,
+    message: `Chuẩn bị xong: ${allProducts.length} sản phẩm, ${allUnits.length} đơn vị, ${allInventoryBatches.length} lô tồn kho`,
     type: 'success',
   })
 
@@ -268,21 +269,21 @@ export async function migrateProducts(
     type: 'success',
   })
 
-  // Step 6: Batch insert stock adjustments
-  const validAdjustments = allAdjustments.filter((a) => successProductIds.has(a.product_id))
-  let adjustmentsCreated = 0
+  // Step 6: Batch insert inventory batches
+  const validBatches = allInventoryBatches.filter((b) => successProductIds.has(b.product_id))
+  let batchesCreated = 0
 
-  if (validAdjustments.length > 0) {
-    addLog({ message: 'Đang tạo phiếu điều chỉnh tồn kho...', type: 'info' })
+  if (validBatches.length > 0) {
+    addLog({ message: 'Đang tạo lô tồn kho...', type: 'info' })
 
-    for (let i = 0; i < validAdjustments.length; i += BATCH_SIZE) {
-      const batch = validAdjustments.slice(i, i + BATCH_SIZE)
+    for (let i = 0; i < validBatches.length; i += BATCH_SIZE) {
+      const batch = validBatches.slice(i, i + BATCH_SIZE)
       try {
-        const created = await stockAdjustmentsRepo.createBatchStockAdjustments(batch)
-        adjustmentsCreated += created.length
+        const created = await inventoryBatchesRepo.createBatchInventoryBatches(batch)
+        batchesCreated += created.length
       } catch (error) {
         addLog({
-          message: `Lỗi tạo phiếu điều chỉnh batch ${i + 1}-${i + batch.length}: ${getErrorMessage(error)}`,
+          message: `Lỗi tạo lô tồn kho batch ${i + 1}-${i + batch.length}: ${getErrorMessage(error)}`,
           type: 'error',
         })
       }
@@ -291,12 +292,12 @@ export async function migrateProducts(
 
   if (failed > 0) {
     addLog({
-      message: `Đã nhập ${success} sản phẩm, ${failed} lỗi, ${adjustmentsCreated} phiếu điều chỉnh`,
+      message: `Đã nhập ${success} sản phẩm, ${failed} lỗi, ${batchesCreated} lô tồn kho`,
       type: 'error',
     })
   } else {
     addLog({
-      message: `Đã nhập ${success} sản phẩm, ${adjustmentsCreated} phiếu điều chỉnh thành công`,
+      message: `Đã nhập ${success} sản phẩm, ${batchesCreated} lô tồn kho thành công`,
       type: 'success',
     })
   }

@@ -1,6 +1,8 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables } from '../../database.types'
+import type { Tables, TablesInsert } from '../../database.types'
 import { ProductStatus } from '../model'
+
+export type InventoryBatchInsert = TablesInsert<'inventory_batches'>
 
 export type InventoryBatch = Tables<'inventory_batches'>
 
@@ -250,6 +252,20 @@ export const createInventoryBatchRepository = (
       const { data, error } = await query
         .order('expiry_date', { ascending: true })
         .order('batch_code', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as InventoryBatch[]
+    },
+    async createBatchInventoryBatches(
+      params: InventoryBatchInsert[]
+    ): Promise<InventoryBatch[]> {
+      const { data, error } = await client
+        .from('inventory_batches')
+        .insert(params)
+        .select()
 
       if (error) {
         throw error
