@@ -14,13 +14,13 @@ import { Main } from '@/components/layout/main'
 import { DatePicker } from '@/components/date-picker'
 import { usePermissions } from '@/hooks/use-permissions'
 import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
-import { ReportOverview } from './components/report-overview'
-import { PurchaseReport } from './components/purchase-report'
+import { ReportOverview } from './tabs/report-overview'
+import { PurchaseReport } from './tabs/purchase-report'
 import {
   ActivityHistoryTab,
   type ActivityTimePeriod,
   activityTimePeriodLabels,
-} from './components/activity-history-tab'
+} from './tabs/activity-history'
 
 export type TimePeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
 export type DashboardTab = 'report' | 'summary' | 'advanced' | 'activity-history'

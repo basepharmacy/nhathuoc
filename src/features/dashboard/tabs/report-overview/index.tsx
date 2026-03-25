@@ -24,11 +24,10 @@ import {
   CalendarX,
   DollarSign,
   ShoppingCart,
-  TrendingDownIcon,
   TrendingUp,
-  TrendingUpIcon,
 } from 'lucide-react'
-import type { TimePeriod } from '..'
+import type { TimePeriod } from '../..'
+import { ChangeBadge } from './components/change-badge'
 
 const emptyMetrics = {
   revenue: 0,
@@ -55,25 +54,6 @@ const topProductDescriptions: Record<TimePeriod, string> = {
   month: '5 sản phẩm bán chạy nhất tháng này',
   quarter: '5 sản phẩm bán chạy nhất quý này',
   year: '5 sản phẩm bán chạy nhất năm nay',
-}
-
-
-function ChangeBadge({ value, label }: { value: number; label: string }) {
-  const isUp = value >= 0
-  return (
-    <Badge
-      variant='outline'
-      className={
-        isUp
-          ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-          : 'border-rose-200 bg-rose-50 text-rose-700'
-      }
-    >
-      {isUp ? <TrendingUpIcon className='h-3 w-3' /> : <TrendingDownIcon className='h-3 w-3' />}
-      {isUp ? '+' : ''}
-      {value}% {label}
-    </Badge>
-  )
 }
 
 export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
@@ -176,7 +156,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
         <Card>
           <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
             <CardTitle className='text-sm font-medium'>Tiền thất thoát</CardTitle>
-            <TrendingDownIcon className='h-4 w-4 text-muted-foreground' />
+            <TrendingUp className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
             <div className='text-2xl font-bold'>

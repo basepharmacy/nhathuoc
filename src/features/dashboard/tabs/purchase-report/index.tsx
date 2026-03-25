@@ -18,8 +18,8 @@ import { useQuery } from '@tanstack/react-query'
 import { ChevronRight, ClipboardList, DollarSign, TrendingDown, Truck } from 'lucide-react'
 import { useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
-import { KpiGrid, type KpiItem } from './kpi-card'
-import { MonthlyBarChart } from './monthly-bar-chart'
+import { KpiGrid, type KpiItem } from '../../components/kpi-card'
+import { MonthlyBarChart } from '../../components/monthly-bar-chart'
 import type { TopSupplierType, TopPurchasedProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 const productTabToType = {
