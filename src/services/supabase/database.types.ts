@@ -994,6 +994,7 @@ export type Database = {
           location_id: string | null
           notes: string | null
           payment_method: Database["public"]["Enums"]["payment_method"] | null
+          sale_completed_time: number | null
           sale_order_code: string
           status: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
@@ -1012,6 +1013,7 @@ export type Database = {
           location_id?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sale_completed_time?: number | null
           sale_order_code: string
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
@@ -1030,6 +1032,7 @@ export type Database = {
           location_id?: string | null
           notes?: string | null
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
+          sale_completed_time?: number | null
           sale_order_code?: string
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id?: string

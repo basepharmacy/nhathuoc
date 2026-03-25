@@ -91,6 +91,9 @@ export function useSaleOrderMutations({
       validateOrder()
       const state = store.getState()
       const total = selectTotal(state)
+      const saleCompletedTime = status === '2_COMPLETE'
+        ? Math.round((Date.now() - state.startedAt) / 1000)
+        : null
       const payload = {
         order: {
           sale_order_code: state.orderCode,
@@ -105,6 +108,7 @@ export function useSaleOrderMutations({
           discount: state.orderDiscount,
           total_amount: total,
           notes: state.notes.trim().length > 0 ? state.notes.trim() : null,
+          sale_completed_time: saleCompletedTime,
         },
         items: buildOrderItems(),
         _display: {
@@ -160,6 +164,9 @@ export function useSaleOrderMutations({
 
       const state = store.getState()
       const total = selectTotal(state)
+      const saleCompletedTime = status === '2_COMPLETE'
+        ? Math.round((Date.now() - state.startedAt) / 1000)
+        : null
       const createPayload = {
         order: {
           sale_order_code: state.orderCode,
@@ -174,6 +181,7 @@ export function useSaleOrderMutations({
           discount: state.orderDiscount,
           total_amount: total,
           notes: state.notes.trim().length > 0 ? state.notes.trim() : null,
+          sale_completed_time: saleCompletedTime,
         },
         items: buildOrderItems(),
         _display: {

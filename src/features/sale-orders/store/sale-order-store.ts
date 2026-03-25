@@ -26,6 +26,7 @@ export type SaleOrderState = {
   isAddCustomerOpen: boolean
   selectedLocationId: string | null
   orderCode: string
+  startedAt: number // timestamp (ms) when order creation started
   // External data (synced from props)
   inventoryBatches: InventoryBatch[]
   // Init params (immutable)
@@ -76,6 +77,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
     isAddCustomerOpen: false,
     selectedLocationId: initialData.locationId || null,
     orderCode: initialData.orderCode,
+    startedAt: Date.now(),
     inventoryBatches,
     initialData,
 
@@ -240,6 +242,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
         cashReceived: 0,
         notes: '',
         orderCode: generateOrderCode(),
+        startedAt: Date.now(),
       }),
 
     // ── External data sync ────────────────────────────────────
