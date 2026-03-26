@@ -51,8 +51,7 @@ export function CustomerDetail() {
     () => {
       const totalAmount = orders.reduce((sum, order) => {
         const orderTotal = order.total_amount ?? 0
-        const discount = order.discount ?? 0
-        return sum + Math.max(0, orderTotal - discount)
+        return sum + Math.max(0, orderTotal)
       }, 0)
       const totalPaid = orders.reduce(
         (sum, order) => sum + (order.customer_paid_amount ?? 0),

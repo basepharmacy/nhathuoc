@@ -1,9 +1,5 @@
 import { useState } from 'react'
 import {
-  ShoppingCart,
-  DollarSign,
-  PiggyBank,
-  Zap,
   ThumbsUp,
   ThumbsDown,
   ChevronRight,
@@ -269,7 +265,7 @@ function DemandForecastCard() {
               <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
               <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(val: number) => [formatNumber(val), 'Dự kiến bán']} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(val) => [formatNumber((val ?? 0) as number), 'Dự kiến bán']} />
               <Bar dataKey='value' fill='hsl(var(--primary))' radius={[4, 4, 0, 0]} maxBarSize={36}>
                 {data.map((_, index) => (
                   <Cell key={index} fillOpacity={1 - index * 0.06} />
@@ -293,7 +289,7 @@ function DemandForecastCard() {
               <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
               <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
               <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [formatNumber(value), name]} />
+              <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [formatNumber((value ?? 0) as number), name]} />
               <Legend />
               <Area type='monotone' dataKey='actual' name='Thực tế' stroke='hsl(var(--primary))' strokeWidth={2} fill='url(#colorActual)' dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false} />
               <Area type='monotone' dataKey='predicted' name='Dự đoán' stroke='hsl(142 76% 36%)' strokeWidth={2} fill='url(#colorPredicted)' dot={{ r: 3 }} activeDot={{ r: 5 }} strokeDasharray='5 5' />
@@ -337,9 +333,9 @@ function CapitalOptimizationCard() {
               </Pie>
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(val: number, _: string, props: { payload: { name: string } }) => [
-                  `${val}%`,
-                  props.payload.name,
+                formatter={(val, _, props) => [
+                  `${val ?? 0}%`,
+                  (props as { payload: { name: string } }).payload.name,
                 ]}
               />
             </PieChart>

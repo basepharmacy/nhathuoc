@@ -41,6 +41,39 @@ export type SalesTopProduct = {
   profit: number
 }
 
+export type TopCustomer = {
+  id: string
+  name: string
+  phone: string
+  quantity: number
+  revenue: number
+  profit: number
+}
+
+export type TopCustomerType = 'by_quantity' | 'by_revenue' | 'by_profit'
+
+export type TopCategory = {
+  id: string
+  name: string
+  quantity: number
+  revenue: number
+  profit: number
+}
+
+export type TopCategoryType = 'by_quantity' | 'by_revenue' | 'by_profit'
+
+export type SalesTimeSeriesGroupBy = 'hour' | 'day' | 'day_of_week'
+
+export type SalesTimeSeriesType = 'by_revenue' | 'by_order_count' | 'by_profit'
+
+export type SalesTimeSeriesItem = {
+  timeKey: number
+  quantity: number
+  revenue: number
+  orderCount: number
+  profit: number
+}
+
 export type SalesStatisticsResult = {
   revenue: number
   profit: number
@@ -94,10 +127,205 @@ const calculateChange = (current: number, previous: number) => {
   return Number((((current - previous) / previous) * 100).toFixed(1))
 }
 
+export type AdvanceSaleStatisticsResult = {
+  returningCustomers: number
+  returningCustomersChange: number
+  profitMargin: number
+  profitMarginChange: number
+  returnRate: number
+  returnRateChange: number
+  avgSaleSpeed: number
+  avgSaleSpeedChange: number
+}
+
+export type AdvancedPeriod = 'month' | 'quarter' | 'year'
+
 export const createDashboardReportRepository = (
   client: BasePharmacySupabaseClient
 ) => {
   return {
+    async getAdvanceSaleStatistics(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      locationId?: string | null
+    }): Promise<AdvanceSaleStatisticsResult> {
+      const { data, error } = await client.rpc('get_advance_sale_statistics', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_location_id: params.locationId ?? undefined,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      })
+
+      if (error) throw error
+
+      const row = (data?.[0] ?? {}) as {
+        current_returning_customers: number | null
+        previous_returning_customers: number | null
+        current_profit_margin: number | null
+        previous_profit_margin: number | null
+        current_return_rate: number | null
+        previous_return_rate: number | null
+        current_avg_sale_speed: number | null
+        previous_avg_sale_speed: number | null
+      }
+
+      const currentReturning = toNumber(row.current_returning_customers)
+      const previousReturning = toNumber(row.previous_returning_customers)
+      const currentMargin = toNumber(row.current_profit_margin)
+      const previousMargin = toNumber(row.previous_profit_margin)
+      const currentReturnRate = toNumber(row.current_return_rate)
+      const previousReturnRate = toNumber(row.previous_return_rate)
+      const currentSpeed = toNumber(row.current_avg_sale_speed)
+      const previousSpeed = toNumber(row.previous_avg_sale_speed)
+
+      return {
+        returningCustomers: currentReturning,
+        returningCustomersChange: calculateChange(currentReturning, previousReturning),
+        profitMargin: currentMargin,
+        profitMarginChange: calculateChange(currentMargin, previousMargin),
+        returnRate: currentReturnRate,
+        returnRateChange: calculateChange(currentReturnRate, previousReturnRate),
+        avgSaleSpeed: currentSpeed,
+        avgSaleSpeedChange: calculateChange(currentSpeed, previousSpeed),
+      }
+    },
+
+    async getAdvanceTopProducts(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      type: TopProductType
+      locationId?: string | null
+      limit?: number
+    }): Promise<SalesTopProduct[]> {
+      const { data, error } = await client.rpc('get_top_products', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+        p_limit: params.limit ?? 5,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name ?? 'Không rõ',
+        unitName: item.unit_name ?? 'đv',
+        quantity: toNumber(item.quantity),
+        revenue: toNumber(item.revenue),
+        profit: toNumber(item.profit),
+      }))
+    },
+
+    async getTopSlowSellProducts(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      type: TopProductType
+      locationId?: string | null
+      limit?: number
+    }): Promise<SalesTopProduct[]> {
+      const { data, error } = await client.rpc('get_top_slow_sell_products', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+        p_limit: params.limit ?? 5,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name ?? 'Không rõ',
+        unitName: item.unit_name ?? 'đv',
+        quantity: toNumber(item.quantity_sold),
+        revenue: toNumber(item.revenue),
+        profit: toNumber(item.profit),
+      }))
+    },
+
+    async getTopCustomers(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      type: TopCustomerType
+      locationId?: string | null
+      limit?: number
+    }): Promise<TopCustomer[]> {
+      const { data, error } = await client.rpc('get_top_customers', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+        p_limit: params.limit ?? 5,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name ?? 'Không rõ',
+        phone: item.phone ?? '',
+        quantity: toNumber(item.quantity_sold),
+        revenue: toNumber(item.revenue),
+        profit: toNumber(item.profit),
+      }))
+    },
+
+    async getTopCategories(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      type: TopCategoryType
+      locationId?: string | null
+    }): Promise<TopCategory[]> {
+      const { data, error } = await client.rpc('get_top_categories', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        id: item.id,
+        name: item.name ?? 'Không rõ',
+        quantity: toNumber(item.quantity_sold),
+        revenue: toNumber(item.revenue),
+        profit: toNumber(item.profit),
+      }))
+    },
+
+    async getSalesTimeSeries(params: {
+      period: AdvancedPeriod
+      referenceDate: string
+      groupBy: SalesTimeSeriesGroupBy
+      type: SalesTimeSeriesType
+      locationId?: string | null
+    }): Promise<SalesTimeSeriesItem[]> {
+      const { data, error } = await client.rpc('get_sales_time_series', {
+        p_period: params.period,
+        p_reference_date: params.referenceDate,
+        p_group_by: params.groupBy,
+        p_type: params.type,
+        p_location_id: params.locationId ?? undefined,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        timeKey: item.time_key,
+        quantity: toNumber(item.quantity),
+        revenue: toNumber(item.revenue),
+        orderCount: item.order_count,
+        profit: toNumber(item.profit),
+      }))
+    },
+
     async getSalesStatistics(params: {
       period: SalesPeriod
       locationId?: string | null

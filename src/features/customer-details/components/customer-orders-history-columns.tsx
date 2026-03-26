@@ -59,10 +59,9 @@ export const getCustomerOrdersHistoryColumns = (
       ),
       cell: ({ row }) => {
         const totalAmount = row.original.total_amount ?? 0
-        const discount = row.original.discount ?? 0
         return (
           <span className='text-sm text-nowrap'>
-            {formatCurrency(Math.max(0, totalAmount - discount))}
+            {formatCurrency(Math.max(0, totalAmount))}
           </span>
         )
       },

@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
   TrendingUp,
   TrendingDown,
@@ -6,7 +7,12 @@ import {
   Receipt,
   Coins,
   Zap,
+  Loader2,
 } from 'lucide-react'
+import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
+import { getAdvanceSaleStatisticsQueryOptions, getAdvanceTopProductsQueryOptions, getTopSlowSellProductsQueryOptions, getTopCustomersQueryOptions, getTopCategoriesQueryOptions, getSalesTimeSeriesQueryOptions } from '@/client/queries'
+import type { AdvancedPeriod, TopProductType, TopCustomerType, TopCategoryType, SalesTimeSeriesGroupBy, SalesTimeSeriesType } from '@/services/supabase/database/repo/dashboardReportRepo'
 import {
   Bar,
   BarChart,
@@ -43,157 +49,35 @@ const metricLabels: Record<MetricTab, string> = {
 
 // --- Mock data ---
 
-const infoCards = [
-  {
-    title: 'Khách quay lại',
-    value: '128',
-    change: 12.5,
-    description: 'so với tháng trước',
-    icon: UserCheck,
-  },
-  {
-    title: 'Giá trị TB/đơn',
-    value: '185.000đ',
-    change: 5.2,
-    description: 'so với tháng trước',
-    icon: Receipt,
-  },
-  {
-    title: 'Lợi nhuận TB/đơn',
-    value: '52.000đ',
-    change: -3.1,
-    description: 'so với tháng trước',
-    icon: Coins,
-  },
-  {
-    title: 'Tốc độ bán hàng',
-    value: '142s',
-    change: -8.4,
-    description: 'so với tháng trước',
-    icon: Zap,
-  },
-]
+const metricToTopProductType: Record<MetricTab, TopProductType> = {
+  revenue: 'by_revenue',
+  quantity: 'by_quantity',
+  profit: 'by_profit',
+}
 
-const topSellingProducts = [
-  { name: 'Paracetamol 500mg', revenue: 18500000, quantity: 420, profit: 5200000 },
-  { name: 'Vitamin C 1000mg', revenue: 15200000, quantity: 380, profit: 4100000 },
-  { name: 'Amoxicillin 500mg', revenue: 12800000, quantity: 290, profit: 3600000 },
-  { name: 'Thuốc ho Bảo Thanh', revenue: 9600000, quantity: 210, profit: 2800000 },
-  { name: 'Men vi sinh Bio-acimin', revenue: 8400000, quantity: 185, profit: 2400000 },
-]
+const metricToCategoryType: Record<MetricTab, TopCategoryType> = {
+  revenue: 'by_revenue',
+  quantity: 'by_quantity',
+  profit: 'by_profit',
+}
 
-const slowSellingProducts = [
-  { name: 'Cao dán Salonpas', revenue: 450000, quantity: 8, profit: 120000 },
-  { name: 'Dầu xanh Con Ó', revenue: 620000, quantity: 12, profit: 180000 },
-  { name: 'Bột sủi nhi', revenue: 780000, quantity: 15, profit: 210000 },
-  { name: 'Thuốc bổ mắt', revenue: 950000, quantity: 18, profit: 280000 },
-  { name: 'Kem chống nắng', revenue: 1100000, quantity: 22, profit: 320000 },
-]
+const metricToTimeSeriesType: Record<MetricTab, SalesTimeSeriesType> = {
+  revenue: 'by_revenue',
+  quantity: 'by_order_count',
+  profit: 'by_profit',
+}
 
-const categoryData = [
-  { name: 'Thuốc kê đơn', revenue: 35000000, quantity: 820, profit: 9500000 },
-  { name: 'Thuốc OTC', revenue: 28000000, quantity: 650, profit: 7800000 },
-  { name: 'Thực phẩm CN', revenue: 18000000, quantity: 420, profit: 5200000 },
-  { name: 'Dụng cụ y tế', revenue: 8000000, quantity: 180, profit: 2400000 },
-  { name: 'Mỹ phẩm', revenue: 5000000, quantity: 110, profit: 1500000 },
-]
-
-const hourlyData = [
-  { label: '7h', revenue: 2100000, quantity: 25, profit: 580000 },
-  { label: '8h', revenue: 4500000, quantity: 52, profit: 1200000 },
-  { label: '9h', revenue: 6200000, quantity: 71, profit: 1700000 },
-  { label: '10h', revenue: 5800000, quantity: 67, profit: 1600000 },
-  { label: '11h', revenue: 4200000, quantity: 48, profit: 1150000 },
-  { label: '12h', revenue: 2800000, quantity: 32, profit: 770000 },
-  { label: '13h', revenue: 3100000, quantity: 36, profit: 850000 },
-  { label: '14h', revenue: 5500000, quantity: 63, profit: 1500000 },
-  { label: '15h', revenue: 6800000, quantity: 78, profit: 1850000 },
-  { label: '16h', revenue: 7200000, quantity: 83, profit: 1980000 },
-  { label: '17h', revenue: 8500000, quantity: 98, profit: 2350000 },
-  { label: '18h', revenue: 7800000, quantity: 90, profit: 2150000 },
-  { label: '19h', revenue: 5200000, quantity: 60, profit: 1430000 },
-  { label: '20h', revenue: 3500000, quantity: 40, profit: 960000 },
-  { label: '21h', revenue: 1800000, quantity: 21, profit: 500000 },
-]
-
-const dailyData = [
-  { label: 'T2', revenue: 12500000, quantity: 145, profit: 3200000 },
-  { label: 'T3', revenue: 14200000, quantity: 168, profit: 3800000 },
-  { label: 'T4', revenue: 11800000, quantity: 132, profit: 2900000 },
-  { label: 'T5', revenue: 15600000, quantity: 189, profit: 4200000 },
-  { label: 'T6', revenue: 16800000, quantity: 201, profit: 4600000 },
-  { label: 'T7', revenue: 19200000, quantity: 234, profit: 5100000 },
-  { label: 'CN', revenue: 17500000, quantity: 215, profit: 4800000 },
-]
-
-const weeklyData = [
-  { label: 'T1', revenue: 85000000, quantity: 980, profit: 23000000 },
-  { label: 'T2', revenue: 92000000, quantity: 1050, profit: 25000000 },
-  { label: 'T3', revenue: 78000000, quantity: 890, profit: 21000000 },
-  { label: 'T4', revenue: 105000000, quantity: 1200, profit: 28500000 },
-  { label: 'T5', revenue: 88000000, quantity: 1010, profit: 24000000 },
-  { label: 'T6', revenue: 95000000, quantity: 1090, profit: 25800000 },
-  { label: 'T7', revenue: 110000000, quantity: 1260, profit: 30000000 },
-  { label: 'T8', revenue: 98000000, quantity: 1120, profit: 26500000 },
-  { label: 'T9', revenue: 102000000, quantity: 1170, profit: 27800000 },
-  { label: 'T10', revenue: 115000000, quantity: 1320, profit: 31200000 },
-  { label: 'T11', revenue: 108000000, quantity: 1240, profit: 29400000 },
-  { label: 'T12', revenue: 120000000, quantity: 1380, profit: 32600000 },
-  { label: 'T13', revenue: 95000000, quantity: 1090, profit: 25800000 },
-  { label: 'T14', revenue: 88000000, quantity: 1010, profit: 24000000 },
-  { label: 'T15', revenue: 105000000, quantity: 1200, profit: 28500000 },
-  { label: 'T16', revenue: 92000000, quantity: 1050, profit: 25000000 },
-  { label: 'T17', revenue: 110000000, quantity: 1260, profit: 30000000 },
-  { label: 'T18', revenue: 98000000, quantity: 1120, profit: 26500000 },
-  { label: 'T19', revenue: 102000000, quantity: 1170, profit: 27800000 },
-  { label: 'T20', revenue: 115000000, quantity: 1320, profit: 31200000 },
-  { label: 'T21', revenue: 108000000, quantity: 1240, profit: 29400000 },
-  { label: 'T22', revenue: 120000000, quantity: 1380, profit: 32600000 },
-  { label: 'T23', revenue: 125000000, quantity: 1440, profit: 34000000 },
-  { label: 'T24', revenue: 118000000, quantity: 1360, profit: 32100000 },
-  { label: 'T25', revenue: 130000000, quantity: 1500, profit: 35400000 },
-  { label: 'T26', revenue: 122000000, quantity: 1400, profit: 33200000 },
-  { label: 'T27', revenue: 135000000, quantity: 1550, profit: 36700000 },
-  { label: 'T28', revenue: 128000000, quantity: 1470, profit: 34800000 },
-  { label: 'T29', revenue: 140000000, quantity: 1610, profit: 38100000 },
-  { label: 'T30', revenue: 132000000, quantity: 1520, profit: 35900000 },
-  { label: 'T31', revenue: 145000000, quantity: 1670, profit: 39400000 },
-  { label: 'T32', revenue: 138000000, quantity: 1590, profit: 37500000 },
-  { label: 'T33', revenue: 150000000, quantity: 1730, profit: 40800000 },
-  { label: 'T34', revenue: 142000000, quantity: 1640, profit: 38600000 },
-  { label: 'T35', revenue: 148000000, quantity: 1700, profit: 40200000 },
-  { label: 'T36', revenue: 155000000, quantity: 1780, profit: 42100000 },
-  { label: 'T37', revenue: 160000000, quantity: 1840, profit: 43500000 },
-  { label: 'T38', revenue: 152000000, quantity: 1750, profit: 41300000 },
-  { label: 'T39', revenue: 158000000, quantity: 1820, profit: 42900000 },
-  { label: 'T40', revenue: 165000000, quantity: 1900, profit: 44800000 },
-  { label: 'T41', revenue: 170000000, quantity: 1960, profit: 46200000 },
-  { label: 'T42', revenue: 162000000, quantity: 1870, profit: 44100000 },
-  { label: 'T43', revenue: 168000000, quantity: 1930, profit: 45600000 },
-  { label: 'T44', revenue: 175000000, quantity: 2010, profit: 47500000 },
-  { label: 'T45', revenue: 180000000, quantity: 2070, profit: 48900000 },
-  { label: 'T46', revenue: 172000000, quantity: 1980, profit: 46700000 },
-  { label: 'T47', revenue: 178000000, quantity: 2050, profit: 48300000 },
-  { label: 'T48', revenue: 185000000, quantity: 2130, profit: 50200000 },
-  { label: 'T49', revenue: 190000000, quantity: 2190, profit: 51600000 },
-  { label: 'T50', revenue: 182000000, quantity: 2100, profit: 49500000 },
-  { label: 'T51', revenue: 188000000, quantity: 2160, profit: 51000000 },
-  { label: 'T52', revenue: 195000000, quantity: 2250, profit: 53000000 },
-]
-
-const topVipCustomers = [
-  { name: 'Nguyễn Văn An', phone: '0901***123', revenue: 45200000, quantity: 320, profit: 12800000, orders: 32 },
-  { name: 'Trần Thị Bích', phone: '0912***456', revenue: 38500000, quantity: 280, profit: 10900000, orders: 28 },
-  { name: 'Lê Hoàng Minh', phone: '0938***789', revenue: 31800000, quantity: 240, profit: 9100000, orders: 24 },
-  { name: 'Phạm Thùy Dung', phone: '0976***321', revenue: 27600000, quantity: 210, profit: 7800000, orders: 21 },
-  { name: 'Võ Đức Thắng', phone: '0865***654', revenue: 24100000, quantity: 190, profit: 6900000, orders: 19 },
-]
+const metricToCustomerType: Record<MetricTab, TopCustomerType> = {
+  revenue: 'by_revenue',
+  quantity: 'by_quantity',
+  profit: 'by_profit',
+}
 
 const PIE_OPACITIES = [1, 0.8, 0.6, 0.4, 0.25]
 
 const tooltipStyle = {
-  backgroundColor: 'hsl(var(--popover))',
-  border: '1px solid hsl(var(--border))',
+  backgroundColor: 'var(--popover)',
+  border: '1px solid var(--border)',
   borderRadius: '8px',
   fontSize: '12px',
 }
@@ -238,20 +122,104 @@ function MetricTabSwitcher({ active, onChange }: { active: MetricTab; onChange: 
   )
 }
 
-function InfoCards() {
+function periodToReferenceDate(period: AdvancedPeriod, selectedPeriod: string): string {
+  if (period === 'month') {
+    return `${selectedPeriod}-01`
+  }
+  if (period === 'quarter') {
+    const year = selectedPeriod.slice(0, 4)
+    const quarter = parseInt(selectedPeriod.slice(4), 10)
+    const month = String((quarter - 1) * 3 + 1).padStart(2, '0')
+    return `${year}-${month}-01`
+  }
+  return `${selectedPeriod}-01-01`
+}
+
+const periodChangeLabels: Record<AdvancedPeriod, string> = {
+  month: 'so với tháng trước',
+  quarter: 'so với quý trước',
+  year: 'so với năm trước',
+}
+
+function InfoCards({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+
+  const { data, isLoading } = useQuery({
+    ...getAdvanceSaleStatisticsQueryOptions({
+      period,
+      referenceDate,
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
+
+  const description = periodChangeLabels[period]
+
+  const cards = [
+    {
+      title: 'Khách quay lại',
+      subtitle: 'Số khách quay lại mua hàng',
+      value: formatNumber(data?.returningCustomers ?? 0),
+      change: data?.returningCustomersChange ?? 0,
+      icon: UserCheck,
+    },
+    {
+      title: 'Biên lợi nhuận',
+      subtitle: 'Tỷ lệ lợi nhuận trên doanh thu',
+      value: `${(data?.profitMargin ?? 0).toFixed(1)}%`,
+      change: data?.profitMarginChange ?? 0,
+      icon: Coins,
+    },
+    {
+      title: 'Tỷ lệ trả đơn',
+      subtitle: 'Tỉ lệ đơn bị hủy trên tổng số đơn',
+      value: `${(data?.returnRate ?? 0).toFixed(1)}%`,
+      change: data?.returnRateChange ?? 0,
+      icon: Receipt,
+      invertColor: true,
+    },
+    {
+      title: 'Tốc độ bán hàng',
+      subtitle: 'Thời gian TB xử lý mỗi đơn',
+      value: `${Math.round(data?.avgSaleSpeed ?? 0)}s`,
+      change: data?.avgSaleSpeedChange ?? 0,
+      icon: Zap,
+      invertColor: true,
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className='flex h-[120px] items-center justify-center'>
+              <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
   return (
     <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
-      {infoCards.map((card) => {
+      {cards.map((card) => {
         const isUp = card.change >= 0
-        const isSpeedCard = card.title === 'Tốc độ bán hàng'
-        const changeColor = isSpeedCard
+        const invert = card.invertColor
+        const changeColor = invert
           ? (isUp ? 'text-red-500' : 'text-emerald-500')
           : (isUp ? 'text-emerald-500' : 'text-red-500')
 
         return (
           <Card key={card.title}>
             <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
-              <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
+              <div>
+                <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
+                <p className='text-xs text-muted-foreground'>{card.subtitle}</p>
+              </div>
               <card.icon className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
@@ -265,7 +233,7 @@ function InfoCards() {
                 <span className={cn('font-medium', changeColor)}>
                   {isUp ? '+' : ''}{card.change}%
                 </span>
-                <span>{card.description}</span>
+                <span>{description}</span>
               </div>
             </CardContent>
           </Card>
@@ -275,8 +243,21 @@ function InfoCards() {
   )
 }
 
-function TopSellingCard() {
+function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+
+  const { data: products = [], isLoading } = useQuery({
+    ...getAdvanceTopProductsQueryOptions({
+      period,
+      referenceDate,
+      type: metricToTopProductType[metric],
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
 
   return (
     <Card>
@@ -290,31 +271,54 @@ function TopSellingCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width='100%' height={220}>
-          <BarChart data={topSellingProducts} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
-            <XAxis type='number' hide />
-            <YAxis type='category' dataKey='name' width={130} stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(value: number) => [
-                metric === 'quantity' ? formatNumber(value) : formatVND(value),
-                metricLabels[metric],
-              ]}
-            />
-            <Bar dataKey={metric} fill='hsl(var(--primary))' radius={[0, 4, 4, 0]} maxBarSize={24}>
-              {topSellingProducts.map((_, index) => (
-                <Cell key={index} fillOpacity={1 - index * 0.15} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <div className='flex h-[220px] items-center justify-center'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+          </div>
+        ) : products.length === 0 ? (
+          <div className='flex h-[220px] items-center justify-center text-sm text-muted-foreground'>
+            Không có dữ liệu
+          </div>
+        ) : (
+          <ResponsiveContainer width='100%' height={220}>
+            <BarChart data={products} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+              <XAxis type='number' hide />
+              <YAxis type='category' dataKey='name' width={130} stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value) => [
+                  metric === 'quantity' ? formatNumber((value ?? 0) as number) : formatVND((value ?? 0) as number),
+                  metricLabels[metric],
+                ]}
+              />
+              <Bar dataKey={metric} fill='var(--primary)' radius={[0, 4, 4, 0]} maxBarSize={24}>
+                {products.map((_, index) => (
+                  <Cell key={index} fillOpacity={1 - index * 0.15} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-function SlowSellingCard() {
+function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+
+  const { data: products = [], isLoading } = useQuery({
+    ...getTopSlowSellProductsQueryOptions({
+      period,
+      referenceDate,
+      type: metricToTopProductType[metric],
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
 
   return (
     <Card>
@@ -328,32 +332,72 @@ function SlowSellingCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width='100%' height={220}>
-          <BarChart data={slowSellingProducts} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
-            <XAxis type='number' hide />
-            <YAxis type='category' dataKey='name' width={130} stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(value: number) => [
-                metric === 'quantity' ? formatNumber(value) : formatVND(value),
-                metricLabels[metric],
-              ]}
-            />
-            <Bar dataKey={metric} fill='hsl(var(--destructive))' radius={[0, 4, 4, 0]} maxBarSize={24}>
-              {slowSellingProducts.map((_, index) => (
-                <Cell key={index} fillOpacity={1 - index * 0.15} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <div className='flex h-[220px] items-center justify-center'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+          </div>
+        ) : products.length === 0 ? (
+          <div className='flex h-[220px] items-center justify-center text-sm text-muted-foreground'>
+            Không có dữ liệu
+          </div>
+        ) : (
+          <ResponsiveContainer width='100%' height={220}>
+            <BarChart data={products} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+              <XAxis type='number' hide />
+              <YAxis type='category' dataKey='name' width={130} stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value) => [
+                  metric === 'quantity' ? formatNumber((value ?? 0) as number) : formatVND((value ?? 0) as number),
+                  metricLabels[metric],
+                ]}
+              />
+              <Bar dataKey={metric} fill='var(--destructive)' radius={[0, 4, 4, 0]} maxBarSize={24}>
+                {products.map((_, index) => (
+                  <Cell key={index} fillOpacity={1 - index * 0.15} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-function CategoryPieCard() {
+function CategoryPieCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
-  const total = categoryData.reduce((s, i) => s + getMetricValue(i, metric), 0)
+  const { selectedLocationId } = useLocationContext()
+  const user = useUser()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+
+  const { data: categories = [], isLoading } = useQuery({
+    ...getTopCategoriesQueryOptions({
+      period,
+      referenceDate,
+      type: metricToCategoryType[metric],
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
+
+  const grouped = useMemo(() => {
+    if (categories.length <= 5) return categories
+    const top4 = categories.slice(0, 4)
+    const rest = categories.slice(4)
+    return [
+      ...top4,
+      {
+        id: 'other',
+        name: 'Danh mục khác',
+        revenue: rest.reduce((s, i) => s + i.revenue, 0),
+        quantity: rest.reduce((s, i) => s + i.quantity, 0),
+        profit: rest.reduce((s, i) => s + i.profit, 0),
+      },
+    ]
+  }, [categories])
+
+  const total = grouped.reduce((s, i) => s + getMetricValue(i, metric), 0)
 
   return (
     <Card>
@@ -367,56 +411,76 @@ function CategoryPieCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className='flex items-center gap-6'>
-          <ResponsiveContainer width={160} height={160}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx='50%'
-                cy='50%'
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={3}
-                dataKey={metric}
-                stroke='hsl(var(--background))'
-                strokeWidth={2}
-              >
-                {categoryData.map((_, index) => (
-                  <Cell key={index} fill='hsl(var(--foreground))' fillOpacity={PIE_OPACITIES[index]} />
-                ))}
-              </Pie>
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={(value: number) => [
-                  metric === 'quantity' ? formatNumber(value) : formatVND(value),
-                  metricLabels[metric],
-                ]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className='flex-1 space-y-2.5'>
-            {categoryData.map((item, index) => {
-              const val = getMetricValue(item, metric)
-              return (
-                <div key={item.name} className='flex items-center justify-between'>
-                  <div className='flex items-center gap-2'>
-                    <div className='h-2.5 w-2.5 rounded-full bg-foreground' style={{ opacity: PIE_OPACITIES[index] }} />
-                    <span className='text-xs text-muted-foreground'>{item.name}</span>
-                  </div>
-                  <span className='text-xs font-medium'>{Math.round((val / total) * 100)}%</span>
-                </div>
-              )
-            })}
+        {isLoading ? (
+          <div className='flex items-center justify-center py-8'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-        </div>
+        ) : grouped.length === 0 ? (
+          <div className='text-center text-xs text-muted-foreground py-8'>Không có dữ liệu</div>
+        ) : (
+          <div className='flex items-center gap-6'>
+            <ResponsiveContainer width={160} height={160}>
+              <PieChart>
+                <Pie
+                  data={grouped}
+                  cx='50%'
+                  cy='50%'
+                  innerRadius={45}
+                  outerRadius={70}
+                  paddingAngle={3}
+                  dataKey={metric}
+                  stroke='var(--background)'
+                  strokeWidth={2}
+                >
+                  {grouped.map((_, index) => (
+                    <Cell key={index} fill='var(--foreground)' fillOpacity={PIE_OPACITIES[index]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={tooltipStyle}
+                  formatter={(value) => [
+                    metric === 'quantity' ? formatNumber((value ?? 0) as number) : formatVND((value ?? 0) as number),
+                    metricLabels[metric],
+                  ]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className='flex-1 space-y-2.5'>
+              {grouped.map((item, index) => {
+                const val = getMetricValue(item, metric)
+                return (
+                  <div key={item.name} className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                      <div className='h-2.5 w-2.5 rounded-full bg-foreground' style={{ opacity: PIE_OPACITIES[index] }} />
+                      <span className='text-xs text-muted-foreground'>{item.name}</span>
+                    </div>
+                    <span className='text-xs font-medium'>{total > 0 ? Math.round((val / total) * 100) : 0}%</span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-function TopVipCustomersCard() {
+function TopVipCustomersCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
-  const sorted = [...topVipCustomers].sort((a, b) => getMetricValue(b, metric) - getMetricValue(a, metric))
+  const { selectedLocationId } = useLocationContext()
+  const user = useUser()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+
+  const { data: customers = [], isLoading } = useQuery({
+    ...getTopCustomersQueryOptions({
+      period,
+      referenceDate,
+      type: metricToCustomerType[metric],
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
 
   return (
     <Card>
@@ -430,71 +494,110 @@ function TopVipCustomersCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className='space-y-3'>
-          {sorted.map((customer, index) => (
-            <div key={customer.phone} className='flex items-center justify-between'>
-              <div className='flex items-center gap-3'>
-                <div className='flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-[11px] font-bold text-amber-600'>
-                  {index + 1}
+        {isLoading ? (
+          <div className='flex items-center justify-center py-8'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+          </div>
+        ) : customers.length === 0 ? (
+          <div className='text-center text-xs text-muted-foreground py-8'>Không có dữ liệu</div>
+        ) : (
+          <div className='space-y-3'>
+            {customers.map((customer, index) => (
+              <div key={customer.id} className='flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className='flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-[11px] font-bold text-amber-600'>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div className='text-xs font-medium'>{customer.name}</div>
+                    <div className='text-[11px] text-muted-foreground'>{customer.phone}</div>
+                  </div>
                 </div>
-                <div>
-                  <div className='text-xs font-medium'>{customer.name}</div>
-                  <div className='text-[11px] text-muted-foreground'>{customer.phone} · {customer.orders} đơn</div>
-                </div>
+                <span className='text-xs font-semibold'>
+                  {metric === 'quantity' ? formatNumber(getMetricValue(customer, metric)) : formatVND(getMetricValue(customer, metric))}
+                </span>
               </div>
-              <span className='text-xs font-semibold'>
-                {metric === 'quantity' ? formatNumber(getMetricValue(customer, metric)) : formatVND(getMetricValue(customer, metric))}
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-type TimeRange = 'hour' | 'day' | 'week'
+type TimeView = 'hour' | 'weekday' | 'date'
 
-const timeRangeLabels: Record<TimeRange, string> = {
+const timeViewLabels: Record<TimeView, string> = {
   hour: 'Theo giờ',
-  day: 'Theo ngày',
-  week: 'Theo tuần',
+  weekday: 'Theo thứ',
+  date: 'Theo ngày',
 }
 
-const timeRangeData: Record<TimeRange, typeof hourlyData> = {
-  hour: hourlyData,
-  day: dailyData,
-  week: weeklyData,
+const timeViewToGroupBy: Record<TimeView, SalesTimeSeriesGroupBy> = {
+  hour: 'hour',
+  weekday: 'day_of_week',
+  date: 'day',
 }
 
-function AverageRevenueCard() {
+const WEEKDAY_LABELS = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN']
+
+function formatTimeKey(timeKey: number, groupBy: SalesTimeSeriesGroupBy) {
+  if (groupBy === 'hour') return `${timeKey}h`
+  if (groupBy === 'day_of_week') return WEEKDAY_LABELS[timeKey - 1] ?? `${timeKey}`
+  return `${timeKey}`
+}
+
+function AverageRevenueCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
-  const [timeRange, setTimeRange] = useState<TimeRange>('hour')
+  const [timeView, setTimeView] = useState<TimeView>('hour')
+  const { selectedLocationId } = useLocationContext()
+  const user = useUser()
+  const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
+  const groupBy = timeViewToGroupBy[timeView]
 
-  const data = timeRangeData[timeRange]
+  const { data: rawData = [], isLoading } = useQuery({
+    ...getSalesTimeSeriesQueryOptions({
+      period,
+      referenceDate,
+      groupBy,
+      type: metricToTimeSeriesType[metric],
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user,
+  })
+
+  const chartData = useMemo(() =>
+    rawData.map((item) => ({
+      label: formatTimeKey(item.timeKey, groupBy),
+      revenue: item.revenue,
+      quantity: item.quantity,
+      profit: item.profit,
+    })),
+    [rawData, groupBy]
+  )
 
   return (
     <Card>
       <CardHeader>
         <div className='flex items-center justify-between'>
           <div>
-            <CardTitle className='text-sm'>Trung bình {metricLabels[metric].toLowerCase()} {timeRangeLabels[timeRange].toLowerCase()}</CardTitle>
-            <CardDescription className='text-xs'>Phân tích xu hướng theo thời gian trong năm</CardDescription>
+            <CardTitle className='text-sm'>Trung bình {metricLabels[metric].toLowerCase()} {timeViewLabels[timeView].toLowerCase()}</CardTitle>
+            <CardDescription className='text-xs'>Phân tích xu hướng theo thời gian</CardDescription>
           </div>
           <div className='flex items-center gap-2'>
             <div className='inline-flex h-7 items-center rounded-md bg-muted p-0.5 text-muted-foreground'>
-              {(Object.keys(timeRangeLabels) as TimeRange[]).map((key) => (
+              {(Object.keys(timeViewLabels) as TimeView[]).map((key) => (
                 <button
                   key={key}
-                  onClick={() => setTimeRange(key)}
+                  onClick={() => setTimeView(key)}
                   className={cn(
                     'inline-flex h-6 items-center rounded px-2 text-[11px] font-medium transition-colors',
-                    timeRange === key
+                    timeView === key
                       ? 'bg-background text-foreground shadow-sm'
                       : 'hover:text-foreground'
                   )}
                 >
-                  {timeRangeLabels[key]}
+                  {timeViewLabels[key]}
                 </button>
               ))}
             </div>
@@ -503,36 +606,46 @@ function AverageRevenueCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width='100%' height={280}>
-          <LineChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-            <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
-            <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis
-              stroke='hsl(var(--muted-foreground))'
-              fontSize={11}
-              tickLine={false}
-              axisLine={false}
-              tickFormatter={(v) => metric === 'quantity' ? v : formatVND(v)}
-            />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={(value: number) => [
-                metric === 'quantity' ? formatNumber(value) : formatVND(value),
-                metricLabels[metric],
-              ]}
-            />
-            <Legend />
-            <Line
-              type='monotone'
-              dataKey={metric}
-              name={metricLabels[metric]}
-              stroke='hsl(var(--primary))'
-              strokeWidth={2}
-              dot={timeRange === 'week' ? false : { r: 3 }}
-              activeDot={{ r: 5 }}
-            />
-          </LineChart>
-        </ResponsiveContainer>
+        {isLoading ? (
+          <div className='flex h-[280px] items-center justify-center'>
+            <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+          </div>
+        ) : chartData.length === 0 ? (
+          <div className='flex h-[280px] items-center justify-center text-sm text-muted-foreground'>
+            Không có dữ liệu
+          </div>
+        ) : (
+          <ResponsiveContainer width='100%' height={280}>
+            <LineChart data={chartData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+              <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' />
+              <XAxis dataKey='label' stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
+              <YAxis
+                stroke='var(--muted-foreground)'
+                fontSize={11}
+                tickLine={false}
+                axisLine={false}
+                tickFormatter={(v) => metric === 'quantity' ? v : formatVND(v)}
+              />
+              <Tooltip
+                contentStyle={tooltipStyle}
+                formatter={(value) => [
+                  metric === 'quantity' ? formatNumber((value ?? 0) as number) : formatVND((value ?? 0) as number),
+                  metricLabels[metric],
+                ]}
+              />
+              <Legend />
+              <Line
+                type='monotone'
+                dataKey={metric}
+                name={metricLabels[metric]}
+                stroke='var(--primary)'
+                strokeWidth={2}
+                dot={timeView === 'date' ? false : { r: 3 }}
+                activeDot={{ r: 5 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
       </CardContent>
     </Card>
   )
@@ -540,20 +653,20 @@ function AverageRevenueCard() {
 
 // --- Main ---
 
-export function SalesPerformance() {
+export function SalesPerformance({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
   return (
     <div className='space-y-4'>
-      <InfoCards />
-      <AverageRevenueCard />
+      <AverageRevenueCard period={period} selectedPeriod={selectedPeriod} />
+      <InfoCards period={period} selectedPeriod={selectedPeriod} />
 
       <div className='grid gap-4 md:grid-cols-2'>
-        <TopSellingCard />
-        <SlowSellingCard />
+        <TopSellingCard period={period} selectedPeriod={selectedPeriod} />
+        <SlowSellingCard period={period} selectedPeriod={selectedPeriod} />
       </div>
 
       <div className='grid gap-4 md:grid-cols-2'>
-        <CategoryPieCard />
-        <TopVipCustomersCard />
+        <CategoryPieCard period={period} selectedPeriod={selectedPeriod} />
+        <TopVipCustomersCard period={period} selectedPeriod={selectedPeriod} />
       </div>
     </div>
   )

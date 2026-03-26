@@ -569,6 +569,8 @@ export type Database = {
       products: {
         Row: {
           active_ingredient: string | null
+          avg_daily_sales: number
+          avg_daily_sales_90d: number
           category_id: string | null
           created_at: string | null
           description: string | null
@@ -587,6 +589,8 @@ export type Database = {
         }
         Insert: {
           active_ingredient?: string | null
+          avg_daily_sales?: number
+          avg_daily_sales_90d?: number
           category_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -605,6 +609,8 @@ export type Database = {
         }
         Update: {
           active_ingredient?: string | null
+          avg_daily_sales?: number
+          avg_daily_sales_90d?: number
           category_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -1390,6 +1396,28 @@ export type Database = {
         }
         Returns: string
       }
+      get_advance_sale_statistics: {
+        Args: {
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_timezone?: string
+        }
+        Returns: {
+          current_avg_sale_speed: number
+          current_period_end: string
+          current_period_start: string
+          current_profit_margin: number
+          current_return_rate: number
+          current_returning_customers: number
+          previous_avg_sale_speed: number
+          previous_period_end: string
+          previous_period_start: string
+          previous_profit_margin: number
+          previous_return_rate: number
+          previous_returning_customers: number
+        }[]
+      }
       get_inventory_batches_list: {
         Args: {
           p_expiry_status?: string
@@ -1503,6 +1531,23 @@ export type Database = {
           previous_total_revenue: number
         }[]
       }
+      get_sales_time_series: {
+        Args: {
+          p_group_by?: string
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_timezone?: string
+          p_type?: string
+        }
+        Returns: {
+          order_count: number
+          profit: number
+          quantity: number
+          revenue: number
+          time_key: number
+        }[]
+      }
       get_tenant_overview_v2: {
         Args: { p_location_id?: string }
         Returns: {
@@ -1512,6 +1557,40 @@ export type Database = {
           total_staff: number
           total_suppliers_active: number
           total_suppliers_inactive: number
+        }[]
+      }
+      get_top_categories: {
+        Args: {
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_timezone?: string
+          p_type?: string
+        }
+        Returns: {
+          id: string
+          name: string
+          profit: number
+          quantity_sold: number
+          revenue: number
+        }[]
+      }
+      get_top_customers: {
+        Args: {
+          p_limit?: number
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_timezone?: string
+          p_type?: string
+        }
+        Returns: {
+          id: string
+          name: string
+          phone: string
+          profit: number
+          quantity_sold: number
+          revenue: number
         }[]
       }
       get_top_products: {
@@ -1547,6 +1626,25 @@ export type Database = {
           unit_name: string
         }[]
       }
+      get_top_slow_sell_products: {
+        Args: {
+          p_limit?: number
+          p_location_id?: string
+          p_period?: string
+          p_reference_date?: string
+          p_timezone?: string
+          p_type?: string
+        }
+        Returns: {
+          current_stock: number
+          id: string
+          name: string
+          profit: number
+          quantity_sold: number
+          revenue: number
+          unit_name: string
+        }[]
+      }
       get_top_suppliers: {
         Args: {
           p_limit?: number
@@ -1569,6 +1667,7 @@ export type Database = {
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }
+      update_product_avg_daily_sales: { Args: never; Returns: undefined }
     }
     Enums: {
       activity_type:

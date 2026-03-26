@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import {
   BrainCircuit,
   BarChart3,
@@ -19,11 +19,9 @@ import { InventoryAnalysis } from './components/inventory-analysis'
 import { SmartPurchasing } from './components/smart-purchasing'
 
 type AdvancedTab = 'assistant' | 'sales' | 'inventory' | 'purchasing'
-type AdvancedPeriod = 'day' | 'week' | 'month' | 'quarter' | 'year'
+type AdvancedPeriod = 'month' | 'quarter' | 'year'
 
 const periodLabels: Record<AdvancedPeriod, string> = {
-  day: 'Ngày',
-  week: 'Tuần',
   month: 'Tháng',
   quarter: 'Quý',
   year: 'Năm',
@@ -36,9 +34,52 @@ const tabs: { value: AdvancedTab; label: string; icon: typeof BrainCircuit }[] =
   { value: 'purchasing', label: 'Nhập hàng thông minh', icon: ShoppingCart },
 ]
 
+function getPeriodOptions(period: AdvancedPeriod) {
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const currentMonth = now.getMonth() + 1
+  const options: { value: string; label: string }[] = []
+
+  if (period === 'month') {
+    for (let y = currentYear; y >= currentYear - 3; y--) {
+      const endM = y === currentYear ? currentMonth : 12
+      for (let m = endM; m >= 1; m--) {
+        const mm = String(m).padStart(2, '0')
+        options.push({ value: `${y}-${mm}`, label: `${mm}/${y}` })
+      }
+    }
+  } else if (period === 'quarter') {
+    for (let y = currentYear; y >= currentYear - 3; y--) {
+      const maxQ = y === currentYear ? Math.ceil(currentMonth / 3) : 4
+      for (let q = maxQ; q >= 1; q--) {
+        const sm = (q - 1) * 3 + 1
+        const em = q * 3
+        options.push({
+          value: `${y}${String(q).padStart(2, '0')}`,
+          label: `Quý ${q} ${y} (${sm}~${em})`,
+        })
+      }
+    }
+  } else {
+    for (let y = currentYear; y >= currentYear - 3; y--) {
+      options.push({ value: `${y}`, label: `Năm ${y}` })
+    }
+  }
+
+  return options
+}
+
 export function AdvancedReport() {
   const [activeTab, setActiveTab] = useState<AdvancedTab>('assistant')
   const [period, setPeriod] = useState<AdvancedPeriod>('month')
+  const periodOptions = useMemo(() => getPeriodOptions(period), [period])
+  const [selectedPeriod, setSelectedPeriod] = useState(() => getPeriodOptions('month')[0]?.value)
+
+  const handlePeriodChange = (v: AdvancedPeriod) => {
+    setPeriod(v)
+    const newOptions = getPeriodOptions(v)
+    setSelectedPeriod(newOptions[0]?.value)
+  }
 
   return (
     <div className='space-y-4'>
@@ -62,24 +103,39 @@ export function AdvancedReport() {
           ))}
         </div>
 
-        <Select value={period} onValueChange={(v) => setPeriod(v as AdvancedPeriod)}>
-          <SelectTrigger className='w-28 h-9'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {Object.entries(periodLabels).map(([value, label]) => (
-              <SelectItem key={value} value={value}>
-                {label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className='flex items-center gap-2'>
+          <Select value={period} onValueChange={(v) => handlePeriodChange(v as AdvancedPeriod)}>
+            <SelectTrigger className='w-28 h-9'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(periodLabels).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <SelectTrigger className='w-44 h-9'>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {periodOptions.map(({ value, label }) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Tab content */}
       {activeTab === 'assistant' && <SystemAssistant />}
 
-      {activeTab === 'sales' && <SalesPerformance />}
+      {activeTab === 'sales' && <SalesPerformance period={period} selectedPeriod={selectedPeriod} />}
 
       {activeTab === 'inventory' && <InventoryAnalysis />}
 

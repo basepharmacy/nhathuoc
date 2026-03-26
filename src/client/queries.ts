@@ -35,7 +35,7 @@ import {
 import {
   productMastersRepo,
 } from '.'
-import { type SalesPeriod, type TopProductType, type TopSupplierType, type TopPurchasedProductType } from '@/services/supabase/database/repo/dashboardReportRepo'
+import { type SalesPeriod, type TopProductType, type TopSupplierType, type TopPurchasedProductType, type AdvancedPeriod, type TopCustomerType, type TopCategoryType, type SalesTimeSeriesGroupBy, type SalesTimeSeriesType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
 
 export type VietQrBank = {
@@ -586,6 +586,114 @@ export const getStockAdjustmentsListQueryOptions = (
       const result = await stockAdjustmentsRepo.getStockAdjustmentsList(params)
       return result
     },
+  })
+
+export const getAdvanceSaleStatisticsQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'advance-sale-statistics', params.period, params.referenceDate, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getAdvanceSaleStatistics({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getAdvanceTopProductsQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  type: TopProductType
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'advance-top-products', params.period, params.referenceDate, params.type, params.locationId ?? 'all', params.limit ?? 5],
+    queryFn: async () =>
+      dashboardReportRepo.getAdvanceTopProducts({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
+      }),
+  })
+
+export const getTopSlowSellProductsQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  type: TopProductType
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-slow-sell-products', params.period, params.referenceDate, params.type, params.locationId ?? 'all', params.limit ?? 5],
+    queryFn: async () =>
+      dashboardReportRepo.getTopSlowSellProducts({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
+      }),
+  })
+
+export const getTopCustomersQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  type: TopCustomerType
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-customers', params.period, params.referenceDate, params.type, params.locationId ?? 'all', params.limit ?? 5],
+    queryFn: async () =>
+      dashboardReportRepo.getTopCustomers({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
+      }),
+  })
+
+export const getTopCategoriesQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  type: TopCategoryType
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'top-categories', params.period, params.referenceDate, params.type, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getTopCategories({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getSalesTimeSeriesQueryOptions = (params: {
+  period: AdvancedPeriod
+  referenceDate: string
+  groupBy: SalesTimeSeriesGroupBy
+  type: SalesTimeSeriesType
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'sales-time-series', params.period, params.referenceDate, params.groupBy, params.type, params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getSalesTimeSeries({
+        period: params.period,
+        referenceDate: params.referenceDate,
+        groupBy: params.groupBy,
+        type: params.type,
+        locationId: params.locationId ?? undefined,
+      }),
   })
 
 export const getSalesStatisticsQueryOptions = (params: {

@@ -284,9 +284,9 @@ function CategoryPieCard() {
               </Pie>
               <Tooltip
                 contentStyle={tooltipStyle}
-                formatter={(val: number, _: string, props: { payload: { name: string } }) => [
-                  `${fmt(val)}${unit ? ` ${unit}` : ''} (${Math.round((val / total) * 100)}%)`,
-                  props.payload.name,
+                formatter={(val, _, props) => [
+                  `${fmt((val ?? 0) as number)}${unit ? ` ${unit}` : ''} (${Math.round(((val ?? 0) as number / total) * 100)}%)`,
+                  (props as { payload: { name: string } }).payload.name,
                 ]}
               />
             </PieChart>
@@ -370,7 +370,7 @@ function TopStaleBatchesCard() {
             <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => metric === 'days' ? `${v}d` : formatVND(v)} />
             <Tooltip
               contentStyle={tooltipStyle}
-              formatter={(val: number) => [fmt(val), staleMetricLabels[metric]]}
+              formatter={(val) => [fmt((val ?? 0) as number), staleMetricLabels[metric]]}
               labelFormatter={(label) => `${label}`}
             />
             <Bar dataKey={metric} fill='hsl(var(--destructive))' radius={[4, 4, 0, 0]} maxBarSize={36}>
@@ -542,7 +542,7 @@ function InOutFlowCard({ metric, setMetric }: { metric: FlowMetric; setMetric: (
             <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
             <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
             <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} />
-            <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [fmt(value), name]} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [fmt((value ?? 0) as number), name]} />
             <Legend />
             <Area type='monotone' dataKey={nhapKey} name='Nhập' stroke='hsl(142 76% 36%)' strokeWidth={2} fill='url(#colorNhap)' dot={{ r: 3 }} activeDot={{ r: 5 }} />
             <Area type='monotone' dataKey={xuatKey} name='Xuất' stroke='hsl(var(--destructive))' strokeWidth={2} fill='url(#colorXuat)' dot={{ r: 3 }} activeDot={{ r: 5 }} />
@@ -582,7 +582,7 @@ function StockFlowCard({ metric, setMetric }: { metric: FlowMetric; setMetric: (
             <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
             <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
             <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} />
-            <Tooltip contentStyle={tooltipStyle} formatter={(value: number, name: string) => [fmt(value), name]} />
+            <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [fmt((value ?? 0) as number), name]} />
             <Legend />
             <Area type='monotone' dataKey={tonKey} name='Tồn' stroke='hsl(var(--primary))' strokeWidth={2} fill='url(#colorTon)' dot={{ r: 3 }} activeDot={{ r: 5 }} />
           </AreaChart>
