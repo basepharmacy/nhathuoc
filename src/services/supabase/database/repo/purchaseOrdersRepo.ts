@@ -349,6 +349,25 @@ export const createPurchaseOrderRepository = (
 
       return data as PurchaseOrder
     },
+    async updatePurchaseOrderItem(params: {
+      itemId: number
+      tenantId: string
+      updates: { batch_code?: string | null; expiry_date?: string | null }
+    }): Promise<PurchaseOrderItem> {
+      const { data, error } = await client
+        .from('purchase_order_items')
+        .update(params.updates)
+        .eq('id', params.itemId)
+        .eq('tenant_id', params.tenantId)
+        .select()
+        .single()
+
+      if (error) {
+        throw error
+      }
+
+      return data as PurchaseOrderItem
+    },
     async deletePurchaseOrder(params: {
       orderId: string
     }): Promise<void> {

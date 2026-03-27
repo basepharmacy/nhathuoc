@@ -18,6 +18,16 @@ export const getDefaultUnit = (product: ProductWithUnits) =>
   product.product_units?.find((unit) => unit.is_base_unit) ??
   product.product_units?.[0]
 
+// tìm product_units có conversion_factor lớn nhất để lấy giá trị quy đổi về đơn vị lớn nhất
+export const getBiggestConversionUnit = (product: ProductWithUnits) =>
+  product.product_units?.reduce((prev, current) => {
+    if ((current.conversion_factor ?? 1) > (prev.conversion_factor ?? 1)) {
+      return current
+    }
+    return prev
+  }
+  )
+
 export const statusLabels: Record<PurchaseOrderStatus, string> = {
   '1_DRAFT': 'Nháp',
   '2_ORDERED': 'Đã đặt',

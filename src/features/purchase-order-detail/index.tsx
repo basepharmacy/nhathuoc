@@ -87,6 +87,29 @@ export function PurchaseOrderDetail() {
   const normalizePaymentStatus = (paid: number): PaymentStatus =>
     paid <= 0 ? '1_UNPAID' : paid >= totals.total ? '3_PAID' : '2_PARTIALLY_PAID'
 
+  const batchUpdateMutation = useMutation({
+    mutationFn: async (params: { itemId: number; batchCode: string; expiryDate: string }) => {
+      await purchaseOrdersRepo.updatePurchaseOrderItem({
+        itemId: params.itemId,
+        tenantId,
+        updates: {
+          batch_code: params.batchCode || null,
+          expiry_date: params.expiryDate || null,
+        },
+      })
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchase-orders', tenantId] })
+    },
+    onError: (error: unknown) => {
+      toast.error(mapSupabaseError(error))
+    },
+  })
+
+  const handleBatchSave = (itemId: number, _productId: string, batchCode: string, expiryDate: string) => {
+    batchUpdateMutation.mutate({ itemId, batchCode, expiryDate })
+  }
+
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!orderCode || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
@@ -117,7 +140,15 @@ export function PurchaseOrderDetail() {
     },
   })
 
-  const submit = () => updateMutation.mutate()
+  const submit = () => {
+    const items = orderDetail?.items ?? []
+    const missingBatch = items.filter((item) => !item.batch_code)
+    if (missingBatch.length > 0) {
+      toast.error(`Vui lòng chọn lô cho tất cả sản phẩm trước khi nhập kho. Còn ${missingBatch.length} sản phẩm chưa chọn lô.`)
+      return
+    }
+    updateMutation.mutate()
+  }
   const isSubmitting = updateMutation.isPending
 
   // ── Effects ─────────────────────────────────────────────────
@@ -207,7 +238,13 @@ export function PurchaseOrderDetail() {
                 issuedAt={orderDetail.issued_at ?? ''}
               />
 
-              <PurchaseOrderDetailItems items={orderDetail.items} />
+              <PurchaseOrderDetailItems
+                items={orderDetail.items}
+                tenantId={tenantId}
+                locationId={orderDetail.location_id}
+                isOrdered={isOrdered}
+                onBatchSave={handleBatchSave}
+              />
             </div>
 
             <PurchaseOrderDetailSummary

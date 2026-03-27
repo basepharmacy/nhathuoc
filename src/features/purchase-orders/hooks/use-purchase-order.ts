@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { productsRepo, purchaseOrdersRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits, PurchaseOrderStatus } from '@/services/supabase/'
-import { type OrderItem, type PaymentStatus, getDefaultUnit } from '../data/types'
+import { type OrderItem, type PaymentStatus, getBiggestConversionUnit } from '../data/types'
 
 type UsePurchaseOrderParams = {
   tenantId: string
@@ -94,18 +94,11 @@ export function usePurchaseOrder({
   )
 
   // ── Validation ──────────────────────────────────────────────
-  const validateOrder = (requireBatch = false) => {
+  const validateOrder = () => {
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (!supplierId) throw new Error('Vui lòng chọn nhà cung cấp.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
-
-    if (requireBatch) {
-      const itemsWithoutBatch = items.filter((item) => !item.batchCode.trim())
-      if (itemsWithoutBatch.length > 0) {
-        throw new Error('Vui lòng nhập mã lô cho tất cả sản phẩm.')
-      }
-    }
   }
 
   // ── Mutations ───────────────────────────────────────────────
@@ -153,7 +146,7 @@ export function usePurchaseOrder({
 
   const createMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
-      validateOrder(status !== '1_DRAFT')
+      validateOrder()
       const order = await purchaseOrdersRepo.createPurchaseOrderWithItems({
         order: {
           purchase_order_code: orderCode,
@@ -186,7 +179,7 @@ export function usePurchaseOrder({
   const updateMutation = useMutation({
     mutationFn: async (status: '1_DRAFT' | '2_ORDERED') => {
       if (!orderCodeParam || !orderDetail) throw new Error('Không tìm thấy đơn nhập hàng.')
-      validateOrder(status !== '1_DRAFT')
+      validateOrder()
 
       await purchaseOrdersRepo.updatePurchaseOrderWithItems({
         orderId: orderDetail.id,
@@ -228,8 +221,8 @@ export function usePurchaseOrder({
       return ''
     }
 
-    const defaultUnit = getDefaultUnit(product)
-    const unitPrice = defaultUnit?.cost_price ?? 0
+    const biggestUnit = getBiggestConversionUnit(product)
+    const unitPrice = biggestUnit?.cost_price ?? 0
     const newId = `${product.id}-${Date.now()}`
 
     setItems((prev) => [
@@ -237,7 +230,7 @@ export function usePurchaseOrder({
       {
         id: newId,
         product,
-        productUnitId: defaultUnit?.id ?? null,
+        productUnitId: biggestUnit?.id ?? null,
         quantity: 1,
         unitPrice,
         discount: 0,

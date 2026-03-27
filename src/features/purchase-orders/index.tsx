@@ -136,8 +136,8 @@ export function PurchaseOrders() {
   const [pendingBatchItemId, setPendingBatchItemId] = useState<string | null>(null)
 
   const handleAddProduct = (product: Parameters<typeof order.addProduct>[0]) => {
-    const newItemId = order.addProduct(product)
-    if (newItemId) setPendingBatchItemId(newItemId)
+    order.addProduct(product)
+    //if (newItemId) setPendingBatchItemId(newItemId)
   }
 
   // ── Print ──────────────────────────────────────────────────
