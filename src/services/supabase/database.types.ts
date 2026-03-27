@@ -569,7 +569,9 @@ export type Database = {
       products: {
         Row: {
           active_ingredient: string | null
-          avg_daily_sales: number
+          avg_daily_sales_30d: number
+          avg_daily_sales_60d: number
+          avg_daily_sales_7d: number
           avg_daily_sales_90d: number
           category_id: string | null
           created_at: string | null
@@ -589,7 +591,9 @@ export type Database = {
         }
         Insert: {
           active_ingredient?: string | null
-          avg_daily_sales?: number
+          avg_daily_sales_30d?: number
+          avg_daily_sales_60d?: number
+          avg_daily_sales_7d?: number
           avg_daily_sales_90d?: number
           category_id?: string | null
           created_at?: string | null
@@ -609,7 +613,9 @@ export type Database = {
         }
         Update: {
           active_ingredient?: string | null
-          avg_daily_sales?: number
+          avg_daily_sales_30d?: number
+          avg_daily_sales_60d?: number
+          avg_daily_sales_7d?: number
           avg_daily_sales_90d?: number
           category_id?: string | null
           created_at?: string | null
@@ -1418,6 +1424,30 @@ export type Database = {
           previous_returning_customers: number
         }[]
       }
+      get_dead_value_inventory: {
+        Args: { p_location_id?: string; p_type?: number }
+        Returns: {
+          average_cost_price: number
+          last_sold_at: string
+          product_id: string
+          product_name: string
+          product_unit_id: string
+          product_unit_name: string
+          total_inventory_value: number
+          total_quantity: number
+        }[]
+      }
+      get_categories_by_inventories: {
+        Args: {
+          p_location_id?: string
+        }
+        Returns: {
+          category_id: string
+          category_name: string
+          total_quantity: number
+          total_value: number
+        }[]
+      }
       get_inventory_batches_list: {
         Args: {
           p_expiry_status?: string
@@ -1486,6 +1516,20 @@ export type Database = {
           total_value: number
         }[]
       }
+      get_low_stock_inventory: {
+        Args: { p_location_id?: string; p_type?: number }
+        Returns: {
+          average_cost_price: number
+          avg_daily_sales: number
+          estimated_days_of_stock: number
+          product_id: string
+          product_name: string
+          product_unit_id: string
+          product_unit_name: string
+          total_inventory_value: number
+          total_quantity: number
+        }[]
+      }
       get_low_stock_products_v2: {
         Args: { p_location_id?: string }
         Returns: {
@@ -1494,6 +1538,25 @@ export type Database = {
           product_name: string
           stock: number
           unit_name: string
+        }[]
+      }
+      get_potential_loss_inventory: {
+        Args: { p_location_id?: string; p_type?: number }
+        Returns: {
+          average_cost_price: number
+          avg_daily_sales: number
+          batch_code: string
+          batch_id: string
+          days_until_expiry: number
+          expiry_date: string
+          potential_loss_quantity: number
+          potential_loss_value: number
+          product_id: string
+          product_name: string
+          product_unit_id: string
+          product_unit_name: string
+          quantity: number
+          sellable_quantity: number
         }[]
       }
       get_purchases_statistics_v2: {

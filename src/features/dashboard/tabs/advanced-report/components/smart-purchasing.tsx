@@ -1,23 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import {
-  ThumbsUp,
-  ThumbsDown,
   ChevronRight,
+  ShoppingCart,
+  Banknote,
+  CreditCard,
+  AlertTriangle,
+  Loader2,
 } from 'lucide-react'
 import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
   Tooltip,
-  XAxis,
-  YAxis,
 } from 'recharts'
 import {
   Card,
@@ -26,81 +22,25 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useUser } from '@/client/provider'
+import { useLocationContext } from '@/context/location-provider'
+import { getPurchasesStatisticsV2QueryOptions, getTopSuppliersQueryOptions, getLowStockInventoryQueryOptions } from '@/client/queries'
+import type { TopSupplierType } from '@/services/supabase/database/repo/dashboardReportRepo'
 
-// --- Mock data ---
+const LOW_STOCK_DAYS = 30
+const SUGGEST_STOCK_DAYS = 60
 
-const suggestedProducts = [
-  { name: 'Paracetamol 500mg', current: 45, suggested: 200, priority: 'urgent', avgSale: 25, daysLeft: 1.8, supplier: 'NCC Pharma' },
-  { name: 'Amoxicillin 500mg', current: 60, suggested: 150, priority: 'urgent', avgSale: 18, daysLeft: 3.3, supplier: 'DHG Pharma' },
-  { name: 'Vitamin C 1000mg', current: 80, suggested: 180, priority: 'high', avgSale: 12, daysLeft: 6.7, supplier: 'NCC Pharma' },
-  { name: 'Men vi sinh Bio-acimin', current: 35, suggested: 100, priority: 'high', avgSale: 8, daysLeft: 4.4, supplier: 'Bidiphar' },
-  { name: 'Omega-3 Fish Oil', current: 50, suggested: 120, priority: 'medium', avgSale: 6, daysLeft: 8.3, supplier: 'NCC Pharma' },
-  { name: 'Thuốc ho Bảo Thanh', current: 70, suggested: 100, priority: 'medium', avgSale: 5, daysLeft: 14, supplier: 'Traphaco' },
-  { name: 'Calcium + D3', current: 40, suggested: 80, priority: 'low', avgSale: 3, daysLeft: 13.3, supplier: 'DHG Pharma' },
-  { name: 'Centrum Multivitamin', current: 90, suggested: 60, priority: 'low', avgSale: 4, daysLeft: 22.5, supplier: 'NCC Pharma' },
-]
+const supplierTabToType = {
+  amount: 'by_order_amount',
+  orders: 'by_orders',
+  debt: 'by_debt',
+} as const satisfies Record<string, TopSupplierType>
 
-const demandForecastDaily = [
-  { label: 'T2', value: 85 },
-  { label: 'T3', value: 92 },
-  { label: 'T4', value: 78 },
-  { label: 'T5', value: 105 },
-  { label: 'T6', value: 118 },
-  { label: 'T7', value: 145 },
-  { label: 'CN', value: 132 },
-]
-
-const demandForecastWeekly = [
-  { label: 'Tuần 1', value: 620 },
-  { label: 'Tuần 2', value: 580 },
-  { label: 'Tuần 3', value: 710 },
-  { label: 'Tuần 4', value: 690 },
-  { label: 'Tuần 5', value: 750 },
-  { label: 'Tuần 6', value: 680 },
-  { label: 'Tuần 7', value: 820 },
-  { label: 'Tuần 8', value: 780 },
-]
-
-const demandTrendData = [
-  { label: 'T1', actual: 520, predicted: 530 },
-  { label: 'T2', actual: 580, predicted: 570 },
-  { label: 'T3', actual: 610, predicted: 620 },
-  { label: 'T4', actual: 550, predicted: 580 },
-  { label: 'T5', actual: 690, predicted: 670 },
-  { label: 'T6', actual: 720, predicted: 710 },
-  { label: 'T7', actual: 680, predicted: 700 },
-  { label: 'T8', actual: 750, predicted: 740 },
-  { label: 'T9', actual: 710, predicted: 730 },
-  { label: 'T10', actual: 780, predicted: 770 },
-  { label: 'T11', actual: 820, predicted: 810 },
-  { label: 'T12', actual: null, predicted: 860 },
-]
-
-const shouldBuyProducts = [
-  { name: 'Paracetamol 500mg', reason: 'Tồn thấp, bán chạy', score: 95 },
-  { name: 'Amoxicillin 500mg', reason: 'Sắp hết, nhu cầu tăng', score: 90 },
-  { name: 'Vitamin C 1000mg', reason: 'Mùa cao điểm sắp tới', score: 85 },
-  { name: 'Men vi sinh Bio-acimin', reason: 'Xu hướng tăng liên tục', score: 78 },
-  { name: 'Thuốc ho Bảo Thanh', reason: 'Mùa lạnh, nhu cầu tăng', score: 72 },
-]
-
-const shouldNotBuyProducts = [
-  { name: 'Kem chống nắng SPF50', reason: 'Tồn cao, bán chậm', score: 15 },
-  { name: 'Nước muối Natri 0.9%', reason: 'Đã nhập nhiều kỳ trước', score: 20 },
-  { name: 'Gel rửa tay khô', reason: 'Nhu cầu giảm mạnh', score: 22 },
-  { name: 'Khẩu trang y tế', reason: 'Tồn kho quá lớn', score: 25 },
-  { name: 'Vitamin E 400IU', reason: 'Lợi nhuận thấp, bán chậm', score: 30 },
-]
-
-const capitalDistribution = [
-  { name: 'Cần nhập gấp', value: 45 },
-  { name: 'Nên nhập', value: 25 },
-  { name: 'Có thể hoãn', value: 18 },
-  { name: 'Không nên nhập', value: 12 },
-]
+type SupplierTab = keyof typeof supplierTabToType
 
 const quickOrderDrafts = [
   {
@@ -141,19 +81,31 @@ function formatVND(value: number) {
   return value.toString()
 }
 
-function formatNumber(value: number) {
-  return value.toLocaleString('vi-VN')
-}
-
 const priorityConfig: Record<string, { label: string; color: string }> = {
-  urgent: { label: 'Khẩn cấp', color: 'bg-red-500/15 text-red-600' },
-  high: { label: 'Cao', color: 'bg-orange-500/15 text-orange-600' },
+  urgent: { label: 'Cao', color: 'bg-red-500/15 text-red-600' },
   medium: { label: 'Trung bình', color: 'bg-blue-500/15 text-blue-600' },
   low: { label: 'Thấp', color: 'bg-slate-500/15 text-slate-600' },
 }
 
 // --- Sub-components ---
+function getPriority(daysLeft: number): string {
+  if (daysLeft <= 7) return 'high'
+  if (daysLeft <= 15) return 'medium'
+  return 'low'
+}
+
 function PurchaseSuggestionCard() {
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+
+  const { data: lowStockItems = [], isLoading } = useQuery({
+    ...getLowStockInventoryQueryOptions({
+      locationId: selectedLocationId,
+      days: LOW_STOCK_DAYS,
+    }),
+    enabled: !!user,
+  })
+
   return (
     <Card>
       <CardHeader>
@@ -163,245 +115,148 @@ function PurchaseSuggestionCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className='space-y-2'>
-          {suggestedProducts.map((product) => {
-            const priority = priorityConfig[product.priority]
-            return (
-              <div
-                key={product.name}
-                className='flex items-center gap-3 rounded-lg border p-2.5'
-              >
-                <div className='min-w-0 flex-1'>
-                  <div className='flex items-center gap-2'>
-                    <span className='truncate text-sm font-medium'>{product.name}</span>
-                    <Badge variant='secondary' className={cn('shrink-0 text-[10px] px-1.5 py-0', priority.color)}>
-                      {priority.label}
-                    </Badge>
-                  </div>
-                  <div className='mt-1 flex items-center gap-3 text-xs text-muted-foreground'>
-                    <span>Tồn: <strong className='text-foreground'>{product.current}</strong></span>
-                    <span>Bán TB/ngày: <strong className='text-foreground'>{product.avgSale}</strong></span>
-                    <span>Còn ~<strong className={cn('text-foreground', product.daysLeft <= 3 && 'text-red-500')}>{product.daysLeft}</strong> ngày</span>
-                  </div>
-                </div>
-                <div className='text-right shrink-0'>
-                  <div className='text-sm font-semibold text-primary'>+{product.suggested}</div>
-                  <div className='text-[10px] text-muted-foreground'>{product.supplier}</div>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-type DemandView = 'daily' | 'weekly'
-type DemandTab = 'forecast' | 'trend'
-
-const demandViewLabels: Record<DemandView, string> = {
-  daily: 'Ngày',
-  weekly: 'Tuần',
-}
-
-function DemandForecastCard() {
-  const [view, setView] = useState<DemandView>('daily')
-  const [tab, setTab] = useState<DemandTab>('forecast')
-  const data = view === 'daily' ? demandForecastDaily : demandForecastWeekly
-
-  return (
-    <Card>
-      <CardHeader>
-        <div className='flex items-center justify-between'>
-          <div>
-            <CardTitle className='text-sm'>Dự đoán nhu cầu</CardTitle>
-            <CardDescription className='text-xs'>
-              {tab === 'forecast' ? 'Dự kiến số lượng bán ra' : 'Xu hướng nhu cầu thực tế vs dự đoán'}
-            </CardDescription>
+        {isLoading ? (
+          <div className='flex h-[160px] items-center justify-center'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-          <div className='flex items-center gap-2'>
-            <div className='inline-flex h-7 items-center rounded-md bg-muted p-0.5 text-muted-foreground'>
-              {(['forecast', 'trend'] as DemandTab[]).map((key) => (
-                <button
-                  key={key}
-                  onClick={() => setTab(key)}
-                  className={cn(
-                    'inline-flex h-6 items-center rounded px-2 text-[11px] font-medium transition-colors',
-                    tab === key
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'hover:text-foreground'
-                  )}
-                >
-                  {key === 'forecast' ? 'Dự báo' : 'Xu hướng'}
-                </button>
-              ))}
-            </div>
-            {tab === 'forecast' && (
-              <div className='inline-flex h-7 items-center rounded-md bg-muted p-0.5 text-muted-foreground'>
-                {(Object.keys(demandViewLabels) as DemandView[]).map((key) => (
-                  <button
-                    key={key}
-                    onClick={() => setView(key)}
-                    className={cn(
-                      'inline-flex h-6 items-center rounded px-2 text-[11px] font-medium transition-colors',
-                      view === key
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'hover:text-foreground'
-                    )}
-                  >
-                    {demandViewLabels[key]}
-                  </button>
-                ))}
-              </div>
-            )}
+        ) : lowStockItems.length === 0 ? (
+          <div className='flex h-[160px] items-center justify-center text-xs text-muted-foreground'>
+            Không có sản phẩm sắp hết hàng
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {tab === 'forecast' ? (
-          <ResponsiveContainer width='100%' height={280}>
-            <BarChart data={data} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-              <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
-              <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(val) => [formatNumber((val ?? 0) as number), 'Dự kiến bán']} />
-              <Bar dataKey='value' fill='hsl(var(--primary))' radius={[4, 4, 0, 0]} maxBarSize={36}>
-                {data.map((_, index) => (
-                  <Cell key={index} fillOpacity={1 - index * 0.06} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
         ) : (
-          <ResponsiveContainer width='100%' height={280}>
-            <AreaChart data={demandTrendData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-              <defs>
-                <linearGradient id='colorActual' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='5%' stopColor='hsl(var(--primary))' stopOpacity={0.3} />
-                  <stop offset='95%' stopColor='hsl(var(--primary))' stopOpacity={0} />
-                </linearGradient>
-                <linearGradient id='colorPredicted' x1='0' y1='0' x2='0' y2='1'>
-                  <stop offset='5%' stopColor='hsl(142 76% 36%)' stopOpacity={0.3} />
-                  <stop offset='95%' stopColor='hsl(142 76% 36%)' stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
-              <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-              <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [formatNumber((value ?? 0) as number), name]} />
-              <Legend />
-              <Area type='monotone' dataKey='actual' name='Thực tế' stroke='hsl(var(--primary))' strokeWidth={2} fill='url(#colorActual)' dot={{ r: 3 }} activeDot={{ r: 5 }} connectNulls={false} />
-              <Area type='monotone' dataKey='predicted' name='Dự đoán' stroke='hsl(142 76% 36%)' strokeWidth={2} fill='url(#colorPredicted)' dot={{ r: 3 }} activeDot={{ r: 5 }} strokeDasharray='5 5' />
-            </AreaChart>
-          </ResponsiveContainer>
+          <div className='space-y-2'>
+            {lowStockItems.map((product) => {
+              const priorityKey = getPriority(product.estimatedDaysOfStock)
+              const priority = priorityConfig[priorityKey]
+              const suggested = Math.max(0, Math.ceil(product.avgDailySales * SUGGEST_STOCK_DAYS - product.totalQuantity))
+              return (
+                <div
+                  key={product.productId}
+                  className='flex items-center gap-3 rounded-lg border p-2.5'
+                >
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-2'>
+                      <span className='truncate text-sm font-medium'>{product.productName}</span>
+                      <Badge variant='secondary' className={cn('shrink-0 text-[10px] px-1.5 py-0', priority.color)}>
+                        {priority.label}
+                      </Badge>
+                    </div>
+                    <div className='mt-1 flex items-center gap-3 text-xs text-muted-foreground'>
+                      <span>Tồn: <strong className='text-foreground'>{product.totalQuantity}</strong></span>
+                      <span>Bán TB/ngày: <strong className='text-foreground'>{product.avgDailySales.toFixed(1)}</strong></span>
+                      <span>Còn ~<strong className={cn('text-foreground', product.estimatedDaysOfStock <= 3 && 'text-red-500')}>{product.estimatedDaysOfStock.toFixed(1)}</strong> ngày</span>
+                    </div>
+                  </div>
+                  <div className='shrink-0 text-sm font-semibold text-primary'>+{suggested} {product.productUnitName}</div>
+                  <Button size='sm' variant='outline' className='shrink-0'>
+                    Nhập hàng
+                    <ChevronRight className='h-3 w-3' />
+                  </Button>
+                </div>
+              )
+            })}
+          </div>
         )}
       </CardContent>
     </Card>
   )
 }
 
-function CapitalOptimizationCard() {
-  const total = capitalDistribution.reduce((s, i) => s + i.value, 0)
+function SupplierPieCard({ purchasePeriodId }: { purchasePeriodId: string }) {
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+  const [tab, setTab] = useState<SupplierTab>('amount')
+
+  const { data: suppliers = [], isLoading } = useQuery({
+    ...getTopSuppliersQueryOptions({
+      locationId: selectedLocationId,
+      type: supplierTabToType[tab],
+      purchasePeriodId: purchasePeriodId ? Number(purchasePeriodId) : undefined,
+    }),
+    enabled: !!user,
+  })
+
+  const pieData: { name: string; value: number }[] = useMemo(() => {
+    if (suppliers.length <= 5) return suppliers.map((s) => ({ name: s.name, value: s.statValue }))
+    const top4 = suppliers.slice(0, 4).map((s) => ({ name: s.name, value: s.statValue }))
+    const othersValue = suppliers.slice(4).reduce((s, i) => s + i.statValue, 0)
+    return [...top4, { name: 'NCC khác', value: othersValue }]
+  }, [suppliers])
+
+  const total = pieData.reduce((s, i) => s + i.value, 0)
 
   return (
     <Card>
-      <CardHeader>
-        <div>
-          <CardTitle className='text-sm'>Tối ưu vốn nhập hàng</CardTitle>
-          <CardDescription className='text-xs'>Phân bổ ngân sách nhập hàng tối ưu</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className='flex items-center gap-6'>
-          <ResponsiveContainer width={160} height={160}>
-            <PieChart>
-              <Pie
-                data={capitalDistribution}
-                cx='50%'
-                cy='50%'
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={3}
-                dataKey='value'
-                stroke='hsl(var(--background))'
-                strokeWidth={2}
-              >
-                {capitalDistribution.map((_, index) => (
-                  <Cell key={index} fill='hsl(var(--foreground))' fillOpacity={PIE_OPACITIES[index]} />
+      <Tabs value={tab} onValueChange={(v) => setTab(v as SupplierTab)}>
+        <CardHeader>
+          <div className='flex items-center gap-4'>
+            <div>
+              <CardTitle className='text-sm'>Nhà cung cấp</CardTitle>
+              <CardDescription className='text-xs'>Phân bổ theo nhà cung cấp</CardDescription>
+            </div>
+            <TabsList className='ml-auto shrink-0'>
+              <TabsTrigger value='amount'>Giá trị</TabsTrigger>
+              <TabsTrigger value='orders'>Đơn hàng</TabsTrigger>
+              <TabsTrigger value='debt'>Công nợ</TabsTrigger>
+            </TabsList>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className='flex h-[160px] items-center justify-center'>
+              <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+            </div>
+          ) : pieData.length === 0 ? (
+            <div className='flex h-[160px] items-center justify-center text-xs text-muted-foreground'>
+              Không có dữ liệu
+            </div>
+          ) : (
+            <div className='flex items-center gap-6'>
+              <ResponsiveContainer width={160} height={160}>
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx='50%'
+                    cy='50%'
+                    innerRadius={45}
+                    outerRadius={70}
+                    paddingAngle={3}
+                    dataKey='value'
+                    stroke='hsl(var(--background))'
+                    strokeWidth={2}
+                  >
+                    {pieData.map((_, index) => (
+                      <Cell key={index} fill='hsl(var(--foreground))' fillOpacity={PIE_OPACITIES[index % PIE_OPACITIES.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={tooltipStyle}
+                    formatter={(val, _, props) => [
+                      tab === 'orders'
+                        ? `${val ?? 0} đơn`
+                        : formatVND(Number(val ?? 0)),
+                      (props as { payload: { name: string } }).payload.name,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className='flex-1 space-y-2.5'>
+                {pieData.map((item, index) => (
+                  <div key={item.name} className='flex items-center justify-between'>
+                    <div className='flex items-center gap-2'>
+                      <div className='h-2.5 w-2.5 rounded-full bg-foreground' style={{ opacity: PIE_OPACITIES[index % PIE_OPACITIES.length] }} />
+                      <span className='text-xs text-muted-foreground truncate max-w-[120px]'>{item.name}</span>
+                    </div>
+                    <span className='text-xs font-medium'>
+                      {total > 0 ? `${Math.round((item.value / total) * 100)}%` : '0%'}
+                    </span>
+                  </div>
                 ))}
-              </Pie>
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={(val, _, props) => [
-                  `${val ?? 0}%`,
-                  (props as { payload: { name: string } }).payload.name,
-                ]}
-              />
-            </PieChart>
-          </ResponsiveContainer>
-          <div className='flex-1 space-y-2.5'>
-            {capitalDistribution.map((item, index) => (
-              <div key={item.name} className='flex items-center justify-between'>
-                <div className='flex items-center gap-2'>
-                  <div className='h-2.5 w-2.5 rounded-full bg-foreground' style={{ opacity: PIE_OPACITIES[index] }} />
-                  <span className='text-xs text-muted-foreground'>{item.name}</span>
-                </div>
-                <span className='text-xs font-medium'>{Math.round((item.value / total) * 100)}%</span>
               </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  )
-}
-
-function ShouldBuyShouldNotCard() {
-  return (
-    <Card>
-      <CardHeader>
-        <div>
-          <CardTitle className='text-sm'>Nên nhập vs Không nên nhập</CardTitle>
-          <CardDescription className='text-xs'>Đề xuất dựa trên phân tích bán hàng, tồn kho & xu hướng</CardDescription>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className='grid gap-4 md:grid-cols-2'>
-          {/* Nên nhập */}
-          <div className='space-y-2'>
-            <div className='flex items-center gap-1.5 text-xs font-medium text-emerald-600'>
-              <ThumbsUp className='h-3.5 w-3.5' />
-              Nên nhập
             </div>
-            {shouldBuyProducts.map((product) => (
-              <div key={product.name} className='flex items-center gap-2 rounded-md border border-emerald-200/50 bg-emerald-50/50 p-2 dark:border-emerald-900/30 dark:bg-emerald-950/20'>
-                <div className='min-w-0 flex-1'>
-                  <div className='truncate text-xs font-medium'>{product.name}</div>
-                  <div className='text-[10px] text-muted-foreground'>{product.reason}</div>
-                </div>
-                <div className='shrink-0 text-xs font-semibold text-emerald-600'>{product.score}%</div>
-              </div>
-            ))}
-          </div>
-          {/* Không nên nhập */}
-          <div className='space-y-2'>
-            <div className='flex items-center gap-1.5 text-xs font-medium text-red-600'>
-              <ThumbsDown className='h-3.5 w-3.5' />
-              Không nên nhập
-            </div>
-            {shouldNotBuyProducts.map((product) => (
-              <div key={product.name} className='flex items-center gap-2 rounded-md border border-red-200/50 bg-red-50/50 p-2 dark:border-red-900/30 dark:bg-red-950/20'>
-                <div className='min-w-0 flex-1'>
-                  <div className='truncate text-xs font-medium'>{product.name}</div>
-                  <div className='text-[10px] text-muted-foreground'>{product.reason}</div>
-                </div>
-                <div className='shrink-0 text-xs font-semibold text-red-600'>{product.score}%</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </CardContent>
+          )}
+        </CardContent>
+      </Tabs>
     </Card>
   )
 }
@@ -448,18 +303,87 @@ function QuickOrderCard() {
   )
 }
 
+// --- InfoCards ---
+
+function InfoCards({ purchasePeriodId }: { purchasePeriodId: string }) {
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+
+  const { data, isLoading } = useQuery({
+    ...getPurchasesStatisticsV2QueryOptions({
+      locationId: selectedLocationId,
+      purchasePeriodId: purchasePeriodId ? Number(purchasePeriodId) : undefined,
+    }),
+    enabled: !!user,
+  })
+
+  const cards = [
+    {
+      title: 'Tổng đơn nhập',
+      value: data?.totalOrders ?? 0,
+      format: (v: number) => v.toLocaleString('vi-VN'),
+      icon: ShoppingCart,
+    },
+    {
+      title: 'Tổng tiền nhập',
+      value: data?.totalOrderAmount ?? 0,
+      format: formatVND,
+      icon: Banknote,
+    },
+    {
+      title: 'Đã thanh toán',
+      value: data?.totalPaidAmount ?? 0,
+      format: formatVND,
+      icon: CreditCard,
+    },
+    {
+      title: 'Công nợ',
+      value: data?.totalDebt ?? 0,
+      format: formatVND,
+      icon: AlertTriangle,
+    },
+  ]
+
+  if (isLoading) {
+    return (
+      <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Card key={i}>
+            <CardContent className='flex h-[100px] items-center justify-center'>
+              <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    )
+  }
+
+  return (
+    <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-4'>
+      {cards.map((card) => (
+        <Card key={card.title}>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>{card.title}</CardTitle>
+            <card.icon className='h-4 w-4 text-muted-foreground' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>{card.format(card.value)}</div>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 // --- Main ---
 
-export function SmartPurchasing() {
+export function SmartPurchasing({ purchasePeriodId }: { purchasePeriodId: string }) {
   return (
     <div className='space-y-4'>
-      <PurchaseSuggestionCard />
-
-      <DemandForecastCard />
-
+      <InfoCards purchasePeriodId={purchasePeriodId} />
       <div className='grid gap-4 md:grid-cols-2'>
-        <CapitalOptimizationCard />
-        <ShouldBuyShouldNotCard />
+        <SupplierPieCard purchasePeriodId={purchasePeriodId} />
+        <PurchaseSuggestionCard />
       </div>
 
       <QuickOrderCard />

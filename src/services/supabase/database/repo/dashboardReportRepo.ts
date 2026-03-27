@@ -104,6 +104,59 @@ export type ExpiredInventoryBatch = {
   unitName: string
 }
 
+export type CategoryByInventory = {
+  id: string
+  name: string
+  quantity: number
+  value: number
+}
+
+export type StaleBatch = {
+  id: string
+  name: string
+  batch: string
+  days: number
+  quantity: number
+  value: number
+}
+
+export type DeadValueInventoryItem = {
+  productId: string
+  productName: string
+  productUnitName: string
+  totalQuantity: number
+  averageCostPrice: number
+  totalInventoryValue: number
+  lastSoldAt: string
+}
+
+export type PotentialLossInventoryItem = {
+  batchId: string
+  batchCode: string
+  productId: string
+  productName: string
+  productUnitName: string
+  quantity: number
+  averageCostPrice: number
+  expiryDate: string
+  daysUntilExpiry: number
+  avgDailySales: number
+  sellableQuantity: number
+  potentialLossQuantity: number
+  potentialLossValue: number
+}
+
+export type LowStockInventoryItem = {
+  productId: string
+  productName: string
+  productUnitName: string
+  totalQuantity: number
+  averageCostPrice: number
+  totalInventoryValue: number
+  avgDailySales: number
+  estimatedDaysOfStock: number
+}
+
 type RpcSalesStatsV2Row = {
   current_completed_orders: number | null
   current_total_profit: number | null
@@ -482,6 +535,151 @@ export const createDashboardReportRepository = (
           status: stock <= 0 ? 'out' : 'low',
         }
       })
+    },
+
+    async getCategoriesByInventories(params: {
+      locationId?: string | null
+    }): Promise<CategoryByInventory[]> {
+      const { data, error } = await client.rpc('get_categories_by_inventories', {
+        p_location_id: params.locationId ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        id: item.category_id,
+        name: item.category_name,
+        quantity: toNumber(item.total_quantity),
+        value: toNumber(item.total_value),
+      }))
+    },
+
+    async getTopStaleBatches(params: {
+      tenantId: string
+      locationId?: string | null
+      limit?: number
+    }): Promise<StaleBatch[]> {
+      const now = new Date()
+      let query = client
+        .from('inventory_batches')
+        .select(
+          `id, batch_code, created_at, quantity, average_cost_price, products!inner(id, product_name)`
+        )
+        .eq('tenant_id', params.tenantId)
+        .gt('quantity', 0)
+        .not('created_at', 'is', null)
+        .order('created_at', { ascending: true })
+
+      if (params.locationId) {
+        query = query.eq('location_id', params.locationId)
+      }
+
+      query = query.limit(params.limit ?? 8)
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      const rows = (data ?? []) as Array<{
+        id: string
+        batch_code: string | null
+        created_at: string | null
+        quantity: number | null
+        average_cost_price: number | null
+        products?: {
+          product_name?: string | null
+        } | null
+      }>
+
+      return rows.map((row) => {
+        const qty = toNumber(row.quantity)
+        const costPrice = toNumber(row.average_cost_price)
+        const createdAt = new Date(row.created_at!)
+        const diffMs = now.getTime() - createdAt.getTime()
+        const days = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+        return {
+          id: row.id,
+          name: row.products?.product_name ?? 'Không rõ',
+          batch: row.batch_code ?? 'N/A',
+          days,
+          quantity: qty,
+          value: qty * costPrice,
+        }
+      })
+    },
+
+    async getDeadValueInventory(params: {
+      locationId?: string | null
+      days?: number
+    }): Promise<DeadValueInventoryItem[]> {
+      const { data, error } = await client.rpc('get_dead_value_inventory', {
+        p_location_id: params.locationId ?? undefined,
+        p_type: params.days ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        productId: item.product_id,
+        productName: item.product_name ?? 'Không rõ',
+        productUnitName: item.product_unit_name ?? 'đv',
+        totalQuantity: toNumber(item.total_quantity),
+        averageCostPrice: toNumber(item.average_cost_price),
+        totalInventoryValue: toNumber(item.total_inventory_value),
+        lastSoldAt: item.last_sold_at ?? '',
+      }))
+    },
+
+    async getPotentialLossInventory(params: {
+      locationId?: string | null
+      days?: number
+    }): Promise<PotentialLossInventoryItem[]> {
+      const { data, error } = await client.rpc('get_potential_loss_inventory', {
+        p_location_id: params.locationId ?? undefined,
+        p_type: params.days ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        batchId: item.batch_id,
+        batchCode: item.batch_code ?? '',
+        productId: item.product_id,
+        productName: item.product_name ?? 'Không rõ',
+        productUnitName: item.product_unit_name ?? 'đv',
+        quantity: toNumber(item.quantity),
+        averageCostPrice: toNumber(item.average_cost_price),
+        expiryDate: item.expiry_date ?? '',
+        daysUntilExpiry: toNumber(item.days_until_expiry),
+        avgDailySales: toNumber(item.avg_daily_sales),
+        sellableQuantity: toNumber(item.sellable_quantity),
+        potentialLossQuantity: toNumber(item.potential_loss_quantity),
+        potentialLossValue: toNumber(item.potential_loss_value),
+      }))
+    },
+
+    async getLowStockInventory(params: {
+      locationId?: string | null
+      days?: number
+    }): Promise<LowStockInventoryItem[]> {
+      const { data, error } = await client.rpc('get_low_stock_inventory', {
+        p_location_id: params.locationId ?? undefined,
+        p_type: params.days ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        productId: item.product_id,
+        productName: item.product_name ?? 'Không rõ',
+        productUnitName: item.product_unit_name ?? 'đv',
+        totalQuantity: toNumber(item.total_quantity),
+        averageCostPrice: toNumber(item.average_cost_price),
+        totalInventoryValue: toNumber(item.total_inventory_value),
+        avgDailySales: toNumber(item.avg_daily_sales),
+        estimatedDaysOfStock: toNumber(item.estimated_days_of_stock),
+      }))
     },
 
     async getExpiredInventoryBatches(params: {

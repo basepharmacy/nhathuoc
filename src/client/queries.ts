@@ -677,6 +677,40 @@ export const getTopCategoriesQueryOptions = (params: {
       }),
   })
 
+export const getCategoriesByInventoriesQueryOptions = (params: {
+  locationId?: string | null
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'categories-by-inventories', params.locationId ?? 'all'],
+    queryFn: async () =>
+      dashboardReportRepo.getCategoriesByInventories({
+        locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getTopStaleBatchesQueryOptions = (params: {
+  tenantId: string
+  locationId?: string | null
+  limit?: number
+}) =>
+  queryOptions({
+    queryKey: [
+      'dashboard-report',
+      'top-stale-batches',
+      params.tenantId,
+      params.locationId ?? 'all',
+      params.limit ?? 8,
+    ],
+    queryFn: async () => {
+      if (!params.tenantId) return []
+      return dashboardReportRepo.getTopStaleBatches({
+        tenantId: params.tenantId,
+        locationId: params.locationId ?? undefined,
+        limit: params.limit,
+      })
+    },
+  })
+
 export const getSalesTimeSeriesQueryOptions = (params: {
   period: AdvancedPeriod
   referenceDate: string
@@ -779,6 +813,45 @@ export const getLowStockProductsQueryOptions = (params: {
     queryFn: async () =>
       dashboardReportRepo.getLowStockProducts({
         locationId: params.locationId ?? undefined,
+      }),
+  })
+
+export const getDeadValueInventoryQueryOptions = (params: {
+  locationId?: string | null
+  days?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'dead-value-inventory', params.locationId ?? 'all', params.days ?? 0],
+    queryFn: async () =>
+      dashboardReportRepo.getDeadValueInventory({
+        locationId: params.locationId ?? undefined,
+        days: params.days,
+      }),
+  })
+
+export const getPotentialLossInventoryQueryOptions = (params: {
+  locationId?: string | null
+  days?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'potential-loss-inventory', params.locationId ?? 'all', params.days ?? 0],
+    queryFn: async () =>
+      dashboardReportRepo.getPotentialLossInventory({
+        locationId: params.locationId ?? undefined,
+        days: params.days,
+      }),
+  })
+
+export const getLowStockInventoryQueryOptions = (params: {
+  locationId?: string | null
+  days?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'low-stock-inventory', params.locationId ?? 'all', params.days ?? 0],
+    queryFn: async () =>
+      dashboardReportRepo.getLowStockInventory({
+        locationId: params.locationId ?? undefined,
+        days: params.days,
       }),
   })
 

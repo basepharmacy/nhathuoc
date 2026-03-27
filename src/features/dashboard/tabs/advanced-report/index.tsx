@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { PurchasePeriodSelector } from '@/components/purchase-period-selector'
 import { SystemAssistant } from './components/system-assistant'
 import { SalesPerformance } from './components/sales-performance'
 import { InventoryAnalysis } from './components/inventory-analysis'
@@ -69,11 +70,22 @@ function getPeriodOptions(period: AdvancedPeriod) {
   return options
 }
 
+type InventoryDays = '7' | '30' | '60' | '90'
+
+const inventoryDaysLabels: Record<InventoryDays, string> = {
+  '7': '7 ngày',
+  '30': '30 ngày',
+  '60': '60 ngày',
+  '90': '90 ngày',
+}
+
 export function AdvancedReport() {
   const [activeTab, setActiveTab] = useState<AdvancedTab>('assistant')
   const [period, setPeriod] = useState<AdvancedPeriod>('month')
   const periodOptions = useMemo(() => getPeriodOptions(period), [period])
   const [selectedPeriod, setSelectedPeriod] = useState(() => getPeriodOptions('month')[0]?.value)
+  const [inventoryDays, setInventoryDays] = useState<InventoryDays>('30')
+  const [purchasePeriodId, setPurchasePeriodId] = useState('')
 
   const handlePeriodChange = (v: AdvancedPeriod) => {
     setPeriod(v)
@@ -104,31 +116,53 @@ export function AdvancedReport() {
         </div>
 
         <div className='flex items-center gap-2'>
-          <Select value={period} onValueChange={(v) => handlePeriodChange(v as AdvancedPeriod)}>
-            <SelectTrigger className='w-28 h-9'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {Object.entries(periodLabels).map(([value, label]) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {activeTab === 'inventory' ? (
+            <Select value={inventoryDays} onValueChange={(v) => setInventoryDays(v as InventoryDays)}>
+              <SelectTrigger className='w-32 h-9'>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(inventoryDaysLabels).map(([value, label]) => (
+                  <SelectItem key={value} value={value}>
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : activeTab === 'purchasing' ? (
+            <PurchasePeriodSelector
+              periodId={purchasePeriodId}
+              onPeriodChange={setPurchasePeriodId}
+            />
+          ) : (
+            <>
+              <Select value={period} onValueChange={(v) => handlePeriodChange(v as AdvancedPeriod)}>
+                <SelectTrigger className='w-28 h-9'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(periodLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
 
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className='w-44 h-9'>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {periodOptions.map(({ value, label }) => (
-                <SelectItem key={value} value={value}>
-                  {label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger className='w-44 h-9'>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {periodOptions.map(({ value, label }) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          )}
         </div>
       </div>
 
@@ -137,9 +171,9 @@ export function AdvancedReport() {
 
       {activeTab === 'sales' && <SalesPerformance period={period} selectedPeriod={selectedPeriod} />}
 
-      {activeTab === 'inventory' && <InventoryAnalysis />}
+      {activeTab === 'inventory' && <InventoryAnalysis days={Number(inventoryDays)} />}
 
-      {activeTab === 'purchasing' && <SmartPurchasing />}
+      {activeTab === 'purchasing' && <SmartPurchasing purchasePeriodId={purchasePeriodId} />}
     </div>
   )
 }
