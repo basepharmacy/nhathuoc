@@ -92,6 +92,12 @@ export function AdvancedReport() {
   const navigate = useNavigate({ from: '/dashboard' })
   const { user } = useUser()
   const isDummy = user?.tenant?.type === '1_NORMAL'
+  const isNewTenant = useMemo(() => {
+    if (isDummy || !user?.tenant?.created_at) return false
+    const created = new Date(user.tenant.created_at)
+    const diffDays = (Date.now() - created.getTime()) / (1000 * 60 * 60 * 24)
+    return diffDays < 30
+  }, [isDummy, user?.tenant?.created_at])
   const activeTab: AdvancedTab = subtab && validSubtabs.includes(subtab) ? subtab : 'assistant'
 
   function setActiveTab(tab: AdvancedTab) {
@@ -195,6 +201,16 @@ export function AdvancedReport() {
             {activeTab === 'assistant'
               ? 'Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách hoạt động của trợ lý AI.'
               : 'Đây là tính năng phiên bản chuyên nghiệp. Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách phiên bản chuyên nghiệp hoạt động.'}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* New tenant indicator */}
+      {isNewTenant && (
+        <Alert variant='default' className='border-blue-500/50 bg-blue-50 dark:bg-blue-950/20'>
+          <Info className='h-4 w-4 text-blue-600' />
+          <AlertDescription className='text-sm text-blue-800 dark:text-blue-200'>
+            Quý khách vui lòng sử dụng hệ thống ít nhất 1 tháng để đảm bảo dữ liệu phân tích đạt độ chính xác cao nhất.
           </AlertDescription>
         </Alert>
       )}

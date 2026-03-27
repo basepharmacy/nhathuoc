@@ -83,8 +83,8 @@ const infoCardsMeta = [
 const PIE_OPACITIES = [1, 0.8, 0.6, 0.4, 0.25]
 
 const tooltipStyle = {
-  backgroundColor: 'hsl(var(--popover))',
-  border: '1px solid hsl(var(--border))',
+  backgroundColor: 'var(--popover)',
+  border: '1px solid var(--border)',
   borderRadius: '8px',
   fontSize: '12px',
 }
@@ -412,11 +412,11 @@ function CategoryPieCard({ isDummy }: { isDummy: boolean }) {
                   paddingAngle={3}
                   dataKey={metric}
                   nameKey='name'
-                  stroke='hsl(var(--background))'
+                  stroke='var(--background)'
                   strokeWidth={2}
                 >
                   {chartData.map((_, index) => (
-                    <Cell key={index} fill='hsl(var(--foreground))' fillOpacity={PIE_OPACITIES[index % PIE_OPACITIES.length]} />
+                    <Cell key={index} fill='var(--foreground)' fillOpacity={PIE_OPACITIES[index % PIE_OPACITIES.length]} />
                   ))}
                 </Pie>
                 <Tooltip
@@ -487,10 +487,10 @@ function TopStaleBatchesCard({ isDummy }: { isDummy: boolean }) {
         ) : (
           <ResponsiveContainer width='100%' height={280}>
             <BarChart data={resolvedBatches} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-              <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
+              <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' />
               <XAxis
                 dataKey='name'
-                stroke='hsl(var(--muted-foreground))'
+                stroke='var(--muted-foreground)'
                 fontSize={10}
                 tickLine={false}
                 axisLine={false}
@@ -504,7 +504,7 @@ function TopStaleBatchesCard({ isDummy }: { isDummy: boolean }) {
                   return label.length > 20 ? `${label.slice(0, 20)}…` : label
                 }}
               />
-              <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}d`} />
+              <YAxis stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v}d`} />
               <Tooltip
                 contentStyle={tooltipStyle}
                 formatter={(val, _, props) => {
@@ -519,7 +519,7 @@ function TopStaleBatchesCard({ isDummy }: { isDummy: boolean }) {
                   return `${item.name} – ${item.batch}`
                 }}
               />
-              <Bar dataKey='days' fill='hsl(var(--destructive))' radius={[4, 4, 0, 0]} maxBarSize={36}>
+              <Bar dataKey='days' fill='var(--destructive)' radius={[4, 4, 0, 0]} maxBarSize={36}>
                 {resolvedBatches.map((_, index) => (
                   <Cell key={index} fillOpacity={1 - index * 0.09} />
                 ))}
@@ -614,9 +614,9 @@ function InventoryFlowCard({ isDummy }: { isDummy: boolean }) {
         ) : (
         <ResponsiveContainer width='100%' height={280}>
           <LineChart data={flowData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
-            <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
-            <XAxis dataKey='snapshotMonth' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
-            <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} />
+            <CartesianGrid strokeDasharray='3 3' stroke='var(--border)' />
+            <XAxis dataKey='snapshotMonth' stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
+            <YAxis stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [fmt((value ?? 0) as number), name]} />
             <Legend />
             <Line type='monotone' dataKey={nhapKey} name='Nhập' stroke='hsl(142 76% 36%)' strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
