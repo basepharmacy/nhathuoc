@@ -4,7 +4,7 @@ import { cn } from '@/lib/utils'
 import { Badge } from '@/components/ui/badge'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { LongText } from '@/components/ui/long-text'
-import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type PurchaseOrderWithRelations } from '@/services/supabase/database/model'
 import { formatCurrency } from '@/lib/utils'
 import { PurchaseOrdersHistoryRowActions } from './purchase-orders-history-row-actions'
 import {

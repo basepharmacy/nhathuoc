@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import { productTypeLabels } from '@/features/products/data/schema'
-import type { ProductMasterWithUnits } from '@/services/supabase/database/repo/productMastersRepo'
+import type { ProductMasterWithUnits } from '@/services/supabase/'
 
 type ProductMasterDetailDialogProps = {
   master: ProductMasterWithUnits | null

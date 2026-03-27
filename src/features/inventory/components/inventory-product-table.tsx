@@ -14,7 +14,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { SquarePen } from 'lucide-react'
 import { formatCurrency, formatDateLabel } from '@/lib/utils'
 import { DataTableColumnHeader } from '@/components/data-table'
-import { type InventoryProductsListItem } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryProductsListItem } from '@/services/supabase/database/model'
 import { Badge } from '@/components/ui/badge'
 import {
   DataTableRowActions,

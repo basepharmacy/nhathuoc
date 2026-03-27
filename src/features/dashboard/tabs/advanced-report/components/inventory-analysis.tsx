@@ -108,7 +108,7 @@ import type {
   DeadValueInventoryItem,
   PotentialLossInventoryItem,
   LowStockInventoryItem,
-} from '@/services/supabase/database/repo/dashboardReportRepo'
+} from '@/services/supabase/database/model'
 
 function DeadValueTable({ data }: { data: DeadValueInventoryItem[] }) {
   return (

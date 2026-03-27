@@ -23,7 +23,7 @@ import {
 } from '@/components/data-table-row-actions'
 import { QuantityWithUnitCell } from './quantity-with-unit-cell'
 import { usePermissions } from '@/hooks/use-permissions'
-import { type InventoryBatchWithRelations } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchWithRelations } from '@/services/supabase/database/model'
 import {
   StockAdjustmentsActionDialog,
   type StockAdjustmentInitialBatch,

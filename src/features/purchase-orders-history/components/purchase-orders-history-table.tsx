@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table'
 import { DatePicker } from '@/components/date-picker'
 import { DataTablePagination, DataTableSkeletonRows, DataTableToolbar } from '@/components/data-table'
-import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type PurchaseOrderWithRelations } from '@/services/supabase/database/model'
 
 type PurchaseOrdersHistoryTableProps = {
   table: ReactTable<PurchaseOrderWithRelations>

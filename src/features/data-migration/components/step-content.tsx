@@ -14,7 +14,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { locationsRepo } from '@/client'
-import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import type { Location } from '@/services/supabase/'
 import { Link } from '@tanstack/react-router'
 import { FileUploadZone } from './file-upload-zone'
 import type { FileUploadState } from '../utils/types'

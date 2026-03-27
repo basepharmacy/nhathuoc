@@ -62,7 +62,7 @@ import {
   productFormSchema,
 } from '../data/schema'
 import { type ProductWithUnits, type Category } from '@/services/supabase'
-import type { ProductMasterWithUnits } from '@/services/supabase/database/repo/productMastersRepo'
+import type { ProductMasterWithUnits } from '@/services/supabase/'
 
 type ProductsActionDialogProps = {
   currentRow?: ProductWithUnits

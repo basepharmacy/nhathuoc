@@ -1,5 +1,4 @@
-import type { QuickPurchaseOrderItem, PurchasesStatisticsV2Result } from '@/services/supabase/database/repo/dashboardReportRepo'
-import type { LowStockInventoryItem } from '@/services/supabase/database/repo/dashboardReportRepo'
+import type { QuickPurchaseOrderItem, PurchasesStatisticsV2Result, LowStockInventoryItem } from '@/services/supabase/database/model'
 
 export const DUMMY_PURCHASE_STATISTICS: PurchasesStatisticsV2Result = {
   totalOrders: 48,

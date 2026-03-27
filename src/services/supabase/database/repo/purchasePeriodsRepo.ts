@@ -1,15 +1,5 @@
 import { BasePharmacySupabaseClient } from '../../client'
-
-export type PurchasePeriod = {
-  id: number
-  name: string | null
-  number: number
-  from_date: string
-  to_date: string
-  tenant_id: string
-  created_at: string | null
-  updated_at: string | null
-}
+import { PurchasePeriod } from '../model'
 
 export const createPurchasePeriodRepository = (
   client: BasePharmacySupabaseClient

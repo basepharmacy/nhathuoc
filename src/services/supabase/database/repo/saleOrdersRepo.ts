@@ -6,26 +6,9 @@ import type {
   SaleOrderUpdate,
   SaleOrderWithItems,
   SaleOrderWithRelations,
+  SaleOrdersHistoryQueryInput,
+  SaleOrdersHistoryQueryResult,
 } from '../model'
-
-
-export type SaleOrdersHistoryQueryInput = {
-  tenantId: string
-  pageIndex: number
-  pageSize: number
-  search?: string
-  customerId?: string
-  locationId?: string
-  statuses?: Array<SaleOrder['status']>
-  fromDate?: string
-  toDate?: string
-  sorting?: Array<{ id: string; desc: boolean }>
-}
-
-export type SaleOrdersHistoryQueryResult = {
-  data: SaleOrderWithRelations[]
-  total: number
-}
 
 export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) => {
   return {

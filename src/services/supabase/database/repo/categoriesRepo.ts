@@ -1,12 +1,11 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import {
+  Category,
+  CategoryInsert,
+  CategoryUpdate,
+  CategoryWithActiveProductsCount
+} from '../model'
 
-export type Category = Tables<'categories'>
-export type CategoryInsert = TablesInsert<'categories'>
-export type CategoryUpdate = TablesUpdate<'categories'>
-export type CategoryWithActiveProductsCount = Category & {
-  active_products_count: number
-}
 
 export const createCategoryRepository = (client: BasePharmacySupabaseClient) => ({
   async getCategories(tenantId: string): Promise<Category[]> {

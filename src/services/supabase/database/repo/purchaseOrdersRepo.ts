@@ -6,36 +6,11 @@ import {
   PurchaseOrderItem,
   PurchaseOrderItemInsert,
   PurchaseOrderUpdate,
+  PurchaseOrderWithRelations,
+  PurchaseOrderWithItems,
+  PurchaseOrdersHistoryQueryInput,
+  PurchaseOrdersHistoryQueryResult,
 } from '../model'
-
-export type PurchaseOrderWithRelations = PurchaseOrder & {
-  supplier?: { id: string; name: string } | null
-  location?: { id: string; name: string } | null
-  user?: { id: string; name: string } | null
-}
-export type PurchaseOrderWithItems = PurchaseOrder & {
-  items?: PurchaseOrderItem[]
-}
-
-export type PurchaseOrdersHistoryQueryInput = {
-  tenantId: string
-  pageIndex: number
-  pageSize: number
-  search?: string
-  supplierId?: string
-  locationId?: string
-  statuses?: Array<PurchaseOrder['status']>
-  paymentStatuses?: Array<PurchaseOrder['payment_status']>
-  fromDate?: string
-  toDate?: string
-  purchasePeriodId?: number
-  sorting?: Array<{ id: string; desc: boolean }>
-}
-
-export type PurchaseOrdersHistoryQueryResult = {
-  data: PurchaseOrderWithRelations[]
-  total: number
-}
 
 export const createPurchaseOrderRepository = (
   client: BasePharmacySupabaseClient

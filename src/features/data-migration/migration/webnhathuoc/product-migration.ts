@@ -3,12 +3,12 @@ import {
   inventoryBatchesRepo,
   productsRepo,
 } from '@/client'
-import type { CategoryInsert } from '@/services/supabase/database/repo/categoriesRepo'
+import type { CategoryInsert } from '@/services/supabase/'
 import type {
   ProductInsert,
   ProductUnitInsert,
 } from '@/services/supabase/'
-import type { InventoryBatchInsert } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import type { InventoryBatchInsert } from '@/services/supabase/'
 import type { ProcessLog } from '../../utils/types'
 import { parseFile } from '../../utils/file-parser'
 

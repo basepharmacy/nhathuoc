@@ -4,7 +4,7 @@ import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { type SaleOrderItem } from '../data/types'
-import type { BankAccount } from '@/services/supabase/database/repo/bankAccountsRepo'
+import type { BankAccount } from '@/services/supabase/'
 import { useMemo } from 'react'
 import { Location } from '@/services/supabase/'
 

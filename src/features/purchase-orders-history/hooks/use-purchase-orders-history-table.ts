@@ -11,7 +11,7 @@ import {
 import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
 import { usePermissions } from '@/hooks/use-permissions'
 import { type PurchaseOrderWithRelations } from '@/services/supabase'
-import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type PurchaseOrdersHistoryQueryInput } from '@/services/supabase/database/model'
 
 type FilterOption = { label: string; value: string }
 

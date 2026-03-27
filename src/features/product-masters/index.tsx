@@ -9,7 +9,7 @@ import { useDebouncedValue } from '@/hooks/use-debounced-value'
 import { useUser } from '@/client/provider'
 import { productsRepo } from '@/client'
 import { getProductMastersBySourceQueryOptions } from '@/client/queries'
-import type { ProductMasterWithUnits } from '@/services/supabase/database/repo/productMastersRepo'
+import type { ProductMasterWithUnits } from '@/services/supabase/'
 import { ProductMastersTable } from './components/product-masters-table'
 
 export function ProductMasters() {

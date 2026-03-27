@@ -12,7 +12,7 @@ import { getActivityHistoryQueryOptions } from '@/client/queries'
 import {
   type ActivityHistoryWithRelations,
   activityTypeLabels,
-} from '@/services/supabase/database/repo/activityHistoryRepo'
+} from '@/services/supabase/'
 import { resolveOrderRoute } from '@/lib/utils'
 
 const PAGE_SIZE = 20

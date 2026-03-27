@@ -5,7 +5,7 @@ import {
   type VisibilityState,
 } from '@tanstack/react-table'
 import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
-import { type StockAdjustmentsListQueryInput } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { type StockAdjustmentsListQueryInput } from '@/services/supabase/database/model'
 import { ALL_REASON_CODE_OPTIONS } from '../data/reason-code'
 
 type Location = { id: string; name: string }

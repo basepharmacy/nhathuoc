@@ -1,5 +1,5 @@
 import { LocationSelector } from '@/components/location-selector'
-import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import type { Location } from '@/services/supabase/'
 
 type StockAdjustmentsAddMetaProps = {
   locations: Location[]

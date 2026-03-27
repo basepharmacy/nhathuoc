@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/select'
 import { usePermissions } from '@/hooks/use-permissions'
 import { useUser } from '@/client/provider'
-import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import type { Location } from '@/services/supabase/'
 
 type LocationSelectorProps = {
   locations: Location[]

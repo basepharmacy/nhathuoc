@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils'
 import { stockAdjustmentsRepo } from '@/client'
 import { useUser } from '@/client/provider'
 import { mapSupabaseError } from '@/lib/error-mapper'
-import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { type StockAdjustmentWithRelations } from '@/services/supabase'
 import {
   Table,
   TableBody,

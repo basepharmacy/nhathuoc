@@ -12,7 +12,7 @@ import {
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { getAdvanceSaleStatisticsQueryOptions, getAdvanceTopProductsQueryOptions, getTopSlowSellProductsQueryOptions, getTopCustomersQueryOptions, getTopCategoriesQueryOptions, getSalesTimeSeriesQueryOptions } from '@/client/queries'
-import type { AdvancedPeriod, TopProductType, TopCustomerType, TopCategoryType, SalesTimeSeriesGroupBy, SalesTimeSeriesType } from '@/services/supabase/database/repo/dashboardReportRepo'
+import type { AdvancedPeriod, TopProductType, TopCustomerType, TopCategoryType, SalesTimeSeriesGroupBy, SalesTimeSeriesType } from '@/services/supabase/database/model'
 import {
   Bar,
   BarChart,

@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import type { ProductMasterWithUnits, ProductMasterUnit } from '@/services/supabase/database/repo/productMastersRepo'
+import type { ProductMasterWithUnits, ProductMasterUnit } from '@/services/supabase/'
 
 const getBaseUnit = (master: ProductMasterWithUnits) =>
   master.product_master_units?.find((u) => u.is_base_unit) ??

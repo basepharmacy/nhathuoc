@@ -1,9 +1,5 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
-
-export type Location = Tables<'locations'>
-export type LocationInsert = TablesInsert<'locations'>
-export type LocationUpdate = TablesUpdate<'locations'>
+import { Location, LocationInsert, LocationUpdate } from '../model'
 
 export const createLocationRepository = (client: BasePharmacySupabaseClient) => ({
   async getLocationById(locationId: string): Promise<Location | null> {

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import useDialogState from '@/hooks/use-dialog-state'
-import type { StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import type { StockAdjustmentWithRelations } from '@/services/supabase/'
 
 type StockAdjustmentsDialogType = 'add' | 'delete'
 

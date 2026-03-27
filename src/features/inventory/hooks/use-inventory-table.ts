@@ -5,7 +5,7 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/repo/inventoryBatchesRepo'
+import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/model'
 import { usePermissions } from '@/hooks/use-permissions'
 
 type Location = { id: string; name: string }

@@ -4,7 +4,7 @@ import { DataTableColumnHeader } from '@/components/data-table'
 import {
   type ActivityHistoryWithRelations,
   activityTypeLabels,
-} from '@/services/supabase/database/repo/activityHistoryRepo'
+} from '@/services/supabase/'
 
 const activityTypeColors: Record<
   ActivityHistoryWithRelations['activity_type'],

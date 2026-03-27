@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button'
 import { DataTablePagination, DataTableSkeletonRows, DataTableBulkActions } from '@/components/data-table'
 import { useUser } from '@/client/provider'
 import { getProductsQueryOptions } from '@/client/queries'
-import type { ProductMasterWithUnits } from '@/services/supabase/database/repo/productMastersRepo'
+import type { ProductMasterWithUnits } from '@/services/supabase/'
 import { productMastersColumns } from './product-masters-columns'
 import { ProductMasterDetailDialog } from './product-master-detail-dialog'
 

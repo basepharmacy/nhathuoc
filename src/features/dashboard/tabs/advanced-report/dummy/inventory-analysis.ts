@@ -3,7 +3,7 @@ import type {
   PotentialLossInventoryItem,
   LowStockInventoryItem,
   InventoryValueByMonth,
-} from '@/services/supabase/database/repo/dashboardReportRepo'
+} from '@/services/supabase/database/model'
 
 export const DUMMY_FLOW_DATA: InventoryValueByMonth[] = [
   { snapshotMonth: '2025-04', totalImportQuantity: 2900, totalExportQuantity: 2500, totalQuantity: 12100, totalImportValue: 430000000, totalExportValue: 370000000, totalInventoryValue: 1720000000 },

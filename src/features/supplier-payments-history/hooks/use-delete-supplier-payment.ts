@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { supplierPaymentsRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
-import { type SupplierPayment } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { type SupplierPayment } from '@/services/supabase/'
 
 export function useDeleteSupplierPayment<TData extends SupplierPayment = SupplierPayment>(
   tenantId: string,

@@ -4,7 +4,7 @@ import {
   DataTableRowActions as RowActions,
   type RowAction,
 } from '@/components/data-table-row-actions'
-import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import { type PurchaseOrderWithRelations } from '@/services/supabase/database/model'
 
 type PurchaseOrdersHistoryRowActionsProps = {
   row: Row<PurchaseOrderWithRelations>

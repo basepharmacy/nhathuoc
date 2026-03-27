@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { getActivityHistoryQueryOptions } from '@/client/queries'
-import type { ActivityHistoryWithRelations } from '@/services/supabase/database/repo/activityHistoryRepo'
+import type { ActivityHistoryWithRelations } from '@/services/supabase/'
 import { ActivityItem } from './components/activity-item'
 
 export type ActivityTimePeriod = 'day' | 'week' | 'month' | 'quarter' | 'year' | 'custom'

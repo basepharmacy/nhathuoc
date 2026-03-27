@@ -9,8 +9,7 @@ import {
   useReactTable,
 } from '@tanstack/react-table'
 import { formatFromDateParam, formatToDateParam } from '@/lib/utils'
-import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
-import { type AllSupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { type SupplierPaymentWithSupplier, type AllSupplierPaymentsHistoryQueryInput } from '@/services/supabase/database/model'
 
 type FilterOption = { label: string; value: string }
 

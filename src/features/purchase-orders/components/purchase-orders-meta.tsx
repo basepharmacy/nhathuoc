@@ -1,7 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { LocationSelector } from '@/components/location-selector'
-import type { Location } from '@/services/supabase/database/repo/locationsRepo'
+import type { Location } from '@/services/supabase/'
 import { PurchaseOrderStatus } from '@/services/supabase/'
 import { statusColors, statusLabels } from '../data/types'
 import { cn, toDatetimeLocal } from '@/lib/utils'

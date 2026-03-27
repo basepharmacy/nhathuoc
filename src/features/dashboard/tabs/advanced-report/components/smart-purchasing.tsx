@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { getPurchasesStatisticsV2QueryOptions, getTopSuppliersQueryOptions, getLowStockInventoryQueryOptions, getSuggestQuickPurchaseOrdersQueryOptions } from '@/client/queries'
-import type { TopSupplierType, QuickPurchaseOrderItem } from '@/services/supabase/database/repo/dashboardReportRepo'
+import type { TopSupplierType, QuickPurchaseOrderItem } from '@/services/supabase/database/model'
 import {
   DUMMY_PURCHASE_STATISTICS,
   DUMMY_TOP_SUPPLIERS,

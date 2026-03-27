@@ -1,9 +1,6 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables, TablesInsert, TablesUpdate } from '../../database.types'
+import { BankAccount, BankAccountInsert, BankAccountUpdate } from '../model'
 
-export type BankAccount = Tables<'bank_accounts'>
-export type BankAccountInsert = TablesInsert<'bank_accounts'>
-export type BankAccountUpdate = TablesUpdate<'bank_accounts'>
 
 export const createBankAccountRepository = (
   client: BasePharmacySupabaseClient

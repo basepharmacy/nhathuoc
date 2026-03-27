@@ -15,8 +15,7 @@ import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import { useSuppliers } from '@/features/suppliers/components/suppliers-provider'
 import { type Supplier } from '@/features/suppliers/data/schema'
-import { type PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
-import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { type PurchaseOrderWithRelations, type SupplierPaymentWithSupplier } from '@/services/supabase/database/model'
 import {
   getLocationsQueryOptions,
   getPurchaseOrdersHistoryQueryOptions,

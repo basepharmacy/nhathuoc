@@ -1,6 +1,6 @@
 import { type ColumnDef } from '@tanstack/react-table'
 import { formatCurrency, formatDateTimeLabel, formatQuantity } from '@/lib/utils'
-import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { type StockAdjustmentWithRelations } from '@/services/supabase/'
 import { Badge } from '@/components/ui/badge'
 import { getReasonCodeLabel } from '../data/reason-code'
 import { StockAdjustmentsRowActions } from './stock-adjustments-row-actions'

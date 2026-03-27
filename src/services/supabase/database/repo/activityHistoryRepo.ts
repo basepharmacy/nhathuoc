@@ -1,27 +1,10 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import type { Tables } from '../../database.types'
-
-export type ActivityHistory = Tables<'activity_history'>
-
-export type ActivityHistoryWithRelations = ActivityHistory & {
-  user?: { id: string; name: string } | null
-  location?: { id: string; name: string } | null
-}
-
-export type ActivityHistoryQueryInput = {
-  tenantId: string
-  userId?: string | null
-  locationId?: string | null
-  pageIndex: number
-  pageSize: number
-  fromDate?: string | null
-  toDate?: string | null
-}
-
-export type ActivityHistoryQueryResult = {
-  data: ActivityHistoryWithRelations[]
-  total: number
-}
+import {
+  ActivityHistory,
+  ActivityHistoryWithRelations,
+  ActivityHistoryQueryInput,
+  ActivityHistoryQueryResult
+} from '../model'
 
 const activityTypeLabels: Record<ActivityHistory['activity_type'], string> = {
   PURCHASE_ORDER_ORDERED: 'Đặt hàng nhập',

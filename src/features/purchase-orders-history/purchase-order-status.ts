@@ -1,4 +1,4 @@
-import type { PurchaseOrderWithRelations } from '@/services/supabase/database/repo/purchaseOrdersRepo'
+import type { PurchaseOrderWithRelations } from '@/services/supabase/database/model'
 
 export const purchaseOrderStatusLabels: Record<PurchaseOrderWithRelations['status'], string> = {
   '1_DRAFT': 'Nháp',

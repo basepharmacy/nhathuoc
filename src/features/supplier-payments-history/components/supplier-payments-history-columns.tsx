@@ -3,7 +3,7 @@ import { Link } from '@tanstack/react-router'
 import { LongText } from '@/components/ui/long-text'
 import { DataTableColumnHeader } from '@/components/data-table'
 import { formatCurrency } from '@/lib/utils'
-import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/repo/supplierPaymentsRepo'
+import { type SupplierPaymentWithSupplier } from '@/services/supabase/database/model'
 import { SupplierPaymentsHistoryRowActions } from './supplier-payments-history-row-actions'
 
 const formatDateLabel = (value?: string | null) => {

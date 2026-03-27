@@ -15,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { type StockAdjustmentWithRelations } from '@/services/supabase/database/repo/stockAdjustmentsRepo'
+import { type StockAdjustmentWithRelations } from '@/services/supabase/'
 
 type StockAdjustmentsRowActionsProps = {
   row: Row<StockAdjustmentWithRelations>
