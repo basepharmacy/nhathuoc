@@ -872,6 +872,23 @@ export const getSuggestQuickPurchaseOrdersQueryOptions = (params: {
       }),
   })
 
+export const getInventoryValueByMonthQueryOptions = (params: {
+  locationId?: string | null
+  categoryId?: string | null
+  fromDate?: string
+  toDate?: string
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'inventory-value-by-month', params.locationId ?? 'all', params.categoryId ?? 'all', params.fromDate ?? '', params.toDate ?? ''],
+    queryFn: async () =>
+      dashboardReportRepo.getInventoryValueByMonth({
+        locationId: params.locationId ?? undefined,
+        categoryId: params.categoryId ?? undefined,
+        fromDate: params.fromDate,
+        toDate: params.toDate,
+      }),
+  })
+
 export const getActivityHistoryQueryOptions = (
   params: ActivityHistoryQueryInput
 ) =>

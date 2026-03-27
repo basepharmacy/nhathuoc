@@ -11,6 +11,7 @@ import { Route } from '@/routes/_authenticated/dashboard'
 import { useUser } from '@/client/provider'
 import { cn } from '@/lib/utils'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Badge } from '@/components/ui/badge'
 import {
   Select,
   SelectContent,
@@ -126,6 +127,11 @@ export function AdvancedReport() {
             >
               <Icon className='h-3.5 w-3.5' />
               {label}
+              {value === 'assistant' && (
+                <Badge variant='outline' className='ml-1 border-0 bg-gradient-to-r from-violet-600 to-purple-500 px-1.5 py-0 text-[10px] font-semibold text-white'>
+                  Enterprise
+                </Badge>
+              )}
             </button>
           ))}
         </div>
@@ -182,11 +188,13 @@ export function AdvancedReport() {
       </div>
 
       {/* Dummy data banner */}
-      {isDummy && activeTab !== 'assistant' && (
+      {isDummy && (
         <Alert variant='default' className='border-amber-500/50 bg-amber-50 dark:bg-amber-950/20'>
           <Info className='h-4 w-4 text-amber-600' />
           <AlertDescription className='text-sm text-amber-800 dark:text-amber-200'>
-            Đây là tính năng dành cho phiên bản chuyên nghiệp. Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách phiên bản chuyên nghiệp hoạt động.
+            {activeTab === 'assistant'
+              ? 'Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách hoạt động của trợ lý AI.'
+              : 'Đây là tính năng phiên bản chuyên nghiệp. Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách phiên bản chuyên nghiệp hoạt động.'}
           </AlertDescription>
         </Alert>
       )}

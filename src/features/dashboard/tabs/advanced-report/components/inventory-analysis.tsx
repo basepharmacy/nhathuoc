@@ -8,6 +8,7 @@ import {
   getDeadValueInventoryQueryOptions,
   getPotentialLossInventoryQueryOptions,
   getLowStockInventoryQueryOptions,
+  getInventoryValueByMonthQueryOptions,
 } from '@/client/queries'
 import {
   Ban,
@@ -55,9 +56,8 @@ import {
   DUMMY_LOW_STOCK,
   DUMMY_CATEGORIES_INV,
   DUMMY_STALE_BATCHES,
+  DUMMY_FLOW_DATA,
 } from '../dummy/inventory-analysis'
-
-// --- Mock data ---
 
 const infoCardsMeta = [
   {
@@ -78,21 +78,6 @@ const infoCardsMeta = [
     description: (days: number) => `dự kiến hết hàng trong ${days} ngày tới`,
     icon: PackageSearch,
   },
-]
-
-const flowData = [
-  { label: 'T1', nhap_qty: 320, xuat_qty: 280, ton_qty: 12100, nhap_val: 256000000, xuat_val: 224000000, ton_val: 1720000000 },
-  { label: 'T2', nhap_qty: 450, xuat_qty: 390, ton_qty: 12160, nhap_val: 360000000, xuat_val: 312000000, ton_val: 1768000000 },
-  { label: 'T3', nhap_qty: 380, xuat_qty: 420, ton_qty: 12120, nhap_val: 304000000, xuat_val: 336000000, ton_val: 1736000000 },
-  { label: 'T4', nhap_qty: 520, xuat_qty: 480, ton_qty: 12160, nhap_val: 416000000, xuat_val: 384000000, ton_val: 1768000000 },
-  { label: 'T5', nhap_qty: 410, xuat_qty: 350, ton_qty: 12220, nhap_val: 328000000, xuat_val: 280000000, ton_val: 1816000000 },
-  { label: 'T6', nhap_qty: 350, xuat_qty: 400, ton_qty: 12170, nhap_val: 280000000, xuat_val: 320000000, ton_val: 1776000000 },
-  { label: 'T7', nhap_qty: 480, xuat_qty: 510, ton_qty: 12140, nhap_val: 384000000, xuat_val: 408000000, ton_val: 1752000000 },
-  { label: 'T8', nhap_qty: 550, xuat_qty: 490, ton_qty: 12200, nhap_val: 440000000, xuat_val: 392000000, ton_val: 1800000000 },
-  { label: 'T9', nhap_qty: 420, xuat_qty: 380, ton_qty: 12240, nhap_val: 336000000, xuat_val: 304000000, ton_val: 1832000000 },
-  { label: 'T10', nhap_qty: 390, xuat_qty: 430, ton_qty: 12200, nhap_val: 312000000, xuat_val: 344000000, ton_val: 1800000000 },
-  { label: 'T11', nhap_qty: 510, xuat_qty: 460, ton_qty: 12250, nhap_val: 408000000, xuat_val: 368000000, ton_val: 1840000000 },
-  { label: 'T12', nhap_qty: 600, xuat_qty: 400, ton_qty: 12450, nhap_val: 480000000, xuat_val: 320000000, ton_val: 1850000000 },
 ]
 
 const PIE_OPACITIES = [1, 0.8, 0.6, 0.4, 0.25]
@@ -575,11 +560,35 @@ function FlowMetricSwitcher({ metric, onChange }: { metric: FlowMetric; onChange
   )
 }
 
-function InventoryFlowCard() {
+function InventoryFlowCard({ isDummy }: { isDummy: boolean }) {
   const [metric, setMetric] = useState<FlowMetric>('quantity')
-  const nhapKey = metric === 'quantity' ? 'nhap_qty' : 'nhap_val'
-  const xuatKey = metric === 'quantity' ? 'xuat_qty' : 'xuat_val'
-  const tonKey = metric === 'quantity' ? 'ton_qty' : 'ton_val'
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+
+  const { fromDate, toDate } = useMemo(() => {
+    const now = new Date()
+    const to = new Date(now.getFullYear(), now.getMonth() + 1, 0) // last day of current month
+    const from = new Date(now.getFullYear(), now.getMonth() - 11, 1) // first day of 12 months ago
+    return {
+      fromDate: from.toISOString().slice(0, 10),
+      toDate: to.toISOString().slice(0, 10),
+    }
+  }, [])
+
+  const { data: flowDataApi, isLoading } = useQuery({
+    ...getInventoryValueByMonthQueryOptions({
+      locationId: selectedLocationId,
+      fromDate,
+      toDate,
+    }),
+    enabled: !!user && !isDummy,
+  })
+
+  const flowData = isDummy ? DUMMY_FLOW_DATA : (flowDataApi ?? [])
+
+  const nhapKey = metric === 'quantity' ? 'totalImportQuantity' : 'totalImportValue'
+  const xuatKey = metric === 'quantity' ? 'totalExportQuantity' : 'totalExportValue'
+  const tonKey = metric === 'quantity' ? 'totalQuantity' : 'totalInventoryValue'
   const fmt = metric === 'quantity' ? formatNumber : formatVND
 
   return (
@@ -594,10 +603,19 @@ function InventoryFlowCard() {
         </div>
       </CardHeader>
       <CardContent>
+        {!isDummy && isLoading ? (
+          <div className='flex items-center justify-center h-[280px]'>
+            <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
+          </div>
+        ) : flowData.length === 0 ? (
+          <div className='flex items-center justify-center h-[280px] text-sm text-muted-foreground'>
+            Không có dữ liệu
+          </div>
+        ) : (
         <ResponsiveContainer width='100%' height={280}>
           <LineChart data={flowData} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
             <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
-            <XAxis dataKey='label' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
+            <XAxis dataKey='snapshotMonth' stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} />
             <YAxis stroke='hsl(var(--muted-foreground))' fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => fmt(v)} />
             <Tooltip contentStyle={tooltipStyle} formatter={(value, name) => [fmt((value ?? 0) as number), name]} />
             <Legend />
@@ -606,6 +624,7 @@ function InventoryFlowCard() {
             <Line type='monotone' dataKey={tonKey} name='Tồn' stroke='var(--primary)' strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
           </LineChart>
         </ResponsiveContainer>
+        )}
       </CardContent>
       <CardFooter className='border-t pt-4'>
         <div className='flex gap-2 text-xs text-muted-foreground'>
@@ -622,7 +641,7 @@ function InventoryFlowCard() {
 export function InventoryAnalysis({ days, isDummy }: { days: number; isDummy: boolean }) {
   return (
     <div className='space-y-4'>
-      <InventoryFlowCard />
+      <InventoryFlowCard isDummy={isDummy} />
       <InfoCards days={days} isDummy={isDummy} />
       <div className='grid gap-4 md:grid-cols-2'>
         <CategoryPieCard isDummy={isDummy} />

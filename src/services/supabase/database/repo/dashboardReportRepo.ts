@@ -120,6 +120,16 @@ export type StaleBatch = {
   value: number
 }
 
+export type InventoryValueByMonth = {
+  snapshotMonth: string
+  totalImportQuantity: number
+  totalExportQuantity: number
+  totalQuantity: number
+  totalImportValue: number
+  totalExportValue: number
+  totalInventoryValue: number
+}
+
 export type DeadValueInventoryItem = {
   productId: string
   productName: string
@@ -567,7 +577,7 @@ export const createDashboardReportRepository = (
         id: item.category_id,
         name: item.category_name,
         quantity: toNumber(item.total_quantity),
-        value: toNumber(item.total_value),
+        value: toNumber(item.total_inventory_value),
       }))
     },
 
@@ -792,6 +802,32 @@ export const createDashboardReportRepository = (
           unitName,
         }
       })
+    },
+
+    async getInventoryValueByMonth(params: {
+      locationId?: string | null
+      categoryId?: string | null
+      fromDate?: string
+      toDate?: string
+    }): Promise<InventoryValueByMonth[]> {
+      const { data, error } = await client.rpc('get_inventory_value_by_month', {
+        p_location_id: params.locationId ?? undefined,
+        p_category_id: params.categoryId ?? undefined,
+        p_from_date: params.fromDate ?? undefined,
+        p_to_date: params.toDate ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        snapshotMonth: item.snapshot_month,
+        totalImportQuantity: toNumber(item.total_import_quantity),
+        totalExportQuantity: toNumber(item.total_export_quantity),
+        totalQuantity: toNumber(item.total_quantity),
+        totalImportValue: toNumber(item.total_import_value),
+        totalExportValue: toNumber(item.total_export_value),
+        totalInventoryValue: toNumber(item.total_inventory_value),
+      }))
     },
 
   }

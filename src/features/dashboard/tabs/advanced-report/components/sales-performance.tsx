@@ -589,7 +589,7 @@ function AverageRevenueCard({ period, selectedPeriod, isDummy }: { period: Advan
     enabled: !!user && !isDummy,
   })
 
-  const resolvedData = isDummy ? DUMMY_TIME_SERIES : rawData
+  const resolvedData = isDummy ? (DUMMY_TIME_SERIES[groupBy] ?? []) : rawData
 
   const chartData = useMemo(() =>
     resolvedData.map((item) => ({

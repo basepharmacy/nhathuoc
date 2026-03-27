@@ -8,6 +8,10 @@ import {
   ArrowRight,
   ShieldCheck,
   Info,
+  BrainCircuit,
+  Zap,
+  Target,
+  Rocket,
 } from 'lucide-react'
 import {
   Area,
@@ -349,11 +353,58 @@ function IssueDistributionChart() {
   )
 }
 
+function AIPromoBanner() {
+  return (
+    <div className='relative overflow-hidden rounded-xl border border-violet-500/20 bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-6 text-white shadow-lg'>
+      {/* Decorative background elements */}
+      <div className='pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-2xl' />
+      <div className='pointer-events-none absolute -bottom-8 -left-8 h-32 w-32 rounded-full bg-white/5 blur-2xl' />
+      <div className='pointer-events-none absolute right-1/3 top-1/2 h-20 w-20 rounded-full bg-violet-400/10 blur-xl' />
+
+      <div className='relative flex flex-col gap-4 lg:flex-row lg:items-center lg:gap-6'>
+        {/* Icon */}
+        <div className='flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm ring-1 ring-white/20'>
+          <BrainCircuit className='h-7 w-7' />
+        </div>
+
+        {/* Content */}
+        <div className='flex-1 space-y-2'>
+          <div className='flex items-center gap-2'>
+            <h3 className='text-lg font-bold tracking-tight'>Trợ lý AI sắp ra mắt!</h3>
+            <span className='inline-flex items-center gap-1 rounded-full bg-white/20 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm'>
+              <Rocket className='h-3 w-3' />
+              Coming soon
+            </span>
+          </div>
+          <p className='text-sm leading-relaxed text-white/85'>
+            Bạn gặp khó khăn khi quá nhiều thông tin, tình hình bán hàng hoặc kho hàng hiện tại có vấn đề nhưng không biết giải quyết ra sao?
+          </p>
+          <div className='flex flex-col gap-2 pt-1 sm:flex-row sm:gap-4'>
+            <div className='flex items-center gap-2 text-xs text-white/80'>
+              <div className='flex h-5 w-5 items-center justify-center rounded-md bg-white/15'>
+                <Zap className='h-3 w-3' />
+              </div>
+              Phát hiện rủi ro & đề xuất giải pháp tức thì
+            </div>
+            <div className='flex items-center gap-2 text-xs text-white/80'>
+              <div className='flex h-5 w-5 items-center justify-center rounded-md bg-white/15'>
+                <Target className='h-3 w-3' />
+              </div>
+              Nắm bắt cơ hội & xu hướng bán hàng tối ưu
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // --- Main ---
 
 export function SystemAssistant() {
   return (
     <div className='space-y-4'>
+      <AIPromoBanner />
       <HeroCard />
 
       <div className='-mx-4 px-4 overflow-x-auto'>

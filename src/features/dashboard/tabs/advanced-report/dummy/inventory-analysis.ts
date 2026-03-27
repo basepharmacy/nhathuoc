@@ -2,7 +2,23 @@ import type {
   DeadValueInventoryItem,
   PotentialLossInventoryItem,
   LowStockInventoryItem,
+  InventoryValueByMonth,
 } from '@/services/supabase/database/repo/dashboardReportRepo'
+
+export const DUMMY_FLOW_DATA: InventoryValueByMonth[] = [
+  { snapshotMonth: '2025-04', totalImportQuantity: 320, totalExportQuantity: 280, totalQuantity: 12100, totalImportValue: 256000000, totalExportValue: 224000000, totalInventoryValue: 1720000000 },
+  { snapshotMonth: '2025-05', totalImportQuantity: 450, totalExportQuantity: 390, totalQuantity: 12160, totalImportValue: 360000000, totalExportValue: 312000000, totalInventoryValue: 1768000000 },
+  { snapshotMonth: '2025-06', totalImportQuantity: 380, totalExportQuantity: 420, totalQuantity: 12120, totalImportValue: 304000000, totalExportValue: 336000000, totalInventoryValue: 1736000000 },
+  { snapshotMonth: '2025-07', totalImportQuantity: 520, totalExportQuantity: 480, totalQuantity: 12160, totalImportValue: 416000000, totalExportValue: 384000000, totalInventoryValue: 1768000000 },
+  { snapshotMonth: '2025-08', totalImportQuantity: 410, totalExportQuantity: 350, totalQuantity: 12220, totalImportValue: 328000000, totalExportValue: 280000000, totalInventoryValue: 1816000000 },
+  { snapshotMonth: '2025-09', totalImportQuantity: 350, totalExportQuantity: 400, totalQuantity: 12170, totalImportValue: 280000000, totalExportValue: 320000000, totalInventoryValue: 1776000000 },
+  { snapshotMonth: '2025-10', totalImportQuantity: 480, totalExportQuantity: 510, totalQuantity: 12140, totalImportValue: 384000000, totalExportValue: 408000000, totalInventoryValue: 1752000000 },
+  { snapshotMonth: '2025-11', totalImportQuantity: 550, totalExportQuantity: 490, totalQuantity: 12200, totalImportValue: 440000000, totalExportValue: 392000000, totalInventoryValue: 1800000000 },
+  { snapshotMonth: '2025-12', totalImportQuantity: 420, totalExportQuantity: 380, totalQuantity: 12240, totalImportValue: 336000000, totalExportValue: 304000000, totalInventoryValue: 1832000000 },
+  { snapshotMonth: '2026-01', totalImportQuantity: 390, totalExportQuantity: 430, totalQuantity: 12200, totalImportValue: 312000000, totalExportValue: 344000000, totalInventoryValue: 1800000000 },
+  { snapshotMonth: '2026-02', totalImportQuantity: 510, totalExportQuantity: 460, totalQuantity: 12250, totalImportValue: 408000000, totalExportValue: 368000000, totalInventoryValue: 1840000000 },
+  { snapshotMonth: '2026-03', totalImportQuantity: 600, totalExportQuantity: 400, totalQuantity: 12450, totalImportValue: 480000000, totalExportValue: 320000000, totalInventoryValue: 1850000000 },
+]
 
 export const DUMMY_DEAD_VALUE: DeadValueInventoryItem[] = [
   { productId: 'p1', productName: 'Kem chống nắng SPF50', productUnitName: 'tuýp', totalQuantity: 45, averageCostPrice: 120000, totalInventoryValue: 5400000, lastSoldAt: '2025-12-15' },

@@ -279,6 +279,73 @@ export type Database = {
           },
         ]
       }
+      inventory_monthly_snapshots: {
+        Row: {
+          category_id: string | null
+          created_at: string | null
+          id: string
+          location_id: string | null
+          snapshot_month: string
+          tenant_id: string
+          total_export_quantity: number
+          total_export_value: number
+          total_import_quantity: number
+          total_import_value: number
+          total_inventory_value: number
+          total_quantity: number
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          snapshot_month: string
+          tenant_id: string
+          total_export_quantity?: number
+          total_export_value?: number
+          total_import_quantity?: number
+          total_import_value?: number
+          total_inventory_value?: number
+          total_quantity?: number
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string | null
+          id?: string
+          location_id?: string | null
+          snapshot_month?: string
+          tenant_id?: string
+          total_export_quantity?: number
+          total_export_value?: number
+          total_import_quantity?: number
+          total_import_value?: number
+          total_inventory_value?: number
+          total_quantity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_monthly_snapshots_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_monthly_snapshots_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_monthly_snapshots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       locations: {
         Row: {
           address: string | null
@@ -1385,6 +1452,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      capture_inventory_monthly_snapshot: { Args: never; Returns: undefined }
       create_sale_order: {
         Args: {
           p_customer_id?: string
@@ -1422,6 +1490,15 @@ export type Database = {
           previous_profit_margin: number
           previous_return_rate: number
           previous_returning_customers: number
+        }[]
+      }
+      get_categories_by_inventories: {
+        Args: { p_location_id?: string }
+        Returns: {
+          category_id: string
+          category_name: string
+          total_inventory_value: number
+          total_quantity: number
         }[]
       }
       get_dead_value_inventory: {
@@ -1503,6 +1580,23 @@ export type Database = {
           total_products: number
           total_quantity: number
           total_value: number
+        }[]
+      }
+      get_inventory_value_by_month: {
+        Args: {
+          p_category_id?: string
+          p_from_date?: string
+          p_location_id?: string
+          p_to_date?: string
+        }
+        Returns: {
+          snapshot_month: string
+          total_export_quantity: number
+          total_export_value: number
+          total_import_quantity: number
+          total_import_value: number
+          total_inventory_value: number
+          total_quantity: number
         }[]
       }
       get_low_stock_inventory: {
