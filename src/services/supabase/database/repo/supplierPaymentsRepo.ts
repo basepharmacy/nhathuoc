@@ -144,7 +144,7 @@ export const createSupplierPaymentRepository = (
       }
 
       return {
-        data: (data ?? []) as SupplierPaymentWithSupplier[],
+        data: (data ?? []) as unknown as SupplierPaymentWithSupplier[],
         total: count ?? 0,
       }
     },
@@ -205,7 +205,7 @@ export const createSupplierPaymentRepository = (
       }
 
       return {
-        data: (data ?? []) as SupplierPaymentWithSupplier[],
+        data: (data ?? []) as unknown as SupplierPaymentWithSupplier[],
         total: count ?? 0,
       }
     },
