@@ -17,7 +17,7 @@ import { Button } from '@/components/ui/button'
 import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
-import type { OrderItem } from './data/types'
+import { type OrderItem, getBiggestConversionUnit } from './data/types'
 import { PurchaseOrdersItems } from './components/purchase-orders-items'
 import { PurchaseOrdersMeta } from './components/purchase-orders-meta'
 import { PurchaseOrdersSearch } from './components/purchase-orders-search'
@@ -29,8 +29,17 @@ import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts'
 
 const route = getRouteApi('/_authenticated/purchase-orders/')
 
+const QUICK_ORDER_STORAGE_KEY = 'quick-order-items'
+
+type QuickOrderStorageItem = {
+  productId: string
+  quantity: number
+  unitId: string
+  unitPrice: number
+}
+
 export function PurchaseOrders() {
-  const { orderCode } = route.useSearch()
+  const { orderCode, productId: prefillProductId, suggestedQty: prefillQty, quickOrderSupplierId } = route.useSearch()
   const navigate = useNavigate()
   const { user } = useUser()
   const tenantId = user?.profile?.tenant_id ?? ''
@@ -133,6 +142,64 @@ export function PurchaseOrders() {
     })
   }, [orderDetail, order.hasInitialized, products, userLocationId, orderCode])
 
+  // ── Prefill product from smart-purchasing suggestion ───────
+  const [prefillHandled, setPrefillHandled] = useState(false)
+  useEffect(() => {
+    if (prefillHandled || !prefillProductId || orderCode) return
+    if (activeProducts.length === 0 || !order.selectedLocationId) return
+
+    const product = activeProducts.find((p) => p.id === prefillProductId)
+    if (!product) return
+
+    const itemId = order.addProduct(product)
+    if (itemId && prefillQty && prefillQty > 1) {
+      const biggestUnit = getBiggestConversionUnit(product)
+      const cf = biggestUnit?.conversion_factor ?? 1
+      const converted = Math.ceil(prefillQty / cf)
+      order.updateItem(itemId, { quantity: converted })
+    }
+    setPrefillHandled(true)
+
+    // Clear search params to avoid re-adding on remount
+    navigate({ to: '/purchase-orders', search: {}, replace: true })
+  }, [prefillProductId, prefillQty, activeProducts, order.selectedLocationId, prefillHandled, orderCode])
+
+  // ── Prefill quick order (multiple products + supplier) ────
+  const [quickOrderHandled, setQuickOrderHandled] = useState(false)
+  useEffect(() => {
+    if (quickOrderHandled || !quickOrderSupplierId || orderCode) return
+    if (activeProducts.length === 0 || !order.selectedLocationId) return
+
+    const raw = sessionStorage.getItem(QUICK_ORDER_STORAGE_KEY)
+    if (!raw) return
+
+    let items: QuickOrderStorageItem[]
+    try {
+      items = JSON.parse(raw)
+    } catch {
+      return
+    }
+
+    order.setSupplierId(quickOrderSupplierId)
+    for (const item of items) {
+      const product = activeProducts.find((p) => p.id === item.productId)
+      if (!product) continue
+
+      const itemId = order.addProduct(product)
+      if (itemId) {
+        order.updateItem(itemId, {
+          quantity: item.quantity,
+          productUnitId: item.unitId || undefined,
+          unitPrice: item.unitPrice,
+        })
+      }
+    }
+
+    sessionStorage.removeItem(QUICK_ORDER_STORAGE_KEY)
+    setQuickOrderHandled(true)
+    navigate({ to: '/purchase-orders', search: {}, replace: true })
+  }, [quickOrderSupplierId, activeProducts, order.selectedLocationId, quickOrderHandled, orderCode])
+
   const [pendingBatchItemId, setPendingBatchItemId] = useState<string | null>(null)
 
   const handleAddProduct = (product: Parameters<typeof order.addProduct>[0]) => {
@@ -214,7 +281,7 @@ export function PurchaseOrders() {
             ref={searchRef}
             products={activeProducts}
             onAddProduct={handleAddProduct}
-            autoFocus={!order.isEdit}
+            autoFocus={!order.isEdit && !prefillProductId && !quickOrderSupplierId}
           />
           <Button
             type='button'

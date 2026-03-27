@@ -49,6 +49,13 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import {
+  DUMMY_DEAD_VALUE,
+  DUMMY_POTENTIAL_LOSS,
+  DUMMY_LOW_STOCK,
+  DUMMY_CATEGORIES_INV,
+  DUMMY_STALE_BATCHES,
+} from '../dummy/inventory-analysis'
 
 // --- Mock data ---
 
@@ -201,7 +208,7 @@ function LowStockTable({ data }: { data: LowStockInventoryItem[] }) {
   )
 }
 
-function InfoCards({ days }: { days: number }) {
+function InfoCards({ days, isDummy }: { days: number; isDummy: boolean }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null)
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
@@ -211,7 +218,7 @@ function InfoCards({ days }: { days: number }) {
       locationId: selectedLocationId,
       days,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
   const { data: potentialLoss, isLoading: loadingLoss } = useQuery({
@@ -219,7 +226,7 @@ function InfoCards({ days }: { days: number }) {
       locationId: selectedLocationId,
       days,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
   const { data: lowStock, isLoading: loadingLow } = useQuery({
@@ -227,39 +234,43 @@ function InfoCards({ days }: { days: number }) {
       locationId: selectedLocationId,
       days,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
+  const resolvedDead = isDummy ? DUMMY_DEAD_VALUE : deadValue
+  const resolvedLoss = isDummy ? DUMMY_POTENTIAL_LOSS : potentialLoss
+  const resolvedLow = isDummy ? DUMMY_LOW_STOCK : lowStock
+
   const deadValueTotal = useMemo(
-    () => (deadValue ?? []).reduce((s, i) => s + i.totalInventoryValue, 0),
-    [deadValue]
+    () => (resolvedDead ?? []).reduce((s, i) => s + i.totalInventoryValue, 0),
+    [resolvedDead]
   )
   const potentialLossTotal = useMemo(
-    () => (potentialLoss ?? []).reduce((s, i) => s + i.potentialLossValue, 0),
-    [potentialLoss]
+    () => (resolvedLoss ?? []).reduce((s, i) => s + i.potentialLossValue, 0),
+    [resolvedLoss]
   )
-  const lowStockCount = (lowStock ?? []).length
+  const lowStockCount = (resolvedLow ?? []).length
 
-  const isLoading = loadingDead || loadingLoss || loadingLow
+  const isLoading = !isDummy && (loadingDead || loadingLoss || loadingLow)
 
   const cards = [
     {
       ...infoCardsMeta[0],
       value: formatVND(deadValueTotal),
       unit: '',
-      data: deadValue ?? [],
+      data: resolvedDead ?? [],
     },
     {
       ...infoCardsMeta[1],
       value: formatVND(potentialLossTotal),
       unit: '',
-      data: potentialLoss ?? [],
+      data: resolvedLoss ?? [],
     },
     {
       ...infoCardsMeta[2],
       value: String(lowStockCount),
       unit: 'sản phẩm',
-      data: lowStock ?? [],
+      data: resolvedLow ?? [],
     },
   ]
 
@@ -318,9 +329,9 @@ function InfoCards({ days }: { days: number }) {
               </div>
             </CardHeader>
             <CardContent>
-              {openIndex === 0 && <DeadValueTable data={deadValue ?? []} />}
-              {openIndex === 1 && <PotentialLossTable data={potentialLoss ?? []} />}
-              {openIndex === 2 && <LowStockTable data={lowStock ?? []} />}
+              {openIndex === 0 && <DeadValueTable data={resolvedDead ?? []} />}
+              {openIndex === 1 && <PotentialLossTable data={resolvedLoss ?? []} />}
+              {openIndex === 2 && <LowStockTable data={resolvedLow ?? []} />}
             </CardContent>
           </Card>
         )
@@ -336,7 +347,7 @@ const categoryMetricLabels: Record<CategoryMetric, string> = {
   value: 'Giá trị',
 }
 
-function CategoryPieCard() {
+function CategoryPieCard({ isDummy }: { isDummy: boolean }) {
   const [metric, setMetric] = useState<CategoryMetric>('quantity')
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
@@ -345,13 +356,14 @@ function CategoryPieCard() {
     ...getCategoriesByInventoriesQueryOptions({
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
+  const resolvedCategories = isDummy ? DUMMY_CATEGORIES_INV : (categories ?? [])
+
   const chartData = useMemo(() => {
-    const all = categories ?? []
-    if (all.length <= 5) return all
-    const sorted = [...all].sort((a, b) => b[metric] - a[metric])
+    if (resolvedCategories.length <= 5) return resolvedCategories
+    const sorted = [...resolvedCategories].sort((a, b) => b[metric] - a[metric])
     const top4 = sorted.slice(0, 4)
     const rest = sorted.slice(4)
     const other = {
@@ -361,7 +373,7 @@ function CategoryPieCard() {
       value: rest.reduce((s, i) => s + i.value, 0),
     }
     return [...top4, other]
-  }, [categories, metric])
+  }, [resolvedCategories, metric])
 
   const total = chartData.reduce((s, i) => s + i[metric], 0)
   const fmt = metric === 'quantity' ? formatNumber : formatVND
@@ -455,7 +467,7 @@ function CategoryPieCard() {
   )
 }
 
-function TopStaleBatchesCard() {
+function TopStaleBatchesCard({ isDummy }: { isDummy: boolean }) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
 
@@ -465,8 +477,10 @@ function TopStaleBatchesCard() {
       locationId: selectedLocationId,
       limit: 8,
     }),
-    enabled: !!user?.profile?.tenant_id,
+    enabled: !!user?.profile?.tenant_id && !isDummy,
   })
+
+  const resolvedBatches = isDummy ? DUMMY_STALE_BATCHES : staleBatches
 
   return (
     <Card>
@@ -481,13 +495,13 @@ function TopStaleBatchesCard() {
           <div className='flex items-center justify-center h-[280px]'>
             <Loader2 className='h-6 w-6 animate-spin text-muted-foreground' />
           </div>
-        ) : !staleBatches?.length ? (
+        ) : !resolvedBatches?.length ? (
           <div className='flex items-center justify-center h-[280px] text-sm text-muted-foreground'>
             Không có dữ liệu
           </div>
         ) : (
           <ResponsiveContainer width='100%' height={280}>
-            <BarChart data={staleBatches} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
+            <BarChart data={resolvedBatches} margin={{ top: 5, right: 10, bottom: 5, left: -10 }}>
               <CartesianGrid strokeDasharray='3 3' stroke='hsl(var(--border))' />
               <XAxis
                 dataKey='name'
@@ -500,7 +514,7 @@ function TopStaleBatchesCard() {
                 textAnchor='end'
                 height={50}
                 tickFormatter={(_, index) => {
-                  const item = staleBatches[index]
+                  const item = resolvedBatches[index]
                   const label = `${item.batch} - ${item.name}`
                   return label.length > 20 ? `${label.slice(0, 20)}…` : label
                 }}
@@ -521,7 +535,7 @@ function TopStaleBatchesCard() {
                 }}
               />
               <Bar dataKey='days' fill='hsl(var(--destructive))' radius={[4, 4, 0, 0]} maxBarSize={36}>
-                {staleBatches.map((_, index) => (
+                {resolvedBatches.map((_, index) => (
                   <Cell key={index} fillOpacity={1 - index * 0.09} />
                 ))}
               </Bar>
@@ -605,14 +619,14 @@ function InventoryFlowCard() {
 
 // --- Main ---
 
-export function InventoryAnalysis({ days }: { days: number }) {
+export function InventoryAnalysis({ days, isDummy }: { days: number; isDummy: boolean }) {
   return (
     <div className='space-y-4'>
       <InventoryFlowCard />
-      <InfoCards days={days} />
+      <InfoCards days={days} isDummy={isDummy} />
       <div className='grid gap-4 md:grid-cols-2'>
-        <CategoryPieCard />
-        <TopStaleBatchesCard />
+        <CategoryPieCard isDummy={isDummy} />
+        <TopStaleBatchesCard isDummy={isDummy} />
       </div>
     </div>
   )

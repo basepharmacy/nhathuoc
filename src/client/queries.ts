@@ -855,6 +855,23 @@ export const getLowStockInventoryQueryOptions = (params: {
       }),
   })
 
+export const getSuggestQuickPurchaseOrdersQueryOptions = (params: {
+  locationId?: string | null
+  reorderDays?: number
+  targetDays?: number
+  type?: number
+}) =>
+  queryOptions({
+    queryKey: ['dashboard-report', 'suggest-quick-purchase-orders', params.locationId ?? 'all', params.reorderDays ?? 0, params.targetDays ?? 0, params.type ?? 0],
+    queryFn: async () =>
+      dashboardReportRepo.suggestQuickPurchaseOrders({
+        locationId: params.locationId ?? undefined,
+        reorderDays: params.reorderDays,
+        targetDays: params.targetDays,
+        type: params.type,
+      }),
+  })
+
 export const getActivityHistoryQueryOptions = (
   params: ActivityHistoryQueryInput
 ) =>

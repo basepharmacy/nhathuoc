@@ -1437,17 +1437,6 @@ export type Database = {
           total_quantity: number
         }[]
       }
-      get_categories_by_inventories: {
-        Args: {
-          p_location_id?: string
-        }
-        Returns: {
-          category_id: string
-          category_name: string
-          total_quantity: number
-          total_value: number
-        }[]
-      }
       get_inventory_batches_list: {
         Args: {
           p_expiry_status?: string
@@ -1727,6 +1716,31 @@ export type Database = {
           supplier_code: string
           supplier_id: string
           updated_at: string
+        }[]
+      }
+      suggest_quick_purchase_orders: {
+        Args: {
+          p_location_id?: string
+          p_reorder_days?: number
+          p_target_days?: number
+          p_type?: number
+        }
+        Returns: {
+          avg_daily_sales: number
+          base_unit_id: string
+          base_unit_name: string
+          current_stock: number
+          estimated_cost: number
+          estimated_days_remaining: number
+          last_cost_price: number
+          last_order_unit_id: string
+          last_order_unit_name: string
+          min_stock: number
+          product_id: string
+          product_name: string
+          suggested_quantity: number
+          supplier_id: string
+          supplier_name: string
         }[]
       }
       unaccent: { Args: { "": string }; Returns: string }

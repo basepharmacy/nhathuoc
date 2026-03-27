@@ -36,6 +36,15 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { Link } from '@tanstack/react-router'
+import {
+  DUMMY_STATISTICS,
+  DUMMY_TOP_PRODUCTS,
+  DUMMY_SLOW_PRODUCTS,
+  DUMMY_CATEGORIES,
+  DUMMY_CUSTOMERS,
+  DUMMY_TIME_SERIES,
+} from '../dummy/sales-performance'
 
 // --- Types ---
 
@@ -141,7 +150,7 @@ const periodChangeLabels: Record<AdvancedPeriod, string> = {
   year: 'so với năm trước',
 }
 
-function InfoCards({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function InfoCards({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const referenceDate = useMemo(() => periodToReferenceDate(period, selectedPeriod), [period, selectedPeriod])
@@ -152,8 +161,10 @@ function InfoCards({ period, selectedPeriod }: { period: AdvancedPeriod; selecte
       referenceDate,
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolved = isDummy ? DUMMY_STATISTICS : data
 
   const description = periodChangeLabels[period]
 
@@ -161,30 +172,30 @@ function InfoCards({ period, selectedPeriod }: { period: AdvancedPeriod; selecte
     {
       title: 'Khách quay lại',
       subtitle: 'Số khách quay lại mua hàng',
-      value: formatNumber(data?.returningCustomers ?? 0),
-      change: data?.returningCustomersChange ?? 0,
+      value: formatNumber(resolved?.returningCustomers ?? 0),
+      change: resolved?.returningCustomersChange ?? 0,
       icon: UserCheck,
     },
     {
       title: 'Biên lợi nhuận',
       subtitle: 'Tỷ lệ lợi nhuận trên doanh thu',
-      value: `${(data?.profitMargin ?? 0).toFixed(1)}%`,
-      change: data?.profitMarginChange ?? 0,
+      value: `${(resolved?.profitMargin ?? 0).toFixed(1)}%`,
+      change: resolved?.profitMarginChange ?? 0,
       icon: Coins,
     },
     {
       title: 'Tỷ lệ trả đơn',
       subtitle: 'Tỉ lệ đơn bị hủy trên tổng số đơn',
-      value: `${(data?.returnRate ?? 0).toFixed(1)}%`,
-      change: data?.returnRateChange ?? 0,
+      value: `${(resolved?.returnRate ?? 0).toFixed(1)}%`,
+      change: resolved?.returnRateChange ?? 0,
       icon: Receipt,
       invertColor: true,
     },
     {
       title: 'Tốc độ bán hàng',
       subtitle: 'Thời gian TB xử lý mỗi đơn',
-      value: `${Math.round(data?.avgSaleSpeed ?? 0)}s`,
-      change: data?.avgSaleSpeedChange ?? 0,
+      value: `${Math.round(resolved?.avgSaleSpeed ?? 0)}s`,
+      change: resolved?.avgSaleSpeedChange ?? 0,
       icon: Zap,
       invertColor: true,
     },
@@ -243,7 +254,7 @@ function InfoCards({ period, selectedPeriod }: { period: AdvancedPeriod; selecte
   )
 }
 
-function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function TopSellingCard({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
@@ -256,8 +267,10 @@ function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; se
       type: metricToTopProductType[metric],
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolvedProducts = isDummy ? DUMMY_TOP_PRODUCTS : products
 
   return (
     <Card>
@@ -275,13 +288,13 @@ function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; se
           <div className='flex h-[220px] items-center justify-center'>
             <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-        ) : products.length === 0 ? (
+        ) : resolvedProducts.length === 0 ? (
           <div className='flex h-[220px] items-center justify-center text-sm text-muted-foreground'>
             Không có dữ liệu
           </div>
         ) : (
           <ResponsiveContainer width='100%' height={220}>
-            <BarChart data={products} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+            <BarChart data={resolvedProducts} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
               <XAxis type='number' hide />
               <YAxis type='category' dataKey='name' width={130} stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip
@@ -292,7 +305,7 @@ function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; se
                 ]}
               />
               <Bar dataKey={metric} fill='var(--primary)' radius={[0, 4, 4, 0]} maxBarSize={24}>
-                {products.map((_, index) => (
+                {resolvedProducts.map((_, index) => (
                   <Cell key={index} fillOpacity={1 - index * 0.15} />
                 ))}
               </Bar>
@@ -304,7 +317,7 @@ function TopSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; se
   )
 }
 
-function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function SlowSellingCard({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
@@ -317,8 +330,10 @@ function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
       type: metricToTopProductType[metric],
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolvedProducts = isDummy ? DUMMY_SLOW_PRODUCTS : products
 
   return (
     <Card>
@@ -336,13 +351,13 @@ function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
           <div className='flex h-[220px] items-center justify-center'>
             <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-        ) : products.length === 0 ? (
+        ) : resolvedProducts.length === 0 ? (
           <div className='flex h-[220px] items-center justify-center text-sm text-muted-foreground'>
             Không có dữ liệu
           </div>
         ) : (
           <ResponsiveContainer width='100%' height={220}>
-            <BarChart data={products} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+            <BarChart data={resolvedProducts} layout='vertical' margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
               <XAxis type='number' hide />
               <YAxis type='category' dataKey='name' width={130} stroke='var(--muted-foreground)' fontSize={11} tickLine={false} axisLine={false} />
               <Tooltip
@@ -353,7 +368,7 @@ function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
                 ]}
               />
               <Bar dataKey={metric} fill='var(--destructive)' radius={[0, 4, 4, 0]} maxBarSize={24}>
-                {products.map((_, index) => (
+                {resolvedProducts.map((_, index) => (
                   <Cell key={index} fillOpacity={1 - index * 0.15} />
                 ))}
               </Bar>
@@ -365,7 +380,7 @@ function SlowSellingCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
   )
 }
 
-function CategoryPieCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function CategoryPieCard({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
   const { selectedLocationId } = useLocationContext()
   const user = useUser()
@@ -378,13 +393,15 @@ function CategoryPieCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
       type: metricToCategoryType[metric],
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
+  const resolvedCategories = isDummy ? DUMMY_CATEGORIES : categories
+
   const grouped = useMemo(() => {
-    if (categories.length <= 5) return categories
-    const top4 = categories.slice(0, 4)
-    const rest = categories.slice(4)
+    if (resolvedCategories.length <= 5) return resolvedCategories
+    const top4 = resolvedCategories.slice(0, 4)
+    const rest = resolvedCategories.slice(4)
     return [
       ...top4,
       {
@@ -395,7 +412,7 @@ function CategoryPieCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
         profit: rest.reduce((s, i) => s + i.profit, 0),
       },
     ]
-  }, [categories])
+  }, [resolvedCategories])
 
   const total = grouped.reduce((s, i) => s + getMetricValue(i, metric), 0)
 
@@ -466,7 +483,7 @@ function CategoryPieCard({ period, selectedPeriod }: { period: AdvancedPeriod; s
   )
 }
 
-function TopVipCustomersCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function TopVipCustomersCard({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
   const { selectedLocationId } = useLocationContext()
   const user = useUser()
@@ -479,8 +496,10 @@ function TopVipCustomersCard({ period, selectedPeriod }: { period: AdvancedPerio
       type: metricToCustomerType[metric],
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolvedCustomers = isDummy ? DUMMY_CUSTOMERS : customers
 
   return (
     <Card>
@@ -498,22 +517,26 @@ function TopVipCustomersCard({ period, selectedPeriod }: { period: AdvancedPerio
           <div className='flex items-center justify-center py-8'>
             <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-        ) : customers.length === 0 ? (
+        ) : resolvedCustomers.length === 0 ? (
           <div className='text-center text-xs text-muted-foreground py-8'>Không có dữ liệu</div>
         ) : (
           <div className='space-y-3'>
-            {customers.map((customer, index) => (
+            {resolvedCustomers.map((customer, index) => (
               <div key={customer.id} className='flex items-center justify-between'>
-                <div className='flex items-center gap-3'>
-                  <div className='flex h-6 w-6 items-center justify-center rounded-full bg-amber-500/10 text-[11px] font-bold text-amber-600'>
+                <Link
+                  to='/customers/$customerId'
+                  params={{ customerId: customer.id }}
+                  className='flex items-center gap-3 hover:opacity-70 transition-opacity'
+                >
+                  <div className='flex h-7 w-7 items-center justify-center rounded-full bg-amber-500/10 text-xs font-bold text-amber-600'>
                     {index + 1}
                   </div>
                   <div>
-                    <div className='text-xs font-medium'>{customer.name}</div>
-                    <div className='text-[11px] text-muted-foreground'>{customer.phone}</div>
+                    <div className='text-sm font-medium'>{customer.name}</div>
+                    <div className='text-xs text-muted-foreground'>{customer.phone}</div>
                   </div>
-                </div>
-                <span className='text-xs font-semibold'>
+                </Link>
+                <span className='text-sm font-semibold'>
                   {metric === 'quantity' ? formatNumber(getMetricValue(customer, metric)) : formatVND(getMetricValue(customer, metric))}
                 </span>
               </div>
@@ -547,7 +570,7 @@ function formatTimeKey(timeKey: number, groupBy: SalesTimeSeriesGroupBy) {
   return `${timeKey}`
 }
 
-function AverageRevenueCard({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+function AverageRevenueCard({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   const [metric, setMetric] = useState<MetricTab>('revenue')
   const [timeView, setTimeView] = useState<TimeView>('hour')
   const { selectedLocationId } = useLocationContext()
@@ -563,17 +586,19 @@ function AverageRevenueCard({ period, selectedPeriod }: { period: AdvancedPeriod
       type: metricToTimeSeriesType[metric],
       locationId: selectedLocationId,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
+  const resolvedData = isDummy ? DUMMY_TIME_SERIES : rawData
+
   const chartData = useMemo(() =>
-    rawData.map((item) => ({
+    resolvedData.map((item) => ({
       label: formatTimeKey(item.timeKey, groupBy),
       revenue: item.revenue,
       quantity: item.quantity,
       profit: item.profit,
     })),
-    [rawData, groupBy]
+    [resolvedData, groupBy]
   )
 
   return (
@@ -653,20 +678,20 @@ function AverageRevenueCard({ period, selectedPeriod }: { period: AdvancedPeriod
 
 // --- Main ---
 
-export function SalesPerformance({ period, selectedPeriod }: { period: AdvancedPeriod; selectedPeriod: string }) {
+export function SalesPerformance({ period, selectedPeriod, isDummy }: { period: AdvancedPeriod; selectedPeriod: string; isDummy: boolean }) {
   return (
     <div className='space-y-4'>
-      <AverageRevenueCard period={period} selectedPeriod={selectedPeriod} />
-      <InfoCards period={period} selectedPeriod={selectedPeriod} />
+      <AverageRevenueCard period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
+      <InfoCards period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
 
       <div className='grid gap-4 md:grid-cols-2'>
-        <TopSellingCard period={period} selectedPeriod={selectedPeriod} />
-        <SlowSellingCard period={period} selectedPeriod={selectedPeriod} />
+        <TopSellingCard period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
+        <SlowSellingCard period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
       </div>
 
       <div className='grid gap-4 md:grid-cols-2'>
-        <CategoryPieCard period={period} selectedPeriod={selectedPeriod} />
-        <TopVipCustomersCard period={period} selectedPeriod={selectedPeriod} />
+        <CategoryPieCard period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
+        <TopVipCustomersCard period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />
       </div>
     </div>
   )

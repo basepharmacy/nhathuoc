@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useNavigate } from '@tanstack/react-router'
 import {
   ChevronRight,
   ShoppingCart,
@@ -28,8 +29,14 @@ import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
-import { getPurchasesStatisticsV2QueryOptions, getTopSuppliersQueryOptions, getLowStockInventoryQueryOptions } from '@/client/queries'
-import type { TopSupplierType } from '@/services/supabase/database/repo/dashboardReportRepo'
+import { getPurchasesStatisticsV2QueryOptions, getTopSuppliersQueryOptions, getLowStockInventoryQueryOptions, getSuggestQuickPurchaseOrdersQueryOptions } from '@/client/queries'
+import type { TopSupplierType, QuickPurchaseOrderItem } from '@/services/supabase/database/repo/dashboardReportRepo'
+import {
+  DUMMY_PURCHASE_STATISTICS,
+  DUMMY_TOP_SUPPLIERS,
+  DUMMY_LOW_STOCK_PURCHASE,
+  DUMMY_QUICK_ORDERS,
+} from '../dummy/smart-purchasing'
 
 const LOW_STOCK_DAYS = 30
 const SUGGEST_STOCK_DAYS = 60
@@ -42,26 +49,17 @@ const supplierTabToType = {
 
 type SupplierTab = keyof typeof supplierTabToType
 
-const quickOrderDrafts = [
-  {
-    supplier: 'NCC Pharma',
-    items: 3,
-    total: 85000000,
-    products: ['Paracetamol 500mg', 'Vitamin C 1000mg', 'Omega-3 Fish Oil'],
-  },
-  {
-    supplier: 'DHG Pharma',
-    items: 2,
-    total: 62000000,
-    products: ['Amoxicillin 500mg', 'Calcium + D3'],
-  },
-  {
-    supplier: 'Bidiphar',
-    items: 1,
-    total: 28000000,
-    products: ['Men vi sinh Bio-acimin'],
-  },
-]
+function groupBySupplier(items: QuickPurchaseOrderItem[]) {
+  const map = new Map<string, { supplierId: string; supplierName: string; items: QuickPurchaseOrderItem[] }>()
+  for (const item of items) {
+    const key = item.supplierId || item.supplierName
+    if (!map.has(key)) {
+      map.set(key, { supplierId: item.supplierId, supplierName: item.supplierName, items: [] })
+    }
+    map.get(key)!.items.push(item)
+  }
+  return Array.from(map.values())
+}
 
 const PIE_OPACITIES = [1, 0.75, 0.5, 0.3]
 
@@ -89,12 +87,13 @@ const priorityConfig: Record<string, { label: string; color: string }> = {
 
 // --- Sub-components ---
 function getPriority(daysLeft: number): string {
-  if (daysLeft <= 7) return 'high'
+  if (daysLeft <= 7) return 'urgent'
   if (daysLeft <= 15) return 'medium'
   return 'low'
 }
 
-function PurchaseSuggestionCard() {
+function PurchaseSuggestionCard({ isDummy }: { isDummy: boolean }) {
+  const navigate = useNavigate()
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
 
@@ -103,8 +102,10 @@ function PurchaseSuggestionCard() {
       locationId: selectedLocationId,
       days: LOW_STOCK_DAYS,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolvedItems = isDummy ? DUMMY_LOW_STOCK_PURCHASE : lowStockItems
 
   return (
     <Card>
@@ -119,13 +120,13 @@ function PurchaseSuggestionCard() {
           <div className='flex h-[160px] items-center justify-center'>
             <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
           </div>
-        ) : lowStockItems.length === 0 ? (
+        ) : resolvedItems.length === 0 ? (
           <div className='flex h-[160px] items-center justify-center text-xs text-muted-foreground'>
             Không có sản phẩm sắp hết hàng
           </div>
         ) : (
           <div className='space-y-2'>
-            {lowStockItems.map((product) => {
+            {resolvedItems.map((product) => {
               const priorityKey = getPriority(product.estimatedDaysOfStock)
               const priority = priorityConfig[priorityKey]
               const suggested = Math.max(0, Math.ceil(product.avgDailySales * SUGGEST_STOCK_DAYS - product.totalQuantity))
@@ -148,7 +149,15 @@ function PurchaseSuggestionCard() {
                     </div>
                   </div>
                   <div className='shrink-0 text-sm font-semibold text-primary'>+{suggested} {product.productUnitName}</div>
-                  <Button size='sm' variant='outline' className='shrink-0'>
+                  <Button
+                    size='sm'
+                    variant='outline'
+                    className='shrink-0'
+                    onClick={() => navigate({
+                      to: '/purchase-orders',
+                      search: { productId: product.productId, suggestedQty: suggested },
+                    })}
+                  >
                     Nhập hàng
                     <ChevronRight className='h-3 w-3' />
                   </Button>
@@ -162,7 +171,7 @@ function PurchaseSuggestionCard() {
   )
 }
 
-function SupplierPieCard({ purchasePeriodId }: { purchasePeriodId: string }) {
+function SupplierPieCard({ purchasePeriodId, isDummy }: { purchasePeriodId: string; isDummy: boolean }) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const [tab, setTab] = useState<SupplierTab>('amount')
@@ -173,15 +182,17 @@ function SupplierPieCard({ purchasePeriodId }: { purchasePeriodId: string }) {
       type: supplierTabToType[tab],
       purchasePeriodId: purchasePeriodId ? Number(purchasePeriodId) : undefined,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
 
+  const resolvedSuppliers = isDummy ? DUMMY_TOP_SUPPLIERS : suppliers
+
   const pieData: { name: string; value: number }[] = useMemo(() => {
-    if (suppliers.length <= 5) return suppliers.map((s) => ({ name: s.name, value: s.statValue }))
-    const top4 = suppliers.slice(0, 4).map((s) => ({ name: s.name, value: s.statValue }))
-    const othersValue = suppliers.slice(4).reduce((s, i) => s + i.statValue, 0)
+    if (resolvedSuppliers.length <= 5) return resolvedSuppliers.map((s) => ({ name: s.name, value: s.statValue }))
+    const top4 = resolvedSuppliers.slice(0, 4).map((s) => ({ name: s.name, value: s.statValue }))
+    const othersValue = resolvedSuppliers.slice(4).reduce((s, i) => s + i.statValue, 0)
     return [...top4, { name: 'NCC khác', value: othersValue }]
-  }, [suppliers])
+  }, [resolvedSuppliers])
 
   const total = pieData.reduce((s, i) => s + i.value, 0)
 
@@ -261,7 +272,45 @@ function SupplierPieCard({ purchasePeriodId }: { purchasePeriodId: string }) {
   )
 }
 
-function QuickOrderCard() {
+const QUICK_ORDER_STORAGE_KEY = 'quick-order-items'
+
+export type QuickOrderStorageItem = {
+  productId: string
+  quantity: number
+  unitId: string
+  unitPrice: number
+}
+
+function QuickOrderCard({ isDummy }: { isDummy: boolean }) {
+  const navigate = useNavigate()
+  const { user } = useUser()
+  const { selectedLocationId } = useLocationContext()
+
+  const { data: rawItems = [], isLoading } = useQuery({
+    ...getSuggestQuickPurchaseOrdersQueryOptions({
+      locationId: selectedLocationId,
+    }),
+    enabled: !!user && !isDummy,
+  })
+
+  const resolvedItems = isDummy ? DUMMY_QUICK_ORDERS : rawItems
+
+  const supplierGroups = useMemo(() => groupBySupplier(resolvedItems), [resolvedItems])
+
+  const handleCreateOrder = (group: ReturnType<typeof groupBySupplier>[number]) => {
+    const storageItems: QuickOrderStorageItem[] = group.items.map((i) => ({
+      productId: i.productId,
+      quantity: i.suggestedQuantity,
+      unitId: i.lastOrderUnitId,
+      unitPrice: i.lastCostPrice,
+    }))
+    sessionStorage.setItem(QUICK_ORDER_STORAGE_KEY, JSON.stringify(storageItems))
+    navigate({
+      to: '/purchase-orders',
+      search: { quickOrderSupplierId: group.supplierId },
+    })
+  }
+
   return (
     <Card>
       <CardHeader>
@@ -271,33 +320,51 @@ function QuickOrderCard() {
         </div>
       </CardHeader>
       <CardContent>
-        <div className='space-y-3'>
-          {quickOrderDrafts.map((draft) => (
-            <div
-              key={draft.supplier}
-              className='flex items-center gap-3 rounded-lg border p-3'
-            >
-              <div className='min-w-0 flex-1'>
-                <div className='flex items-center gap-2'>
-                  <span className='text-sm font-medium'>{draft.supplier}</span>
-                  <Badge variant='secondary' className='text-[10px] px-1.5 py-0'>
-                    {draft.items} sản phẩm
-                  </Badge>
+        {isLoading ? (
+          <div className='flex h-[160px] items-center justify-center'>
+            <Loader2 className='h-5 w-5 animate-spin text-muted-foreground' />
+          </div>
+        ) : supplierGroups.length === 0 ? (
+          <div className='flex h-[160px] items-center justify-center text-xs text-muted-foreground'>
+            Không có gợi ý đơn nhập hàng
+          </div>
+        ) : (
+          <div className='space-y-3'>
+            {supplierGroups.map((group) => {
+              const totalCost = group.items.reduce((s, i) => s + i.estimatedCost, 0)
+              return (
+                <div
+                  key={group.supplierId || group.supplierName}
+                  className='flex items-center gap-3 rounded-lg border p-3'
+                >
+                  <div className='min-w-0 flex-1'>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-sm font-medium'>{group.supplierName}</span>
+                      <Badge variant='secondary' className='text-[10px] px-1.5 py-0'>
+                        {group.items.length} sản phẩm
+                      </Badge>
+                    </div>
+                    <div className='mt-1 text-xs text-muted-foreground truncate'>
+                      {group.items.map((i) => i.productName).join(', ')}
+                    </div>
+                    <div className='mt-1 text-xs font-medium'>
+                      Tổng: <span className='text-primary'>{formatVND(totalCost)}</span>
+                    </div>
+                  </div>
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    className='shrink-0 gap-1 text-xs'
+                    onClick={() => handleCreateOrder(group)}
+                  >
+                    Tạo đơn
+                    <ChevronRight className='h-3 w-3' />
+                  </Button>
                 </div>
-                <div className='mt-1 text-xs text-muted-foreground'>
-                  {draft.products.join(', ')}
-                </div>
-                <div className='mt-1 text-xs font-medium'>
-                  Tổng: <span className='text-primary'>{formatVND(draft.total)}</span>
-                </div>
-              </div>
-              <Button variant='outline' size='sm' className='shrink-0 gap-1 text-xs'>
-                Tạo đơn
-                <ChevronRight className='h-3 w-3' />
-              </Button>
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </CardContent>
     </Card>
   )
@@ -305,7 +372,7 @@ function QuickOrderCard() {
 
 // --- InfoCards ---
 
-function InfoCards({ purchasePeriodId }: { purchasePeriodId: string }) {
+function InfoCards({ purchasePeriodId, isDummy }: { purchasePeriodId: string; isDummy: boolean }) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
 
@@ -314,31 +381,33 @@ function InfoCards({ purchasePeriodId }: { purchasePeriodId: string }) {
       locationId: selectedLocationId,
       purchasePeriodId: purchasePeriodId ? Number(purchasePeriodId) : undefined,
     }),
-    enabled: !!user,
+    enabled: !!user && !isDummy,
   })
+
+  const resolved = isDummy ? DUMMY_PURCHASE_STATISTICS : data
 
   const cards = [
     {
       title: 'Tổng đơn nhập',
-      value: data?.totalOrders ?? 0,
+      value: resolved?.totalOrders ?? 0,
       format: (v: number) => v.toLocaleString('vi-VN'),
       icon: ShoppingCart,
     },
     {
       title: 'Tổng tiền nhập',
-      value: data?.totalOrderAmount ?? 0,
+      value: resolved?.totalOrderAmount ?? 0,
       format: formatVND,
       icon: Banknote,
     },
     {
       title: 'Đã thanh toán',
-      value: data?.totalPaidAmount ?? 0,
+      value: resolved?.totalPaidAmount ?? 0,
       format: formatVND,
       icon: CreditCard,
     },
     {
       title: 'Công nợ',
-      value: data?.totalDebt ?? 0,
+      value: resolved?.totalDebt ?? 0,
       format: formatVND,
       icon: AlertTriangle,
     },
@@ -377,16 +446,16 @@ function InfoCards({ purchasePeriodId }: { purchasePeriodId: string }) {
 
 // --- Main ---
 
-export function SmartPurchasing({ purchasePeriodId }: { purchasePeriodId: string }) {
+export function SmartPurchasing({ purchasePeriodId, isDummy }: { purchasePeriodId: string; isDummy: boolean }) {
   return (
     <div className='space-y-4'>
-      <InfoCards purchasePeriodId={purchasePeriodId} />
+      <InfoCards purchasePeriodId={purchasePeriodId} isDummy={isDummy} />
       <div className='grid gap-4 md:grid-cols-2'>
-        <SupplierPieCard purchasePeriodId={purchasePeriodId} />
-        <PurchaseSuggestionCard />
+        <SupplierPieCard purchasePeriodId={purchasePeriodId} isDummy={isDummy} />
+        <PurchaseSuggestionCard isDummy={isDummy} />
       </div>
 
-      <QuickOrderCard />
+      <QuickOrderCard isDummy={isDummy} />
     </div>
   )
 }

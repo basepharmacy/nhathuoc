@@ -1,11 +1,16 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 import {
   BrainCircuit,
   BarChart3,
   Warehouse,
   ShoppingCart,
+  Info,
 } from 'lucide-react'
+import { Route } from '@/routes/_authenticated/dashboard'
+import { useUser } from '@/client/provider'
 import { cn } from '@/lib/utils'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 import {
   Select,
   SelectContent,
@@ -19,7 +24,7 @@ import { SalesPerformance } from './components/sales-performance'
 import { InventoryAnalysis } from './components/inventory-analysis'
 import { SmartPurchasing } from './components/smart-purchasing'
 
-type AdvancedTab = 'assistant' | 'sales' | 'inventory' | 'purchasing'
+export type AdvancedTab = 'assistant' | 'sales' | 'inventory' | 'purchasing'
 type AdvancedPeriod = 'month' | 'quarter' | 'year'
 
 const periodLabels: Record<AdvancedPeriod, string> = {
@@ -29,10 +34,10 @@ const periodLabels: Record<AdvancedPeriod, string> = {
 }
 
 const tabs: { value: AdvancedTab; label: string; icon: typeof BrainCircuit }[] = [
-  { value: 'assistant', label: 'Trợ lý hệ thống', icon: BrainCircuit },
   { value: 'sales', label: 'Hiệu quả bán hàng', icon: BarChart3 },
   { value: 'inventory', label: 'Phân tích kho hàng', icon: Warehouse },
   { value: 'purchasing', label: 'Nhập hàng thông minh', icon: ShoppingCart },
+  { value: 'assistant', label: 'Trợ lý hệ thống', icon: BrainCircuit },
 ]
 
 function getPeriodOptions(period: AdvancedPeriod) {
@@ -79,8 +84,18 @@ const inventoryDaysLabels: Record<InventoryDays, string> = {
   '90': '90 ngày',
 }
 
+const validSubtabs: AdvancedTab[] = ['assistant', 'sales', 'inventory', 'purchasing']
+
 export function AdvancedReport() {
-  const [activeTab, setActiveTab] = useState<AdvancedTab>('assistant')
+  const { subtab } = Route.useSearch()
+  const navigate = useNavigate({ from: '/dashboard' })
+  const { user } = useUser()
+  const isDummy = user?.tenant?.type === '1_NORMAL'
+  const activeTab: AdvancedTab = subtab && validSubtabs.includes(subtab) ? subtab : 'assistant'
+
+  function setActiveTab(tab: AdvancedTab) {
+    navigate({ search: (prev) => ({ ...prev, subtab: tab }) })
+  }
   const [period, setPeriod] = useState<AdvancedPeriod>('month')
   const periodOptions = useMemo(() => getPeriodOptions(period), [period])
   const [selectedPeriod, setSelectedPeriod] = useState(() => getPeriodOptions('month')[0]?.value)
@@ -166,14 +181,24 @@ export function AdvancedReport() {
         </div>
       </div>
 
+      {/* Dummy data banner */}
+      {isDummy && activeTab !== 'assistant' && (
+        <Alert variant='default' className='border-amber-500/50 bg-amber-50 dark:bg-amber-950/20'>
+          <Info className='h-4 w-4 text-amber-600' />
+          <AlertDescription className='text-sm text-amber-800 dark:text-amber-200'>
+            Đây là tính năng dành cho phiên bản chuyên nghiệp. Hiện tại dữ liệu bạn đang nhìn thấy là dữ liệu giả nhằm mục đích giúp bạn hiểu cách phiên bản chuyên nghiệp hoạt động.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Tab content */}
       {activeTab === 'assistant' && <SystemAssistant />}
 
-      {activeTab === 'sales' && <SalesPerformance period={period} selectedPeriod={selectedPeriod} />}
+      {activeTab === 'sales' && <SalesPerformance period={period} selectedPeriod={selectedPeriod} isDummy={isDummy} />}
 
-      {activeTab === 'inventory' && <InventoryAnalysis days={Number(inventoryDays)} />}
+      {activeTab === 'inventory' && <InventoryAnalysis days={Number(inventoryDays)} isDummy={isDummy} />}
 
-      {activeTab === 'purchasing' && <SmartPurchasing purchasePeriodId={purchasePeriodId} />}
+      {activeTab === 'purchasing' && <SmartPurchasing purchasePeriodId={purchasePeriodId} isDummy={isDummy} />}
     </div>
   )
 }

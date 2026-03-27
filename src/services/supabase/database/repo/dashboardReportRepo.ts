@@ -157,6 +157,23 @@ export type LowStockInventoryItem = {
   estimatedDaysOfStock: number
 }
 
+export type QuickPurchaseOrderItem = {
+  productId: string
+  productName: string
+  baseUnitName: string
+  lastOrderUnitName: string
+  lastOrderUnitId: string
+  currentStock: number
+  minStock: number
+  avgDailySales: number
+  estimatedDaysRemaining: number
+  suggestedQuantity: number
+  lastCostPrice: number
+  estimatedCost: number
+  supplierId: string
+  supplierName: string
+}
+
 type RpcSalesStatsV2Row = {
   current_completed_orders: number | null
   current_total_profit: number | null
@@ -679,6 +696,39 @@ export const createDashboardReportRepository = (
         totalInventoryValue: toNumber(item.total_inventory_value),
         avgDailySales: toNumber(item.avg_daily_sales),
         estimatedDaysOfStock: toNumber(item.estimated_days_of_stock),
+      }))
+    },
+
+    async suggestQuickPurchaseOrders(params: {
+      locationId?: string | null
+      reorderDays?: number
+      targetDays?: number
+      type?: number
+    }): Promise<QuickPurchaseOrderItem[]> {
+      const { data, error } = await client.rpc('suggest_quick_purchase_orders', {
+        p_location_id: params.locationId ?? undefined,
+        p_reorder_days: params.reorderDays ?? undefined,
+        p_target_days: params.targetDays ?? undefined,
+        p_type: params.type ?? undefined,
+      })
+
+      if (error) throw error
+
+      return (data ?? []).map((item) => ({
+        productId: item.product_id,
+        productName: item.product_name ?? 'Không rõ',
+        baseUnitName: item.base_unit_name ?? 'đv',
+        lastOrderUnitName: item.last_order_unit_name ?? 'đv',
+        lastOrderUnitId: item.last_order_unit_id ?? '',
+        currentStock: toNumber(item.current_stock),
+        minStock: toNumber(item.min_stock),
+        avgDailySales: toNumber(item.avg_daily_sales),
+        estimatedDaysRemaining: toNumber(item.estimated_days_remaining),
+        suggestedQuantity: toNumber(item.suggested_quantity),
+        lastCostPrice: toNumber(item.last_cost_price),
+        estimatedCost: toNumber(item.estimated_cost),
+        supplierId: item.supplier_id ?? '',
+        supplierName: item.supplier_name ?? 'Không rõ NCC',
       }))
     },
 
