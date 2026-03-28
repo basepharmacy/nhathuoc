@@ -11,13 +11,13 @@ These rules are based on the existing template in `src/services/supabase/**`.
 - `src/services/supabase/index.ts`: package barrel exports; only export files that actually exist.
 
 ## 2) Client And Type Rules
-- Use a single typed client alias (`FamilyTaskSupabaseClient`) based on `Database` from `database.types.ts`.
-- Keep client config centralized in `createFamilyTaskClient(...)`.
+- Use a single typed client alias (`BasePharmacySupabaseClient`) based on `Database` from `database.types.ts`.
+- Keep client config centralized in `createBasePharmacyClient(...)`.
 - Do not create ad-hoc Supabase clients in features/components.
 
 ## 3) Repository Construction Pattern
 - Every repo must follow factory style:
-  - `export const createXRepository = (client: FamilyTaskSupabaseClient) => ({ ...methods })`
+  - `export const createXRepository = (client: BasePharmacySupabaseClient) => ({ ...methods })`
 - Repository methods should:
   - use explicit input types (`number`, `string`, `Insert`, `Update`, or domain DTOs),
   - return explicit output types (`Promise<T>`, `Promise<T | null>`, `Promise<void>`, etc),

@@ -27,3 +27,4 @@ dist-ssr
 
 sample_data/
 dev-dist/
+.tanstack/

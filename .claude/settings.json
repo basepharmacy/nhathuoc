@@ -1,11 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(npx tsc --noEmit --pretty)"
-    ],
-    "additionalDirectories": [
-      "/Users/duc/Workspace/Private/basepharmacy/nhathuoc/src/features/data-migration"
+      "Bash(pnpm dev:*)",
+      "Bash(pnpm build)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm format:*)",
+      "Bash(pnpm knip)",
+      "Bash(npx tsc:*)"
     ]
   }
 }
