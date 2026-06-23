@@ -41,6 +41,7 @@ export const productFormSchema = z.object({
   product_type: z.enum(productTypeValues),
   status: z.enum(productStatusValues),
   category_id: z.string().optional(),
+  has_expiry: z.boolean(),
   min_stock: z.preprocess(
     (value) => {
       if (value === '' || value === null || value === undefined) return null

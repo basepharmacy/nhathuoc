@@ -8,7 +8,7 @@ export type PurchaseOrderStatus = Enums<'purchase_order_status'>
 export type PurchaseOrderItem = Tables<'purchase_order_items'>
 export type PurchaseOrderItemInsert = TablesInsert<'purchase_order_items'>
 export type PurchaseOrderItemWithRelation = PurchaseOrderItem & {
-	product: { id: string; product_name: string }
+	product: { id: string; product_name: string; has_expiry: boolean }
 	product_unit: { id: string; unit_name: string } | null
 }
 export type PurchaseOrderDetailWithRelations = PurchaseOrder & {

@@ -291,7 +291,7 @@ export const createPurchaseOrderRepository = (
           *,
           items:purchase_order_items(
             *,
-            product:products(id, product_name),
+            product:products(id, product_name, has_expiry),
             product_unit:product_units(id, unit_name)
           ),
           supplier:suppliers(id, name),

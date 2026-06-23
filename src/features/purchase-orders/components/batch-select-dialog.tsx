@@ -30,6 +30,7 @@ type BatchSelectDialogProps = {
   productId: string
   tenantId: string
   locationId?: string | null
+  productHasExpiry?: boolean
   open: boolean
   onOpenChange: (open: boolean) => void
   onSave: (batchCode: string, expiryDate: string, batchId?: string | null) => void
@@ -45,6 +46,7 @@ export function BatchSelectDialog({
   productId,
   tenantId,
   locationId,
+  productHasExpiry = true,
   open,
   onOpenChange,
   onSave,
@@ -54,7 +56,7 @@ export function BatchSelectDialog({
 }: BatchSelectDialogProps) {
   const [batchCode, setBatchCode] = useState('')
   const [expiryDate, setExpiryDate] = useState('')
-  const [noExpiry, setNoExpiry] = useState(false)
+  const [hasExpiry, setHasExpiry] = useState(true)
 
   const { data: allBatches = [] } = useQuery({
     ...getInventoryBatchesQueryOptions(tenantId, productId ? [productId] : [], locationId),
@@ -127,38 +129,41 @@ export function BatchSelectDialog({
     setBatchCode(initialBatchCode)
     if (initialExpiryDate) {
       setExpiryDate(toDateInputValue(initialExpiryDate))
-      setNoExpiry(false)
+      setHasExpiry(true)
     } else if (initialBatchCode) {
       setExpiryDate('')
-      setNoExpiry(true)
+      setHasExpiry(false)
+    } else if (!productHasExpiry) {
+      setExpiryDate('')
+      setHasExpiry(false)
     } else {
       const defaultDate = new Date()
       defaultDate.setFullYear(defaultDate.getFullYear() + 1)
       setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
-      setNoExpiry(false)
+      setHasExpiry(true)
     }
-  }, [open, initialBatchCode, initialExpiryDate])
+  }, [open, initialBatchCode, initialExpiryDate, productHasExpiry])
 
   useEffect(() => {
     if (!selectedBatch) return
     if (selectedBatch.expiry_date) {
       setExpiryDate(toDateInputValue(selectedBatch.expiry_date))
-      setNoExpiry(false)
+      setHasExpiry(true)
     } else {
       setExpiryDate('')
-      setNoExpiry(true)
+      setHasExpiry(false)
     }
   }, [selectedBatch])
 
   const batchCodeError = !batchCode.trim() ? 'Vui lòng nhập mã lô hoặc chọn từ lô có sẵn.' : null
-  const expiryDateError = !noExpiry && !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
+  const expiryDateError = hasExpiry && !expiryDate.trim() ? 'Vui lòng chọn hạn sử dụng.' : null
   const canSave = !batchCodeError && !expiryDateError
 
   const handleSave = () => {
     if (readOnly || !canSave) return
     const normalizedBatchCode = batchCode.trim()
     const matchedBatch = allBatches.find((batch) => batch.batch_code === normalizedBatchCode)
-    onSave(normalizedBatchCode, noExpiry ? '' : expiryDate.trim(), matchedBatch?.id ?? null)
+    onSave(normalizedBatchCode, hasExpiry ? expiryDate.trim() : '', matchedBatch?.id ?? null)
   }
 
   return (
@@ -216,10 +221,10 @@ export function BatchSelectDialog({
                       setBatchCode(batch.batch_code)
                       if (batch.expiry_date) {
                         setExpiryDate(toDateInputValue(batch.expiry_date))
-                        setNoExpiry(false)
+                        setHasExpiry(true)
                       } else {
                         setExpiryDate('')
-                        setNoExpiry(true)
+                        setHasExpiry(false)
                       }
                     }}
                     disabled={readOnly}
@@ -237,21 +242,21 @@ export function BatchSelectDialog({
             <div className='flex items-center justify-between'>
               <Label htmlFor='expiry-date'>Hạn sử dụng</Label>
               <div className='flex items-center gap-2'>
-                <Label htmlFor='no-expiry' className='text-xs text-muted-foreground font-normal'>
-                  Không có HSD
+                <Label htmlFor='has-expiry' className='text-xs text-muted-foreground font-normal'>
+                  {hasExpiry ? 'Có HSD' : 'Không HSD'}
                 </Label>
                 <Switch
-                  id='no-expiry'
-                  checked={noExpiry}
+                  id='has-expiry'
+                  checked={hasExpiry}
                   onCheckedChange={(checked) => {
                     if (readOnly || isExpiryLocked) return
-                    setNoExpiry(checked)
+                    setHasExpiry(checked)
                     if (checked) {
-                      setExpiryDate('')
-                    } else {
                       const defaultDate = new Date()
                       defaultDate.setFullYear(defaultDate.getFullYear() + 1)
                       setExpiryDate(format(defaultDate, 'yyyy-MM-dd'))
+                    } else {
+                      setExpiryDate('')
                     }
                   }}
                   disabled={readOnly || isExpiryLocked}
@@ -271,9 +276,9 @@ export function BatchSelectDialog({
               }}
               placeholder=''
               className='w-full justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-              disabled={isExpiryLocked || readOnly || noExpiry}
+              disabled={isExpiryLocked || readOnly || !hasExpiry}
             />
-            {!noExpiry && (
+            {hasExpiry && (
               <div className='flex gap-2'>
                 <span
                   className='cursor-pointer rounded-md bg-secondary px-2 py-1 text-xs hover:bg-secondary/80 disabled:cursor-not-allowed disabled:opacity-50'

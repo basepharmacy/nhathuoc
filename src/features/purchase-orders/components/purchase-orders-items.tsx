@@ -238,6 +238,7 @@ export function PurchaseOrdersItems({
         productId={activeItem?.product.id ?? ''}
         tenantId={tenantId}
         locationId={locationId}
+        productHasExpiry={activeItem?.product.has_expiry ?? true}
         open={!!activeItemId && !readOnly}
         onOpenChange={(open) => {
           if (!open) setActiveItemId(null)

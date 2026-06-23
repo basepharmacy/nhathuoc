@@ -261,6 +261,7 @@ export function StockAdjustmentsAddItems({
         productId={activeItem?.product.id ?? ''}
         tenantId={tenantId}
         locationId={locationId}
+        productHasExpiry={activeItem?.product.has_expiry ?? true}
         allowExpiryEdit
         open={!!activeItemId}
         onOpenChange={(open) => {

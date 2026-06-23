@@ -138,15 +138,16 @@ export const getProductsColumns = (
       },
     },
     {
-      accessorKey: 'min_stock',
+      accessorKey: 'has_expiry',
       header: ({ column }) => (
-        <DataTableColumnHeader column={column} title='Tồn tối thiểu' />
+        <DataTableColumnHeader column={column} title='Theo dõi HSD' />
       ),
       cell: ({ row }) => {
-        const minStock = row.getValue('min_stock') as number | null
-        return <span className='text-sm'>{minStock ?? '—'}</span>
+        const hasExpiry = row.getValue('has_expiry') as boolean
+        return <span className='text-sm'>{hasExpiry ? 'Có' : 'Không'}</span>
       },
-      meta: { label: 'Tồn tối thiểu' },
+      meta: { label: 'Theo dõi HSD' },
+      enableSorting: false,
     },
     {
       accessorKey: 'status',
@@ -171,6 +172,17 @@ export const getProductsColumns = (
       filterFn: (row, id, value) => {
         return value.includes(row.getValue(id))
       },
+    },
+    {
+      accessorKey: 'min_stock',
+      header: ({ column }) => (
+        <DataTableColumnHeader column={column} title='Tồn tối thiểu' />
+      ),
+      cell: ({ row }) => {
+        const minStock = row.getValue('min_stock') as number | null
+        return <span className='text-sm'>{minStock ?? '—'}</span>
+      },
+      meta: { label: 'Tồn tối thiểu' },
     },
     {
       id: 'actions',

@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Switch } from '@/components/ui/switch'
 import {
   Form,
   FormControl,
@@ -115,6 +116,7 @@ export function ProductsActionDialog({
         product_type: currentRow.product_type,
         status: currentRow.status === '1_DRAFT' ? '2_ACTIVE' : currentRow.status,
         category_id: currentRow.category_id ?? 'none',
+        has_expiry: currentRow.has_expiry ?? true,
         min_stock: currentRow.min_stock ?? null,
         active_ingredient: currentRow.active_ingredient ?? '',
         regis_number: currentRow.regis_number ?? '',
@@ -129,6 +131,7 @@ export function ProductsActionDialog({
         product_type: '1_OTC',
         status: '2_ACTIVE',
         category_id: 'none',
+        has_expiry: true,
         min_stock: 10,
         active_ingredient: '',
         regis_number: '',
@@ -310,6 +313,7 @@ export function ProductsActionDialog({
           product_type: values.product_type,
           status: values.status,
           category_id: normalizeOptionalCategoryId(values.category_id),
+          has_expiry: values.has_expiry,
           min_stock: values.min_stock ?? null,
           active_ingredient: normalizeOptionalText(values.active_ingredient),
           regis_number: normalizeOptionalText(values.regis_number),
@@ -339,6 +343,7 @@ export function ProductsActionDialog({
           product_type: values.product_type,
           status: values.status,
           category_id: normalizeOptionalCategoryId(values.category_id),
+          has_expiry: values.has_expiry,
           min_stock: values.min_stock ?? null,
           active_ingredient: normalizeOptionalText(values.active_ingredient),
           regis_number: normalizeOptionalText(values.regis_number),
@@ -374,6 +379,7 @@ export function ProductsActionDialog({
           product_type: '1_OTC',
           status: '2_ACTIVE',
           category_id: 'none',
+          has_expiry: true,
           min_stock: 10,
           active_ingredient: '',
           regis_number: '',
@@ -558,6 +564,27 @@ export function ProductsActionDialog({
                               ))}
                             </SelectContent>
                           </Select>
+                        </FormControl>
+                        <FormMessage className='col-span-4 col-start-3' />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name='has_expiry'
+                    render={({ field }) => (
+                      <FormItem className='grid grid-cols-6 items-center space-y-0 gap-x-4 gap-y-1'>
+                        <FormLabel className='col-span-2 text-end'>Theo dõi HSD</FormLabel>
+                        <FormControl>
+                          <div className='col-span-4 flex items-center gap-2'>
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                            <span className='text-sm text-muted-foreground'>
+                              {field.value ? 'Có HSD' : 'Không HSD'}
+                            </span>
+                          </div>
                         </FormControl>
                         <FormMessage className='col-span-4 col-start-3' />
                       </FormItem>

@@ -643,6 +643,7 @@ export type Database = {
           category_id: string | null
           created_at: string | null
           description: string | null
+          has_expiry: boolean
           id: string
           jan_code: string | null
           made_company_name: string | null
@@ -665,6 +666,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          has_expiry?: boolean
           id?: string
           jan_code?: string | null
           made_company_name?: string | null
@@ -687,6 +689,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string | null
           description?: string | null
+          has_expiry?: boolean
           id?: string
           jan_code?: string | null
           made_company_name?: string | null
@@ -1075,6 +1078,7 @@ export type Database = {
           payment_method: Database["public"]["Enums"]["payment_method"] | null
           sale_completed_time: number | null
           sale_order_code: string
+          search_text: string | null
           status: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
           total_amount: number
@@ -1094,6 +1098,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           sale_completed_time?: number | null
           sale_order_code: string
+          search_text?: string | null
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id: string
           total_amount?: number
@@ -1113,6 +1118,7 @@ export type Database = {
           payment_method?: Database["public"]["Enums"]["payment_method"] | null
           sale_completed_time?: number | null
           sale_order_code?: string
+          search_text?: string | null
           status?: Database["public"]["Enums"]["sale_order_status"]
           tenant_id?: string
           total_amount?: number
@@ -1452,6 +1458,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      build_sale_order_search_text: {
+        Args: { p_order_id: string }
+        Returns: string
+      }
       capture_inventory_monthly_snapshot: { Args: never; Returns: undefined }
       create_sale_order: {
         Args: {
@@ -1812,6 +1822,8 @@ export type Database = {
           updated_at: string
         }[]
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       suggest_quick_purchase_orders: {
         Args: {
           p_location_id?: string
