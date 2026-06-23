@@ -113,14 +113,14 @@ export function formatShortCurrency(value: number) {
  */
 export type OrderRouteInfo =
   | { type: 'sale-order'; to: '/sale-orders/detail'; search: { orderCode: string } }
-  | { type: 'purchase-order'; to: '/purchase-orders'; search: { orderCode: string } }
+  | { type: 'purchase-order'; to: '/purchase-orders/detail'; search: { orderCode: string } }
 
 export function resolveOrderRoute(referenceCode: string): OrderRouteInfo | null {
   if (/S\d{3}$/.test(referenceCode)) {
     return { type: 'sale-order', to: '/sale-orders/detail', search: { orderCode: referenceCode } }
   }
   if (/P\d{3}$/.test(referenceCode)) {
-    return { type: 'purchase-order', to: '/purchase-orders', search: { orderCode: referenceCode } }
+    return { type: 'purchase-order', to: '/purchase-orders/detail', search: { orderCode: referenceCode } }
   }
   return null
 }

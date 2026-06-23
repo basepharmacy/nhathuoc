@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Badge } from '@/components/ui/badge'
 import {
   type ActivityHistoryWithRelations,
@@ -37,12 +37,28 @@ const formatDateTime = (value?: string | null) => {
 }
 
 export function ActivityItem({ item }: { item: ActivityHistoryWithRelations }) {
+  const navigate = useNavigate()
   const locationName = item.location?.name ?? 'Không xác định'
   const staffName = item.user?.name ?? 'Không xác định'
   const actionLabel = activityTypeLabels[item.activity_type]
   const referenceCode = item.reference_code
   const metadata = item.metadata as Record<string, unknown> | null
   const type = item.activity_type
+
+  // Điều chỉnh tồn kho chuyển sang màn "điều chỉnh tồn kho", còn lại chuyển sang đơn tương ứng
+  const orderRoute = referenceCode ? resolveOrderRoute(referenceCode) : null
+  const isStockAdjustment = type.startsWith('STOCK_ADJUSTMENT_')
+  const isClickable = isStockAdjustment || !!orderRoute
+
+  const handleRecordClick = () => {
+    if (isStockAdjustment) {
+      navigate({ to: '/inventory/adjustments' })
+      return
+    }
+    if (orderRoute) {
+      navigate({ to: orderRoute.to, search: orderRoute.search })
+    }
+  }
 
   const metadataSuffix = (() => {
     if (!metadata) return null
@@ -72,7 +88,24 @@ export function ActivityItem({ item }: { item: ActivityHistoryWithRelations }) {
   })()
 
   return (
-    <div className='flex flex-col gap-1 py-3 border-b last:border-b-0 px-1'>
+    <div
+      role={isClickable ? 'button' : undefined}
+      tabIndex={isClickable ? 0 : undefined}
+      onClick={isClickable ? handleRecordClick : undefined}
+      onKeyDown={
+        isClickable
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault()
+                handleRecordClick()
+              }
+            }
+          : undefined
+      }
+      className={`flex flex-col gap-1 py-3 border-b last:border-b-0 px-1 ${
+        isClickable ? 'cursor-pointer transition-colors hover:bg-muted/50' : ''
+      }`}
+    >
       <div className='flex flex-wrap items-center gap-1.5 text-sm'>
         <Badge variant='outline' className='text-xs shrink-0'>
           {locationName}
@@ -82,6 +115,7 @@ export function ActivityItem({ item }: { item: ActivityHistoryWithRelations }) {
             to='/staffs/$staffId'
             params={{ staffId: item.user.id }}
             className='font-medium hover:underline'
+            onClick={(e) => e.stopPropagation()}
           >
             {staffName}
           </Link>
@@ -95,25 +129,12 @@ export function ActivityItem({ item }: { item: ActivityHistoryWithRelations }) {
         {metadataSuffix && (
           <span className='text-muted-foreground'>{metadataSuffix}</span>
         )}
-        {referenceCode && (() => {
-          const route = resolveOrderRoute(referenceCode)
-          return (
-            <>
-              <span className='text-muted-foreground'>. Mã tham chiếu:</span>
-              {route ? (
-                <Link
-                  to={route.to}
-                  search={route.search}
-                  className='font-mono text-xs font-medium hover:underline'
-                >
-                  {referenceCode}
-                </Link>
-              ) : (
-                <span className='font-mono text-xs font-medium'>{referenceCode}</span>
-              )}
-            </>
-          )
-        })()}
+        {referenceCode && (
+          <>
+            <span className='text-muted-foreground'>. Mã tham chiếu:</span>
+            <span className='font-mono text-xs font-medium'>{referenceCode}</span>
+          </>
+        )}
         <span className='text-xs text-muted-foreground ms-auto'>
           {formatDateTime(item.created_at)}
         </span>
