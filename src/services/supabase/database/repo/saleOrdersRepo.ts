@@ -1,3 +1,4 @@
+import { normalizeSearchValue } from '@/lib/utils'
 import { BasePharmacySupabaseClient } from '../../client'
 import type {
   SaleOrder,
@@ -28,7 +29,9 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
         .eq('tenant_id', params.tenantId)
 
       if (searchValue) {
-        query = query.ilike('sale_order_code', `%${searchValue}%`)
+        // search_text (DB) đã được lower + unaccent qua trigger; chuẩn hoá term tương ứng
+        // để search được cả mã đơn và tên thuốc, bỏ dấu tiếng Việt.
+        query = query.ilike('search_text', `%${normalizeSearchValue(searchValue)}%`)
       }
 
       if (params.customerId) {

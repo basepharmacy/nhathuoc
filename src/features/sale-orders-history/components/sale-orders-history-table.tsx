@@ -55,7 +55,7 @@ export function SaleOrdersHistoryTable({
     <div className='flex flex-1 flex-col gap-4'>
       <DataTableToolbar
         table={table}
-        searchPlaceholder='Tìm mã đơn...'
+        searchPlaceholder='Tìm mã đơn, tên thuốc...'
         searchKey={searchKey}
         filters={filters}
         hideViewOptions
