@@ -1,12 +1,12 @@
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react'
-import { SearchIcon } from 'lucide-react'
+import { Plus, SearchIcon } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import {
   Command,
-  CommandEmpty,
   CommandGroup,
   CommandItem,
   CommandList,
+  CommandSeparator,
 } from '@/components/ui/command'
 import {
   Popover,
@@ -23,6 +23,7 @@ export type PurchaseOrdersSearchHandle = {
 type PurchaseOrdersSearchProps = {
   products: ProductWithUnits[]
   onAddProduct: (product: ProductWithUnits) => void
+  onCreateProduct: (searchTerm: string) => void
   readOnly?: boolean
   autoFocus?: boolean
 }
@@ -30,6 +31,7 @@ type PurchaseOrdersSearchProps = {
 export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, PurchaseOrdersSearchProps>(function PurchaseOrdersSearch({
   products,
   onAddProduct,
+  onCreateProduct,
   readOnly = false,
   autoFocus = false,
 }, ref) {
@@ -77,6 +79,14 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
     setSearchOpen(false)
   }
 
+  const handleCreateProduct = () => {
+    onCreateProduct(searchTerm.trim())
+    setSearchOpen(false)
+  }
+
+  // Index của mục "Thêm sản phẩm mới" (luôn là dòng cuối)
+  const createItemIndex = productsFiltered.length
+
   // Auto-focus on mount
   useEffect(() => {
     if (autoFocus) {
@@ -96,8 +106,7 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [])
 
-  const shouldOpenSuggestions =
-    !readOnly && searchOpen && productsFiltered.length > 0
+  const shouldOpenSuggestions = !readOnly && searchOpen
 
   return (
     <div className='w-full max-w-xl'>
@@ -126,17 +135,18 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
               }}
               onKeyDown={(event) => {
                 if (readOnly) return
-                if (event.key === 'ArrowDown' && productsFiltered.length > 0) {
+                const rowCount = productsFiltered.length + 1 // +1 cho mục "Thêm sản phẩm mới"
+                if (event.key === 'ArrowDown') {
                   event.preventDefault()
                   setActiveIndex((current) =>
-                    current + 1 >= productsFiltered.length ? 0 : current + 1
+                    current + 1 >= rowCount ? 0 : current + 1
                   )
                   return
                 }
-                if (event.key === 'ArrowUp' && productsFiltered.length > 0) {
+                if (event.key === 'ArrowUp') {
                   event.preventDefault()
                   setActiveIndex((current) =>
-                    current - 1 < 0 ? productsFiltered.length - 1 : current - 1
+                    current - 1 < 0 ? rowCount - 1 : current - 1
                   )
                   return
                 }
@@ -144,8 +154,12 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
                   setSearchOpen(false)
                   return
                 }
-                if (event.key === 'Enter' && productsFiltered.length > 0) {
+                if (event.key === 'Enter') {
                   event.preventDefault()
+                  if (activeIndex === createItemIndex || productsFiltered.length === 0) {
+                    handleCreateProduct()
+                    return
+                  }
                   handleAddProduct(productsFiltered[activeIndex] ?? productsFiltered[0])
                 }
               }}
@@ -163,9 +177,37 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
           onWheel={(event) => event.stopPropagation()}
           onTouchMove={(event) => event.stopPropagation()}
         >
-          <Command>
+          <Command shouldFilter={false}>
             <CommandList className='max-h-[220px] overflow-y-auto'>
-              <CommandEmpty>Không tìm thấy sản phẩm.</CommandEmpty>
+              {productsFiltered.length === 0 && (
+                <div className='px-3 py-2 text-sm text-muted-foreground'>
+                  Không tìm thấy sản phẩm.
+                </div>
+              )}
+              <CommandGroup>
+                <CommandItem
+                  ref={(el) => {
+                    if (el) itemRefs.current.set(createItemIndex, el)
+                    else itemRefs.current.delete(createItemIndex)
+                  }}
+                  value='__create_product__'
+                  onSelect={handleCreateProduct}
+                  onMouseEnter={() => setActiveIndex(createItemIndex)}
+                  className={cn(
+                    'cursor-pointer text-primary',
+                    activeIndex === createItemIndex && 'bg-accent'
+                  )}
+                >
+                  <Plus className='h-4 w-4' />
+                  <span className='font-medium'>
+                    Thêm sản phẩm mới
+                    {searchTerm.trim() ? ` "${searchTerm.trim()}"` : ''}
+                  </span>
+                </CommandItem>
+              </CommandGroup>
+
+              {productsFiltered.length > 0 && <CommandSeparator />}
+
               <CommandGroup>
                 {productsFiltered.map((product, index) => (
                   <CommandItem

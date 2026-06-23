@@ -71,7 +71,7 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
           is_base_unit?: boolean
         }
       >
-    }): Promise<Product> {
+    }): Promise<ProductWithUnits> {
       const product = await insertProduct(params.product)
 
       const unitsPayload = params.units.map((unit) => ({
@@ -81,13 +81,16 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
         is_base_unit: unit.is_base_unit ?? false,
       }))
 
-      const { error } = await client.from('product_units').insert(unitsPayload)
+      const { data: insertedUnits, error } = await client
+        .from('product_units')
+        .insert(unitsPayload)
+        .select()
 
       if (error) {
         throw error
       }
 
-      return product
+      return { ...product, product_units: (insertedUnits ?? []) as ProductUnit[] }
     },
     async updateProduct(productId: string, params: ProductUpdate): Promise<Product> {
       const { data, error } = await client

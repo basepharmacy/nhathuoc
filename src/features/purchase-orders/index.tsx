@@ -6,6 +6,7 @@ import { Printer } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
 import {
+  getCategoriesQueryOptions,
   getLocationsQueryOptions,
   getPurchaseOrderDetailQueryOptions,
   getProductsQueryOptions,
@@ -24,6 +25,7 @@ import { PurchaseOrdersSearch } from './components/purchase-orders-search'
 import { PurchaseOrdersSummary } from './components/purchase-orders-summary'
 import { PurchaseOrderInvoice } from './components/purchase-order-invoice'
 import { SuppliersActionDialog } from '@/features/suppliers/components/suppliers-action-dialog'
+import { ProductsActionDialog } from '@/features/products/components/products-action-dialog'
 import { usePurchaseOrder } from './hooks/use-purchase-order'
 import { useKeyboardShortcuts } from './hooks/use-keyboard-shortcuts'
 
@@ -71,6 +73,11 @@ export function PurchaseOrders() {
 
   const { data: locations = [] } = useQuery({
     ...getLocationsQueryOptions(tenantId),
+    enabled: !!tenantId,
+  })
+
+  const { data: categories = [] } = useQuery({
+    ...getCategoriesQueryOptions(tenantId),
     enabled: !!tenantId,
   })
 
@@ -201,10 +208,17 @@ export function PurchaseOrders() {
   }, [quickOrderSupplierId, activeProducts, order.selectedLocationId, quickOrderHandled, orderCode])
 
   const [pendingBatchItemId, setPendingBatchItemId] = useState<string | null>(null)
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false)
+  const [newProductName, setNewProductName] = useState('')
 
   const handleAddProduct = (product: Parameters<typeof order.addProduct>[0]) => {
     order.addProduct(product)
     //if (newItemId) setPendingBatchItemId(newItemId)
+  }
+
+  const handleCreateProduct = (searchTerm: string) => {
+    setNewProductName(searchTerm)
+    setIsAddProductOpen(true)
   }
 
   // ── Print ──────────────────────────────────────────────────
@@ -281,6 +295,7 @@ export function PurchaseOrders() {
             ref={searchRef}
             products={activeProducts}
             onAddProduct={handleAddProduct}
+            onCreateProduct={handleCreateProduct}
             autoFocus={!order.isEdit && !prefillProductId && !quickOrderSupplierId}
           />
           <Button
@@ -348,6 +363,13 @@ export function PurchaseOrders() {
               open={order.isAddSupplierOpen}
               onOpenChange={order.setIsAddSupplierOpen}
               onCreated={(supplier) => order.setSupplierId(supplier.id)}
+            />
+            <ProductsActionDialog
+              open={isAddProductOpen}
+              onOpenChange={setIsAddProductOpen}
+              categories={categories}
+              defaultName={newProductName}
+              onCreated={(product) => order.addProduct(product)}
             />
           </div>
         )}

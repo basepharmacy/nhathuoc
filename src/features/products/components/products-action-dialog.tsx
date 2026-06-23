@@ -69,6 +69,8 @@ type ProductsActionDialogProps = {
   categories: Category[]
   open: boolean
   onOpenChange: (open: boolean) => void
+  defaultName?: string
+  onCreated?: (product: ProductWithUnits) => void
 }
 
 type ProductFormInput = z.input<typeof productFormSchema>
@@ -84,6 +86,8 @@ export function ProductsActionDialog({
   categories,
   open,
   onOpenChange,
+  defaultName,
+  onCreated,
 }: ProductsActionDialogProps) {
   const isEdit = !!currentRow
   const { user } = useUser()
@@ -316,8 +320,9 @@ export function ProductsActionDialog({
         },
         units: normalizeUnits(values.units),
       }),
-    onSuccess: () => {
+    onSuccess: (product) => {
       queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
+      onCreated?.(product)
       if (!isOpenRef.current) return
       form.reset()
       onOpenChange(false)
@@ -360,6 +365,25 @@ export function ProductsActionDialog({
       setDetailsOpen(defaultDetailsOpen)
       setMasterSearchOpen(false)
       setMasterResults([])
+      // Dialog luôn được mount (chỉ bật/tắt `open`) nên RHF giữ lại dữ liệu của
+      // lần mở trước. Ở chế độ tạo mới, reset về mặc định để tránh sót dữ liệu
+      // cũ khi mở lại, rồi mới điền sẵn tên từ ô tìm kiếm (nếu có).
+      if (!isEdit) {
+        form.reset({
+          product_name: defaultName ?? '',
+          product_type: '1_OTC',
+          status: '2_ACTIVE',
+          category_id: 'none',
+          min_stock: 10,
+          active_ingredient: '',
+          regis_number: '',
+          jan_code: '',
+          made_company_name: '',
+          sale_company_name: '',
+          description: '',
+          units: defaultUnits,
+        })
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
