@@ -13,16 +13,21 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from '@/components/ui/popover'
-import { cn, normalizeSearchValue } from '@/lib/utils'
-import { type ProductWithUnits } from '@/services/supabase/'
+import { cn, formatCurrency, normalizeSearchValue } from '@/lib/utils'
+import { type ProductUnit, type ProductWithUnits } from '@/services/supabase/'
 
 export type SaleOrdersSearchHandle = {
   focus: () => void
 }
 
+type SearchRow = {
+  product: ProductWithUnits
+  unit: ProductUnit
+}
+
 type SaleOrdersSearchProps = {
   products: ProductWithUnits[]
-  onAddProduct: (product: ProductWithUnits) => void
+  onAddProduct: (product: ProductWithUnits, unitId?: string) => void
   readOnly?: boolean
   autoFocus?: boolean
 }
@@ -46,32 +51,39 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const productsFiltered = useMemo(() => {
+  const rowsFiltered = useMemo<SearchRow[]>(() => {
     const term = normalizeSearchValue(debouncedSearchTerm.trim())
-    if (!term) return products.slice(0, 10)
-    return products
-      .filter((product) =>
-        normalizeSearchValue(product.product_name).includes(term) ||
-        normalizeSearchValue(product.active_ingredient || '').includes(term)
-      ).slice(0, 10)
+    const matched = !term
+      ? products
+      : products.filter(
+          (product) =>
+            normalizeSearchValue(product.product_name).includes(term) ||
+            normalizeSearchValue(product.active_ingredient || '').includes(term)
+        )
+    return matched
+      .flatMap((product) => {
+        const units = [...(product.product_units ?? [])].sort(
+          (a, b) => Number(b.is_base_unit) - Number(a.is_base_unit)
+        )
+        return units.map((unit) => ({ product, unit }))
+      })
+      .slice(0, 10)
   }, [products, debouncedSearchTerm])
 
   useEffect(() => {
-    if (productsFiltered.length === 0) {
+    if (rowsFiltered.length === 0) {
       setActiveIndex(0)
       return
     }
-    setActiveIndex((current) =>
-      Math.min(current, productsFiltered.length - 1)
-    )
-  }, [productsFiltered])
+    setActiveIndex((current) => Math.min(current, rowsFiltered.length - 1))
+  }, [rowsFiltered])
 
   useEffect(() => {
     itemRefs.current.get(activeIndex)?.scrollIntoView({ block: 'nearest' })
   }, [activeIndex])
 
-  const handleAddProduct = (product: ProductWithUnits) => {
-    onAddProduct(product)
+  const handleAddProduct = (row: SearchRow) => {
+    onAddProduct(row.product, row.unit.id)
     setSearchTerm('')
     setSearchOpen(false)
   }
@@ -96,7 +108,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
   }, [])
 
   const shouldOpenSuggestions =
-    !readOnly && searchOpen && productsFiltered.length > 0
+    !readOnly && searchOpen && rowsFiltered.length > 0
 
   return (
     <div className='w-full max-w-xl'>
@@ -126,17 +138,17 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
               }}
               onKeyDown={(event) => {
                 if (readOnly) return
-                if (event.key === 'ArrowDown' && productsFiltered.length > 0) {
+                if (event.key === 'ArrowDown' && rowsFiltered.length > 0) {
                   event.preventDefault()
                   setActiveIndex((current) =>
-                    current + 1 >= productsFiltered.length ? 0 : current + 1
+                    current + 1 >= rowsFiltered.length ? 0 : current + 1
                   )
                   return
                 }
-                if (event.key === 'ArrowUp' && productsFiltered.length > 0) {
+                if (event.key === 'ArrowUp' && rowsFiltered.length > 0) {
                   event.preventDefault()
                   setActiveIndex((current) =>
-                    current - 1 < 0 ? productsFiltered.length - 1 : current - 1
+                    current - 1 < 0 ? rowsFiltered.length - 1 : current - 1
                   )
                   return
                 }
@@ -144,9 +156,9 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
                   setSearchOpen(false)
                   return
                 }
-                if (event.key === 'Enter' && productsFiltered.length > 0) {
+                if (event.key === 'Enter' && rowsFiltered.length > 0) {
                   event.preventDefault()
-                  handleAddProduct(productsFiltered[activeIndex] ?? productsFiltered[0])
+                  handleAddProduct(rowsFiltered[activeIndex] ?? rowsFiltered[0])
                 }
               }}
               ref={inputRef}
@@ -167,30 +179,40 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
             <CommandList className='max-h-[220px] overflow-y-auto'>
               <CommandEmpty>Không tìm thấy sản phẩm.</CommandEmpty>
               <CommandGroup>
-                {productsFiltered.map((product, index) => (
+                {rowsFiltered.map((row, index) => (
                   <CommandItem
-                    key={product.id}
+                    key={`${row.product.id}-${row.unit.id}`}
                     ref={(el) => {
                       if (el) itemRefs.current.set(index, el)
                       else itemRefs.current.delete(index)
                     }}
-                    value={product.product_name}
-                    onSelect={() => handleAddProduct(product)}
+                    value={`${row.product.product_name}-${row.unit.id}`}
+                    onSelect={() => handleAddProduct(row)}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
                       'cursor-pointer data-[selected=true]:bg-transparent data-[selected=true]:text-inherit',
                       index === activeIndex && '!bg-accent !text-accent-foreground'
                     )}
                   >
-                    <div className='flex w-full flex-col'>
-                      <span className='font-medium'>{product.product_name}</span>
-                      {(product.active_ingredient || product.made_company_name) && (
-                        <span className='text-xs text-muted-foreground'>
-                          {[product.active_ingredient, product.made_company_name]
-                            .filter(Boolean)
-                            .join(' • ')}
+                    <div className='flex w-full items-center justify-between gap-2'>
+                      <div className='flex min-w-0 flex-col'>
+                        <span className='truncate font-medium'>{row.product.product_name}</span>
+                        {(row.product.active_ingredient || row.product.made_company_name) && (
+                          <span className='truncate text-xs text-muted-foreground'>
+                            {[row.product.active_ingredient, row.product.made_company_name]
+                              .filter(Boolean)
+                              .join(' • ')}
+                          </span>
+                        )}
+                      </div>
+                      <div className='flex shrink-0 flex-col items-end gap-0.5'>
+                        <span className='rounded-full bg-muted px-2 py-0.5 text-xs font-medium'>
+                          {row.unit.unit_name}
                         </span>
-                      )}
+                        <span className='text-sm font-semibold'>
+                          {formatCurrency(row.unit.sell_price ?? 0)}
+                        </span>
+                      </div>
                     </div>
                   </CommandItem>
                 ))}

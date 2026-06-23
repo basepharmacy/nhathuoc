@@ -37,34 +37,6 @@
     Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';
 }
 
-@media (prefers-color-scheme: dark) {
-  .landing-page {
-    --lp-background: #0e1512;
-    --lp-foreground: #dbe3de;
-
-    --lp-primary: #8ccbae;
-    --lp-on-primary: #0c3a2a;
-    --lp-primary-container: #164d38;
-    --lp-on-primary-container: #a8dcc5;
-
-    --lp-secondary: #f5b898;
-    --lp-on-secondary: #4a2a0e;
-    --lp-secondary-container: #5e3a1c;
-    --lp-on-secondary-container: #ffdcc2;
-
-    --lp-tertiary: #98c9bb;
-    --lp-on-tertiary: #0a3a2e;
-    --lp-tertiary-container: #164b3f;
-    --lp-on-tertiary-container: #b4e0d4;
-
-    --lp-surface: #0e1512;
-    --lp-on-surface: #dbe3de;
-    --lp-surface-variant: #3c4843;
-    --lp-on-surface-variant: #bcc8c2;
-    --lp-outline: #879189;
-  }
-}
-
 .landing-page .lp-font-heading {
   font-family: 'Nunito Sans', ui-sans-serif, system-ui, -apple-system,
     'Segoe UI', Roboto, Helvetica, Arial, 'Apple Color Emoji', 'Segoe UI Emoji';

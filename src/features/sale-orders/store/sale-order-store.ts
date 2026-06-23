@@ -44,7 +44,7 @@ export type SaleOrderActions = {
   setNotes: (v: string) => void
   setIsAddCustomerOpen: (v: boolean) => void
   // Item actions
-  addProduct: (product: ProductWithUnits) => void
+  addProduct: (product: ProductWithUnits, unitId?: string) => void
   updateItem: (itemId: string, next: Partial<SaleOrderItem>) => void
   handleQuantityChange: (itemId: string, nextQuantity: number) => void
   handleUnitChange: (itemId: string, newUnitId: string) => void
@@ -92,7 +92,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
     setIsAddCustomerOpen: (v) => set({ isAddCustomerOpen: v }),
 
     // ── Item actions ──────────────────────────────────────────
-    addProduct: (product) => {
+    addProduct: (product, unitId) => {
       const state = get()
       if (!state.selectedLocationId) {
         toast.error('Bạn cần phải chọn cửa hàng.')
@@ -100,8 +100,10 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
       }
 
       const batchesByProduct = selectBatchesByProductId(state)
-      const defaultUnit = getDefaultUnit(product)
-      const unitPrice = defaultUnit?.sell_price ?? 0
+      const selectedUnit =
+        (unitId && product.product_units?.find((u) => u.id === unitId)) ||
+        getDefaultUnit(product)
+      const unitPrice = selectedUnit?.sell_price ?? 0
       const batches = batchesByProduct[product.id]
 
       if (!batches || batches.length === 0) {
@@ -117,7 +119,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
         return
       }
 
-      const conversionFactor = defaultUnit?.conversion_factor || 1
+      const conversionFactor = selectedUnit?.conversion_factor || 1
       const batchStock = Math.floor((nextBatch.quantity ?? 0) / conversionFactor)
 
       set({
@@ -126,7 +128,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
           {
             id: `${product.id}-${Date.now()}`,
             product,
-            productUnitId: defaultUnit?.id ?? null,
+            productUnitId: selectedUnit?.id ?? null,
             quantity: 1,
             unitPrice,
             discount: 0,
