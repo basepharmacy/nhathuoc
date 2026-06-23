@@ -17,11 +17,12 @@ type SaleOrderStoreProviderProps = CreateSaleOrderStoreParams & {
 export function SaleOrderStoreProvider({
   initialData,
   inventoryBatches,
+  storageKey,
   children,
 }: SaleOrderStoreProviderProps) {
   const storeRef = useRef<StoreInstance | null>(null)
   if (!storeRef.current) {
-    storeRef.current = createSaleOrderStore({ initialData, inventoryBatches })
+    storeRef.current = createSaleOrderStore({ initialData, inventoryBatches, storageKey })
   }
 
   // Sync inventoryBatches when React Query refetches

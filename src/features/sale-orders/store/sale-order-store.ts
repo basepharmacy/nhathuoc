@@ -1,4 +1,5 @@
-import { createStore } from 'zustand'
+import { createStore, type StateCreator } from 'zustand'
+import { persist, createJSONStorage } from 'zustand/middleware'
 import { toast } from 'sonner'
 import { type ProductWithUnits, type InventoryBatch } from '@/services/supabase/'
 import { type PaymentMethod, type SaleOrderItem, type SaleOrderInCreate } from '../data/types'
@@ -11,6 +12,7 @@ import {
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
 import { selectBatchesByProductId } from './sale-order-selectors'
+import { debouncedDraftStorage } from '../data/draft-storage'
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -62,10 +64,13 @@ export type SaleOrderStore = SaleOrderState & SaleOrderActions
 export type CreateSaleOrderStoreParams = {
   initialData: SaleOrderInCreate
   inventoryBatches: InventoryBatch[]
+  // Khi có: bật persist (localStorage) để giữ nháp khi chuyển màn/reload.
+  // Khi không (chế độ edit): store thường, không persist.
+  storageKey?: string
 }
 
-export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSaleOrderStoreParams) {
-  return createStore<SaleOrderStore>()((set, get) => ({
+export function createSaleOrderStore({ initialData, inventoryBatches, storageKey }: CreateSaleOrderStoreParams) {
+  const initializer: StateCreator<SaleOrderStore> = (set, get) => ({
     // ── Initial state ─────────────────────────────────────────
     items: initialData.items,
     customerId: initialData.customerId,
@@ -248,6 +253,55 @@ export function createSaleOrderStore({ initialData, inventoryBatches }: CreateSa
       }),
 
     // ── External data sync ────────────────────────────────────
-    syncInventoryBatches: (batches) => set({ inventoryBatches: batches }),
-  }))
+    // Khi tồn kho mới về (refetch / khôi phục nháp), tính lại `stock` của từng
+    // dòng theo lô hiện tại để cảnh báo vượt tồn kịp thời và tránh bán âm khi
+    // nháp đã lưu trỏ tới lô đã hết/đã xoá.
+    syncInventoryBatches: (batches) =>
+      set((state) => ({
+        inventoryBatches: batches,
+        items: state.items.map((item) => {
+          if (!item.batchId) return item
+          const batch = batches.find((b) => b.id === item.batchId)
+          const cf = getItemConversionFactor(item) || 1
+          const stock = batch ? Math.floor((batch.quantity ?? 0) / cf) : 0
+          return stock === item.stock ? item : { ...item, stock }
+        }),
+      })),
+  })
+
+  // Chế độ edit (không có storageKey): store thường, không persist.
+  if (!storageKey) {
+    return createStore<SaleOrderStore>()(initializer)
+  }
+
+  // Chế độ tạo mới: persist nháp vào localStorage để giữ khi chuyển màn/reload.
+  return createStore<SaleOrderStore>()(
+    persist(initializer, {
+      name: storageKey,
+      // Storage có debounce + flush khi rời trang (xem draft-storage.ts).
+      storage: createJSONStorage(() => debouncedDraftStorage),
+      // Giữ location mặc định khi nháp lưu giá trị rỗng, tránh ghi đè thành null
+      // làm chặn việc thêm sản phẩm sau khi khôi phục.
+      merge: (persisted, current) => {
+        const p = (persisted ?? {}) as Partial<SaleOrderStore>
+        return {
+          ...current,
+          ...p,
+          selectedLocationId: p.selectedLocationId ?? current.selectedLocationId,
+        }
+      },
+      partialize: (s) => ({
+        items: s.items,
+        customerId: s.customerId,
+        orderDiscount: s.orderDiscount,
+        paymentMethod: s.paymentMethod,
+        cashReceived: s.cashReceived,
+        bankAccountId: s.bankAccountId,
+        notes: s.notes,
+        selectedLocationId: s.selectedLocationId,
+        orderCode: s.orderCode,
+        startedAt: s.startedAt,
+      }),
+    })
+  )
 }

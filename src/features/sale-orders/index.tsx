@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { getRouteApi } from '@tanstack/react-router'
 import { useUser } from '@/client/provider'
@@ -18,6 +18,13 @@ import { toast } from 'sonner'
 import { type InventoryBatch } from '@/services/supabase/'
 import { createNewSaleOrder } from './data/types'
 import { mapOrderToSaleOrderInCreate } from './data/sale-order-helper'
+import {
+  loadDraftSession,
+  saveDraftSession,
+  clearDraftTab,
+  clearDraftSession,
+  draftTabStorageKey,
+} from './data/draft-storage'
 import { OrderKeyboardFooter } from '@/components/order-keyboard-footer'
 
 const route = getRouteApi('/_authenticated/sale-orders/')
@@ -30,6 +37,11 @@ function createTab(): Tab {
   return { id, label: `Đơn ${tabCounter - 1}` }
 }
 
+// Đồng bộ bộ đếm tab sau khi khôi phục phiên để id tab mới không trùng.
+function syncTabCounter(counter: number) {
+  tabCounter = Math.max(tabCounter, counter)
+}
+
 export function SaleOrders() {
   const { orderCode } = route.useSearch()
   const navigate = route.useNavigate()
@@ -39,13 +51,27 @@ export function SaleOrders() {
   const { selectedLocationId: sidebarLocationId } = useLocationContext()
 
   // ── Tab state ───────────────────────────────────────────────
-  const initialTabRef = useRef<Tab | null>(null)
-  // Chuyển khởi tạo tab sau khi đã loading xong dữ liệu order nếu đang ở chế độ
-  if (!initialTabRef.current) {
-    initialTabRef.current = createTab()
+  // Ở chế độ tạo mới (không có orderCode): khôi phục các tab nháp đã lưu.
+  // Ở chế độ edit (có orderCode): luôn bắt đầu 1 tab mới, load từ server.
+  const initialSessionRef = useRef<{ tabs: Tab[]; activeTabId: string } | null>(null)
+  if (!initialSessionRef.current) {
+    const restored = !orderCode ? loadDraftSession() : null
+    if (restored) {
+      syncTabCounter(restored.nextCounter)
+      initialSessionRef.current = { tabs: restored.tabs, activeTabId: restored.activeTabId }
+    } else {
+      const tab = createTab()
+      initialSessionRef.current = { tabs: [tab], activeTabId: tab.id }
+    }
   }
-  const [tabs, setTabs] = useState<Tab[]>([initialTabRef.current])
-  const [activeTabId, setActiveTabId] = useState(initialTabRef.current.id)
+  const [tabs, setTabs] = useState<Tab[]>(initialSessionRef.current.tabs)
+  const [activeTabId, setActiveTabId] = useState(initialSessionRef.current.activeTabId)
+
+  // Lưu metadata phiên (danh sách tab + tab active) mỗi khi thay đổi.
+  useEffect(() => {
+    if (orderCode) return
+    saveDraftSession(tabs, activeTabId)
+  }, [tabs, activeTabId, orderCode])
 
   const MAX_TABS = 4
 
@@ -74,6 +100,7 @@ export function SaleOrders() {
           const newIdx = Math.min(idx, next.length - 1)
           setActiveTabId(next[newIdx].id)
         }
+        clearDraftTab(tabId)
         return next
       })
     },
@@ -82,8 +109,11 @@ export function SaleOrders() {
 
   const handleOrderSaved = useCallback(
     (tabId: string, savedOrderCode: string, status: string) => {
+      // Đơn đã lưu/hoàn tất → xoá nháp của tab này.
+      clearDraftTab(tabId)
       if (tabs.length <= 1) {
         if (status === '2_COMPLETE' && !savedOrderCode.includes('offline-')) {
+          clearDraftSession()
           navigate({
             to: '/sale-orders/detail',
             search: { orderCode: savedOrderCode },
@@ -199,6 +229,7 @@ export function SaleOrders() {
             >
               <SaleOrderTabContent
                 initialData={initialData}
+                storageKey={!orderCode ? draftTabStorageKey(tab.id) : undefined}
                 tenantId={tenantId}
                 userId={userId}
                 products={activeProducts}

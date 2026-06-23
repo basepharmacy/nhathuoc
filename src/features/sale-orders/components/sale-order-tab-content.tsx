@@ -37,6 +37,7 @@ type SaleOrderTabContentProps = {
   tabCount?: number
   isActive?: boolean
   tabs?: Tab[]
+  storageKey?: string
 }
 
 export function SaleOrderTabContent(props: SaleOrderTabContentProps) {
@@ -44,6 +45,7 @@ export function SaleOrderTabContent(props: SaleOrderTabContentProps) {
     <SaleOrderStoreProvider
       initialData={props.initialData}
       inventoryBatches={props.inventoryBatches}
+      storageKey={props.storageKey}
     >
       <SaleOrderTabContentInner {...props} />
     </SaleOrderStoreProvider>
