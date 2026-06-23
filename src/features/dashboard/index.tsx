@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { Plus } from 'lucide-react'
+import { Package, Plus, ShoppingCart } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Route } from '@/routes/_authenticated/dashboard'
 import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -188,24 +189,38 @@ export function Dashboard() {
                     </button>
                   ))}
                 </div>
-                {activityTimePeriod === 'custom' && (
-                  <div className='ml-auto flex items-center gap-2'>
-                    <DatePicker
-                      selected={activityFromDate}
-                      onSelect={setActivityFromDate}
-                      placeholder='Từ ngày'
-                      disablePastDates={false}
-                      className='w-36 h-9 text-sm justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-                    />
-                    <DatePicker
-                      selected={activityToDate}
-                      onSelect={setActivityToDate}
-                      placeholder='Đến ngày'
-                      disablePastDates={false}
-                      className='w-36 h-9 text-sm justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
-                    />
-                  </div>
-                )}
+                <div className='ml-auto flex items-center gap-2'>
+                  {activityTimePeriod === 'custom' && (
+                    <>
+                      <DatePicker
+                        selected={activityFromDate}
+                        onSelect={setActivityFromDate}
+                        placeholder='Từ ngày'
+                        disablePastDates={false}
+                        className='w-36 h-9 text-sm justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+                      />
+                      <DatePicker
+                        selected={activityToDate}
+                        onSelect={setActivityToDate}
+                        placeholder='Đến ngày'
+                        disablePastDates={false}
+                        className='w-36 h-9 text-sm justify-start text-start font-normal data-[empty=true]:text-muted-foreground'
+                      />
+                    </>
+                  )}
+                  <Button variant='outline' size='sm' className='h-9' asChild>
+                    <Link to='/purchase-orders/history'>
+                      <Package className='size-4' />
+                      Lịch sử nhập hàng
+                    </Link>
+                  </Button>
+                  <Button variant='outline' size='sm' className='h-9' asChild>
+                    <Link to='/sale-orders/history'>
+                      <ShoppingCart className='size-4' />
+                      Lịch sử bán hàng
+                    </Link>
+                  </Button>
+                </div>
               </div>
             )}
           </div>
