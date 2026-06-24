@@ -17,6 +17,7 @@ import {
   Warehouse,
   CreditCard,
   Pill,
+  SlidersHorizontal,
 } from 'lucide-react'
 import { type NavGroup, type SidebarData } from '../types'
 import { useUser } from '@/client/provider'
@@ -43,6 +44,12 @@ const staticNavGroups: NavGroup[] = [
         url: '/inventory',
         icon: Warehouse,
         feature: 'inventory',
+      },
+      {
+        title: 'Điều chỉnh tồn kho',
+        url: '/inventory/adjustments',
+        icon: SlidersHorizontal,
+        feature: 'stock_adjustments',
       },
       {
         title: 'Nhập hàng',
@@ -106,7 +113,7 @@ const staticNavGroups: NavGroup[] = [
           {
             title: 'Điều chỉnh tồn kho',
             url: '/inventory/adjustments',
-            icon: Warehouse,
+            icon: SlidersHorizontal,
             feature: 'stock_adjustments',
           },
         ],
