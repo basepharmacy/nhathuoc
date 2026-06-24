@@ -5,6 +5,12 @@ import { productsRepo, purchaseOrdersRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits, PurchaseOrderStatus } from '@/services/supabase/'
 import { type OrderItem, type PaymentStatus, getBiggestConversionUnit } from '../data/types'
+import {
+  clearPurchaseOrderDraft,
+  loadPurchaseOrderDraft,
+  purchaseDraftKey,
+  savePurchaseOrderDraft,
+} from '../data/draft-storage'
 
 type UsePurchaseOrderParams = {
   tenantId: string
@@ -36,13 +42,26 @@ export function usePurchaseOrder({
   const queryClient = useQueryClient()
   const isEdit = Boolean(orderCodeParam)
 
+  // ── Lưu nháp (chỉ chế độ tạo mới) ───────────────────────────
+  // Chế độ sửa đơn nháp đã có trong DB không persist localStorage — dữ liệu đã
+  // nằm ở DB. storageKey scope theo tenant để không lẫn nháp giữa các tài khoản.
+  const storageKey = !isEdit && tenantId ? purchaseDraftKey(tenantId) : null
+  // Khôi phục ngay ở lần render đầu (lazy init) để không bị effect ghi đè input.
+  const restored = useMemo(
+    () => (storageKey ? loadPurchaseOrderDraft(storageKey) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  )
+
   // ── Form state ──────────────────────────────────────────────
-  const [items, setItems] = useState<OrderItem[]>([])
-  const [supplierId, setSupplierId] = useState('')
-  const [orderDiscount, setOrderDiscount] = useState(0)
-  const [notes, setNotes] = useState('')
+  const [items, setItems] = useState<OrderItem[]>(restored?.items ?? [])
+  const [supplierId, setSupplierId] = useState(restored?.supplierId ?? '')
+  const [orderDiscount, setOrderDiscount] = useState(restored?.orderDiscount ?? 0)
+  const [notes, setNotes] = useState(restored?.notes ?? '')
   const [hasInitialized, setHasInitialized] = useState(false)
-  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(userLocationId)
+  const [selectedLocationId, setSelectedLocationId] = useState<string | null>(
+    restored?.selectedLocationId ?? userLocationId
+  )
   const [isAddSupplierOpen, setIsAddSupplierOpen] = useState(false)
 
   // ── Derived / computed ──────────────────────────────────────
@@ -55,8 +74,8 @@ export function usePurchaseOrder({
     return `${encoded}P${random}`
   }, [])
 
-  const [orderCode, setOrderCode] = useState('')
-  const [issuedAt, setIssuedAt] = useState(new Date().toISOString())
+  const [orderCode, setOrderCode] = useState(restored?.orderCode ?? '')
+  const [issuedAt, setIssuedAt] = useState(restored?.issuedAt ?? new Date().toISOString())
 
   // Initialize orderCode once
   useEffect(() => {
@@ -93,6 +112,26 @@ export function usePurchaseOrder({
     [subtotal, orderDiscount]
   )
 
+  // ── Lưu nháp khi state đổi (debounce) ───────────────────────
+  // Bỏ ghi khi đơn rỗng để không lưu nháp trống vô nghĩa.
+  useEffect(() => {
+    if (!storageKey) return
+    const isEmpty = items.length === 0 && !supplierId && !notes && orderDiscount === 0
+    if (isEmpty) {
+      clearPurchaseOrderDraft(storageKey)
+      return
+    }
+    savePurchaseOrderDraft(storageKey, {
+      items,
+      supplierId,
+      orderDiscount,
+      notes,
+      selectedLocationId,
+      orderCode,
+      issuedAt,
+    })
+  }, [storageKey, items, supplierId, orderDiscount, notes, selectedLocationId, orderCode, issuedAt])
+
   // ── Validation ──────────────────────────────────────────────
   const validateOrder = () => {
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
@@ -120,7 +159,6 @@ export function usePurchaseOrder({
 
   const updateCostPricesForNullItems = async (): Promise<boolean> => {
     const updates: Array<{ unitId: string; costPrice: number }> = []
-    console.log('items to check for cost price update', items)
     for (const item of items) {
       if (!item.productUnitId || item.unitPrice <= 0) continue
       const units = item.product.product_units ?? []
@@ -165,11 +203,12 @@ export function usePurchaseOrder({
         items: buildOrderItems(),
       })
       const didUpdateCost = await updateCostPricesForNullItems()
-      console.log('didUpdateCost', didUpdateCost)
       return { order, didUpdateCost }
     },
     onSuccess: ({ order, didUpdateCost }, status) => {
       if (didUpdateCost) queryClient.invalidateQueries({ queryKey: ['products', tenantId] })
+      // Đơn đã lưu vào DB → xoá nháp localStorage để không khôi phục lại.
+      if (storageKey) clearPurchaseOrderDraft(storageKey)
       toast.success('Đã tạo đơn nhập hàng.')
       onOrderSuccess?.(order.purchase_order_code ?? '', status)
     },
@@ -284,6 +323,8 @@ export function usePurchaseOrder({
     isEdit ? updateMutation.mutate('2_ORDERED') : createMutation.mutate('2_ORDERED')
 
   const resetOrder = useCallback(() => {
+    // Huỷ đơn → xoá nháp đang lưu trước khi sinh đơn mới.
+    if (storageKey) clearPurchaseOrderDraft(storageKey)
     setItems([])
     setSupplierId('')
     setOrderDiscount(0)
@@ -293,6 +334,7 @@ export function usePurchaseOrder({
     // Generate new order code
     setOrderCode(generatedOrderCode)
     setIssuedAt(new Date().toISOString())
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Reset form when navigating from edit to create

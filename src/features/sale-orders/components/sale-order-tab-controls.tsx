@@ -18,31 +18,33 @@ export function SaleOrderTabControls({
   onAddTab,
 }: SaleOrderTabControlsProps) {
   return (
-    <div className='flex shrink-0 items-center gap-1'>
-      <TabsList className='shrink-0'>
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            className='group relative gap-1 pr-6'
-          >
-            {tab.label}
-            {tabs.length > 1 && (
-              <button
-                type='button'
-                className='absolute right-1 top-1/2 -translate-y-1/2 rounded-sm p-0.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 group-data-[state=active]:opacity-100'
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onCloseTab(tab.id)
-                }}
-                aria-label={`Đóng ${tab.label}`}
-              >
-                <X className='size-3' />
-              </button>
-            )}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+    <div className='flex min-w-0 items-center gap-1'>
+      <div className='min-w-0 flex-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'>
+        <TabsList className='w-max'>
+          {tabs.map((tab, index) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              className='group relative flex-none gap-1 pr-6'
+            >
+              {`Đơn ${index + 1}`}
+              {tabs.length > 1 && (
+                <button
+                  type='button'
+                  className='absolute right-1 top-1/2 -translate-y-1/2 rounded-sm p-0.5 opacity-0 transition-opacity hover:bg-muted group-hover:opacity-100 group-data-[state=active]:opacity-100'
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onCloseTab(tab.id)
+                  }}
+                  aria-label={`Đóng đơn ${index + 1}`}
+                >
+                  <X className='size-3' />
+                </button>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
 
       {!orderId && (
         <Button

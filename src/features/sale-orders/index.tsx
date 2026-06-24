@@ -73,7 +73,7 @@ export function SaleOrders() {
     saveDraftSession(tabs, activeTabId)
   }, [tabs, activeTabId, orderCode])
 
-  const MAX_TABS = 4
+  const MAX_TABS = 20
 
   const addTab = useCallback(() => {
     if (tabs.length >= MAX_TABS) {
@@ -84,12 +84,6 @@ export function SaleOrders() {
     setTabs((prev) => [...prev, newTab])
     setActiveTabId(newTab.id)
   }, [tabs])
-  const updateTabLabel = useCallback((tabId: string, label: string) => {
-    setTabs((prev) =>
-      prev.map((t) => (t.id === tabId ? { ...t, label } : t))
-    )
-  }, [])
-
   const closeTab = useCallback(
     (tabId: string) => {
       setTabs((prev) => {
@@ -244,7 +238,6 @@ export function SaleOrders() {
                 tabCount={tabs.length}
                 isActive={tab.id === activeTabId}
                 tabs={tabs}
-                onOrderCodeChange={(code) => updateTabLabel(tab.id, code)}
               />
             </TabsContent>
           )

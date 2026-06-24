@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Printer } from 'lucide-react'
 import { type Customer, type BankAccount, type Location, type ProductWithUnits, type InventoryBatch } from '@/services/supabase/'
 import { SaleOrderTabControls, type Tab } from './sale-order-tab-controls'
@@ -33,7 +33,6 @@ type SaleOrderTabContentProps = {
   onAddTab?: () => void
   onCloseTab?: () => void
   onCloseTabById?: (tabId: string) => void
-  onOrderCodeChange: (code: string) => void
   tabCount?: number
   isActive?: boolean
   tabs?: Tab[]
@@ -114,7 +113,6 @@ function SaleOrderTabContentInner({
   onAddTab,
   onCloseTab,
   onCloseTabById,
-  onOrderCodeChange,
   tabCount = 1,
   isActive = true,
   tabs,
@@ -156,15 +154,6 @@ function SaleOrderTabContentInner({
   const resetOrder = useSaleOrderStore((s) => s.resetOrder)
   const handleQuantityChange = useSaleOrderStore((s) => s.handleQuantityChange)
   const removeItem = useSaleOrderStore((s) => s.removeItem)
-
-  // ── Effects ─────────────────────────────────────────────────
-  const onOrderCodeChangeRef = useRef(onOrderCodeChange)
-  onOrderCodeChangeRef.current = onOrderCodeChange
-  useEffect(() => {
-    if (orderCode) {
-      onOrderCodeChangeRef.current?.(orderCode)
-    }
-  }, [orderCode])
 
   // ── Dialogs ───────────────────────────────────────────────
   const [printOpen, setPrintOpen] = useState(false)
