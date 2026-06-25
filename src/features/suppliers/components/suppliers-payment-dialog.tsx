@@ -312,7 +312,7 @@ export function SuppliersPaymentDialog({
             {currentRow
               ? `Ghi nhận thanh toán cho ${currentRow.name}.`
               : 'Ghi nhận thanh toán cho nhà cung cấp.'}{' '}
-            Nhấn lưu khi hoàn tất.
+            Số tiền thanh toán sẽ tự động cập nhật vào các đơn hàng từ cũ đến mới
           </DialogDescription>
         </DialogHeader>
         <div className={showRightPanel ? 'grid grid-cols-1 gap-6 sm:grid-cols-2' : ''}>

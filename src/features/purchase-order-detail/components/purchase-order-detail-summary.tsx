@@ -1,12 +1,13 @@
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
+import type { PurchaseOrder } from '@/services/supabase/'
+import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
-import { DiscountInput } from '@/components/discount-input'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import { Textarea } from '@/components/ui/textarea'
-import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
+import { DiscountInput } from '@/components/discount-input'
 import { type PaymentStatus } from '@/features/purchase-orders/data/types'
-import type { PurchaseOrder } from '@/services/supabase/'
 import { PurchaseOrderQrDialog } from './purchase-order-qr-dialog'
 
 type PurchaseOrderDetailSummaryProps = {
@@ -54,9 +55,16 @@ export function PurchaseOrderDetailSummary({
   orderStatus,
   orderCode,
 }: PurchaseOrderDetailSummaryProps) {
+  const navigate = useNavigate()
   const [qrOpen, setQrOpen] = useState(false)
   const isOrdered = orderStatus === '2_ORDERED'
   const isReadOnly = !isOrdered
+  const isStored = orderStatus === '4_STORED'
+  const isFullyPaid = paymentStatus === '3_PAID'
+  // Đơn đã nhập kho & chưa trả đủ → điều hướng sang trang NCC để thanh toán
+  const showPayLink = isStored && !isFullyPaid
+  // Đơn đã nhập kho & đã trả đủ → ẩn cả link
+  const hideQrLink = isStored && isFullyPaid
 
   const handlePaymentStatusChange = (value: PaymentStatus) => {
     onPaymentStatusChange(value)
@@ -69,12 +77,14 @@ export function PurchaseOrderDetailSummary({
   }
 
   return (
-    <div className='space-y-4 rounded-xl border bg-card p-4 shadow-sm h-full'>
+    <div className='h-full space-y-4 rounded-xl border bg-card p-4 shadow-sm'>
       {supplierName && (
         <>
           <div className='text-center'>
             <div className='text-sm text-muted-foreground'>Nhà cung cấp</div>
-            <div className='text-lg font-semibold text-foreground'>{supplierName}</div>
+            <div className='text-lg font-semibold text-foreground'>
+              {supplierName}
+            </div>
           </div>
           <Separator />
         </>
@@ -154,15 +164,33 @@ export function PurchaseOrderDetailSummary({
             {formatCurrency(totals.debt)}đ
           </span>
         </div>
-        <div className='flex justify-end'>
-          <button
-            type='button'
-            className='text-xs text-primary underline-offset-2 hover:underline'
-            onClick={() => setQrOpen(true)}
-          >
-            Hiển thị QR
-          </button>
-        </div>
+        {!hideQrLink && (
+          <div className='flex justify-end'>
+            {showPayLink ? (
+              <button
+                type='button'
+                className='text-xs text-primary underline-offset-2 hover:underline'
+                onClick={() =>
+                  navigate({
+                    to: '/suppliers/$supplierId',
+                    params: { supplierId },
+                    search: { openPayment: true },
+                  })
+                }
+              >
+                Thực hiện thanh toán
+              </button>
+            ) : (
+              <button
+                type='button'
+                className='text-xs text-primary underline-offset-2 hover:underline'
+                onClick={() => setQrOpen(true)}
+              >
+                Hiển thị QR
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <PurchaseOrderQrDialog

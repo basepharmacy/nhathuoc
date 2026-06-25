@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Trash2, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { UnitPriceInput } from '@/components/unit-price-input'
 import { QuantityStepper } from '@/components/quantity-stepper'
@@ -66,7 +66,15 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                   const unitOptions = item.product.product_units ?? []
                   const isSelected = index === selectedItemIndex
                   const isEditingPrice = editingPriceItemId === item.id
-                  const originalPrice = unitOptions.find((u) => u.id === item.productUnitId)?.sell_price ?? item.unitPrice
+                  const selectedUnit = unitOptions.find((u) => u.id === item.productUnitId)
+                  const originalPrice = selectedUnit?.sell_price ?? item.unitPrice
+                  const costPrice = selectedUnit?.cost_price ?? null
+                  const isBelowCost = costPrice != null && costPrice > 0 && item.unitPrice < costPrice
+                  const belowCostSpacer = isBelowCost ? (
+                    <p className='mt-1 text-xs invisible select-none' aria-hidden='true'>
+                      &nbsp;
+                    </p>
+                  ) : null
                   return (
                     <TableRow
                       key={item.id}
@@ -78,6 +86,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         <div className='flex h-8 w-8 items-center justify-center rounded-md bg-primary/10 text-sm font-semibold text-primary'>
                           {index + 1}
                         </div>
+                        {belowCostSpacer}
                       </TableCell>
                       <TableCell className='align-middle whitespace-normal'>
                         <span className='line-clamp-2 block w-full break-words text-sm font-semibold'>
@@ -88,6 +97,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                           <span>HSD: {formatDateLabel(item.expiryDate)}</span>
                           <span>SL: {item.stock}</span>
                         </div>
+                        {belowCostSpacer}
                       </TableCell>
                       <TableCell className='align-middle'>
                         <select
@@ -107,6 +117,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                             </option>
                           ))}
                         </select>
+                        {belowCostSpacer}
                       </TableCell>
                       <TableCell className='align-middle'>
                         <UnitPriceInput
@@ -118,15 +129,23 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                             if (!open && isEditingPrice) onEditingPriceItemIdChange?.(null)
                           }}
                         />
+                        {isBelowCost && (
+                          <div className='mt-1 flex items-center justify-center gap-1 text-xs text-destructive'>
+                            <AlertTriangle className='h-3 w-3 shrink-0' />
+                            <span>Giá bán dưới giá vốn</span>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className='align-middle'>
                         <QuantityStepper
                           value={item.quantity}
                           onChange={(qty) => onQuantityChange(item.id, qty)}
                         />
+                        {belowCostSpacer}
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>
                         {formatCurrency(lineTotal)}đ
+                        {belowCostSpacer}
                       </TableCell>
                       <TableCell className='align-middle text-end pr-4'>
                         <Button
@@ -138,6 +157,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         >
                           <Trash2 className='h-4 w-4' />
                         </Button>
+                        {belowCostSpacer}
                       </TableCell>
                     </TableRow>
                   )
