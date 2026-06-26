@@ -107,7 +107,7 @@ export const createInventoryBatchRepository = (
     }): Promise<InventoryBatch[]> {
       let query = client
         .from('inventory_batches')
-        .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id')
+        .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id, average_cost_price')
         .eq('tenant_id', params.tenantId)
         .gt('quantity', 0)
 

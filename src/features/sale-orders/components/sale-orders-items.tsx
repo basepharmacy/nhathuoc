@@ -32,6 +32,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
   onEditingPriceItemIdChange,
 }: SaleOrdersItemsProps) {
   const items = useSaleOrderStore((s) => s.items)
+  const inventoryBatches = useSaleOrderStore((s) => s.inventoryBatches)
   const onUpdateItem = useSaleOrderStore((s) => s.updateItem)
   const onQuantityChange = useSaleOrderStore((s) => s.handleQuantityChange)
   const onUnitChange = useSaleOrderStore((s) => s.handleUnitChange)
@@ -68,7 +69,13 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                   const isEditingPrice = editingPriceItemId === item.id
                   const selectedUnit = unitOptions.find((u) => u.id === item.productUnitId)
                   const originalPrice = selectedUnit?.sell_price ?? item.unitPrice
-                  const costPrice = selectedUnit?.cost_price ?? null
+                  // Giá vốn lấy theo average_cost_price thực tế của lô đang chọn.
+                  // average_cost_price là giá vốn trên đơn vị cơ bản, nhân conversion_factor
+                  // để quy về đơn vị đang chọn (so sánh đúng với unitPrice).
+                  const batch = inventoryBatches.find((b) => b.id === item.batchId)
+                  const conversionFactor = selectedUnit?.conversion_factor ?? 1
+                  const costPrice =
+                    batch?.average_cost_price != null ? batch.average_cost_price * conversionFactor : null
                   const isBelowCost = costPrice != null && costPrice > 0 && item.unitPrice < costPrice
                   const belowCostSpacer = isBelowCost ? (
                     <p className='mt-1 text-xs invisible select-none' aria-hidden='true'>
@@ -132,7 +139,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         {isBelowCost && (
                           <div className='mt-1 flex items-center justify-center gap-1 text-xs text-destructive'>
                             <AlertTriangle className='h-3 w-3 shrink-0' />
-                            <span>Giá bán dưới giá vốn</span>
+                            <span>Giá bán dưới giá vốn ({formatCurrency(costPrice!)}đ)</span>
                           </div>
                         )}
                       </TableCell>
