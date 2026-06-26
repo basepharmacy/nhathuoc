@@ -1,5 +1,5 @@
 import { type ProductWithUnits, SaleOrderStatus } from '@/services/supabase/'
-import { generateOrderCode } from '../data/sale-order-helper'
+import { generateOrderCode } from './sale-order-helper'
 export type PaymentMethod = '1_CASH' | '2_BANK_TRANSFER'
 
 export type SaleOrderItem = {

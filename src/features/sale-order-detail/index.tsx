@@ -16,7 +16,7 @@ import { ConfirmDialog } from '@/components/confirm-dialog'
 import { PrintPreviewDialog } from '@/components/print-preview-dialog'
 import { SaleOrdersItems } from './components/sale-orders-items'
 import { SaleOrdersMeta } from './components/sale-orders-meta'
-import { SaleOrdersSummary } from './components//sale-orders-summary'
+import { SaleOrdersSummary } from './components/sale-orders-summary'
 import { SaleOrderInvoice } from './components/sale-order-invoice'
 import { BankAccount } from '../bank-accounts/data/schema'
 

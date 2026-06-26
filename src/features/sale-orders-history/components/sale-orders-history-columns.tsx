@@ -7,7 +7,7 @@ import { LongText } from '@/components/ui/long-text.tsx'
 import { type SaleOrderWithRelations } from '@/services/supabase/'
 import { formatCurrency } from '@/lib/utils'
 import { SaleOrdersHistoryRowActions } from './sale-orders-history-row-actions.tsx'
-import { saleOrderStatusLabels, saleOrderStatusColors } from '../sale-order-status'
+import { saleOrderStatusLabels, saleOrderStatusColors } from '../sale-order-status.ts'
 
 const formatIssuedDate = (value?: string | null) => {
   if (!value) return '—'

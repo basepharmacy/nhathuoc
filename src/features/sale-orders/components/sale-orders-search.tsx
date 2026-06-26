@@ -56,10 +56,10 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
     const matched = !term
       ? products
       : products.filter(
-          (product) =>
-            normalizeSearchValue(product.product_name).includes(term) ||
-            normalizeSearchValue(product.active_ingredient || '').includes(term)
-        )
+        (product) =>
+          normalizeSearchValue(product.product_name).includes(term) ||
+          normalizeSearchValue(product.active_ingredient || '').includes(term)
+      )
     return matched
       .flatMap((product) => {
         const units = [...(product.product_units ?? [])].sort(
@@ -67,7 +67,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
         )
         return units.map((unit) => ({ product, unit }))
       })
-      .slice(0, 10)
+      .slice(0, 100)
   }, [products, debouncedSearchTerm])
 
   useEffect(() => {
