@@ -16,6 +16,13 @@ export const normalizeSearchValue = (value: string) =>
 export const includesSearchValue = (source: string, search: string) =>
   normalizeSearchValue(source).includes(normalizeSearchValue(search))
 
+export const matchesSearchTokens = (source: string, search: string) => {
+  const normalizedSource = normalizeSearchValue(source)
+  const tokens = normalizeSearchValue(search).split(/\s+/).filter(Boolean)
+  if (tokens.length === 0) return true
+  return tokens.every((token) => normalizedSource.includes(token))
+}
+
 export function sleep(ms: number = 1000) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }

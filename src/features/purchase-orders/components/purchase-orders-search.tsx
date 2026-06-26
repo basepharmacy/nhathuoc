@@ -13,7 +13,7 @@ import {
   PopoverAnchor,
   PopoverContent,
 } from '@/components/ui/popover'
-import { cn, normalizeSearchValue } from '@/lib/utils'
+import { cn, matchesSearchTokens } from '@/lib/utils'
 import { type ProductWithUnits } from '@/services/supabase/'
 
 export type PurchaseOrdersSearchHandle = {
@@ -49,11 +49,14 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
   }, [searchTerm])
 
   const productsFiltered = useMemo(() => {
-    const term = normalizeSearchValue(debouncedSearchTerm.trim())
+    const term = debouncedSearchTerm.trim()
     if (!term) return products.slice(0, 10)
     return products
       .filter((product) =>
-        normalizeSearchValue(product.product_name).includes(term)
+        matchesSearchTokens(
+          `${product.product_name} ${product.active_ingredient || ''}`,
+          term
+        )
       )
       .slice(0, 10)
   }, [products, debouncedSearchTerm])
