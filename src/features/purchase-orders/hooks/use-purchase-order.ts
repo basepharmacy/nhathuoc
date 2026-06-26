@@ -254,15 +254,11 @@ export function usePurchaseOrder({
       return ''
     }
 
-    const productExists = items.some((item) => item.product.id === product.id)
-    if (productExists) {
-      toast.error('Sản phẩm này đã có trong đơn hàng.')
-      return ''
-    }
-
+    // Cho phép cùng một sản phẩm ở nhiều dòng (mỗi dòng một lô khác nhau).
+    // Việc chặn trùng (sản phẩm + lô) được xử lý khi chọn lô ở PurchaseOrdersItems.
     const biggestUnit = getBiggestConversionUnit(product)
     const unitPrice = biggestUnit?.cost_price ?? 0
-    const newId = `${product.id}-${Date.now()}`
+    const newId = `${product.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
 
     setItems((prev) => [
       ...prev,

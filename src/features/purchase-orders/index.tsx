@@ -212,8 +212,8 @@ export function PurchaseOrders() {
   const [newProductName, setNewProductName] = useState('')
 
   const handleAddProduct = (product: Parameters<typeof order.addProduct>[0]) => {
-    order.addProduct(product)
-    //if (newItemId) setPendingBatchItemId(newItemId)
+    const newItemId = order.addProduct(product)
+    if (newItemId) setPendingBatchItemId(newItemId)
   }
 
   const handleCreateProduct = (searchTerm: string) => {
@@ -369,7 +369,7 @@ export function PurchaseOrders() {
               onOpenChange={setIsAddProductOpen}
               categories={categories}
               defaultName={newProductName}
-              onCreated={(product) => order.addProduct(product)}
+              onCreated={handleAddProduct}
             />
           </div>
         )}

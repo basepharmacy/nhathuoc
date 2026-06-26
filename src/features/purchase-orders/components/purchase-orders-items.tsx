@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { SquarePen, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { QuantityStepper } from '@/components/quantity-stepper'
 import {
@@ -244,7 +245,18 @@ export function PurchaseOrdersItems({
           if (!open) setActiveItemId(null)
         }}
         onSave={(batchCode, expiryDate) => {
-          if (!activeItemId) return
+          if (!activeItemId || !activeItem) return
+          const duplicated = items.some(
+            (it) =>
+              it.id !== activeItemId &&
+              it.product.id === activeItem.product.id &&
+              batchCode !== '' &&
+              it.batchCode === batchCode
+          )
+          if (duplicated) {
+            toast.error('Sản phẩm này đã có cùng lô trong đơn. Vui lòng chọn lô khác.')
+            return
+          }
           onUpdateItem(activeItemId, { batchCode, expiryDate })
           setActiveItemId(null)
         }}
