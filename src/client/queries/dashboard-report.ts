@@ -156,13 +156,15 @@ export const getSalesTimeSeriesQueryOptions = (params: {
 
 export const getSalesStatisticsQueryOptions = (params: {
   period: SalesPeriod
+  referenceDate?: string
   locationId?: string | null
 }) =>
   queryOptions({
-    queryKey: ['dashboard-report', 'sales-statistics', params.period, params.locationId ?? 'all'],
+    queryKey: ['dashboard-report', 'sales-statistics', params.period, params.referenceDate ?? 'now', params.locationId ?? 'all'],
     queryFn: async () =>
       dashboardReportRepo.getSalesStatistics({
         period: params.period,
+        referenceDate: params.referenceDate ?? undefined,
         locationId: params.locationId ?? undefined,
       }),
   })

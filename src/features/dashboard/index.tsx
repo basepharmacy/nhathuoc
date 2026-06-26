@@ -16,6 +16,8 @@ import { useUser } from '@/client/provider'
 import { getPurchasePeriodsQueryOptions } from '@/client/queries'
 import { purchasePeriodsRepo } from '@/client'
 import { ReportOverview } from './tabs/report-overview'
+import { ReportPeriodPicker } from './tabs/report-overview/components/report-period-picker'
+import { todayReferenceDate } from './lib/period-options'
 import { PurchaseReport } from './tabs/purchase-report'
 import {
   ActivityHistoryTab,
@@ -38,6 +40,9 @@ const timePeriodLabels: Record<TimePeriod, string> = {
 export function Dashboard() {
   const [timePeriod, setTimePeriod] = useState<TimePeriod>(
     () => (localStorage.getItem('dashboard-time-period') as TimePeriod) || 'month'
+  )
+  const [reportReferenceDate, setReportReferenceDate] = useState<string>(() =>
+    todayReferenceDate()
   )
   const [activityTimePeriod, setActivityTimePeriod] = useState<ActivityTimePeriod>(
     () => (localStorage.getItem('dashboard-activity-time-period') as ActivityTimePeriod) || 'month'
@@ -146,24 +151,34 @@ export function Dashboard() {
               </div>
             )}
             {activeTab === 'report' && (
-              <div className='inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground'>
-                {Object.entries(timePeriodLabels).map(([value, label]) => (
-                  <button
-                    key={value}
-                    onClick={() => {
-                      setTimePeriod(value as TimePeriod)
-                      localStorage.setItem('dashboard-time-period', value)
-                    }}
-                    className={cn(
-                      'inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow]',
-                      timePeriod === value
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground hover:text-foreground'
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className='flex flex-1 items-center gap-2'>
+                <div className='inline-flex h-9 w-fit items-center justify-center rounded-lg bg-muted p-[3px] text-muted-foreground'>
+                  {Object.entries(timePeriodLabels).map(([value, label]) => (
+                    <button
+                      key={value}
+                      onClick={() => {
+                        setTimePeriod(value as TimePeriod)
+                        localStorage.setItem('dashboard-time-period', value)
+                        setReportReferenceDate(todayReferenceDate())
+                      }}
+                      className={cn(
+                        'inline-flex h-[calc(100%-1px)] items-center justify-center rounded-md border border-transparent px-2 py-1 text-sm font-medium whitespace-nowrap transition-[color,box-shadow]',
+                        timePeriod === value
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className='ml-auto'>
+                  <ReportPeriodPicker
+                    timePeriod={timePeriod}
+                    referenceDate={reportReferenceDate}
+                    onChange={setReportReferenceDate}
+                  />
+                </div>
               </div>
             )}
             {activeTab === 'activity-history' && (
@@ -226,7 +241,7 @@ export function Dashboard() {
           </div>
 
           <TabsContent value='report'>
-            <ReportOverview timePeriod={timePeriod} />
+            <ReportOverview timePeriod={timePeriod} referenceDate={reportReferenceDate} />
           </TabsContent>
 
           <TabsContent value='summary'>

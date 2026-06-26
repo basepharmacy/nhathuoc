@@ -23,6 +23,7 @@ import {
   TrendingUp,
 } from 'lucide-react'
 import type { TimePeriod } from '../..'
+import { getPeriodDescription } from '../../lib/period-options'
 import { ChangeBadge } from './components/change-badge'
 
 const emptyMetrics = {
@@ -36,15 +37,13 @@ const emptyMetrics = {
   stockLossChange: 0,
 }
 
-const periodDescriptions: Record<TimePeriod, string> = {
-  day: 'Theo hôm nay',
-  week: 'Theo tuần này',
-  month: 'Theo tháng này',
-  quarter: 'Theo quý này',
-  year: 'Theo năm nay',
-}
-
-export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
+export function ReportOverview({
+  timePeriod,
+  referenceDate,
+}: {
+  timePeriod: TimePeriod
+  referenceDate: string
+}) {
   const { user } = useUser()
   const { selectedLocationId } = useLocationContext()
   const locationId = selectedLocationId ?? user?.location?.id ?? undefined
@@ -53,6 +52,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
   const { data: reportMetrics } = useQuery({
     ...getSalesStatisticsQueryOptions({
       period: timePeriod,
+      referenceDate,
       locationId,
     }),
     enabled: !!user,
@@ -73,7 +73,7 @@ export function ReportOverview({ timePeriod }: { timePeriod: TimePeriod }) {
   })
 
   const data = reportMetrics ?? emptyMetrics
-  const periodDescription = periodDescriptions[timePeriod]
+  const periodDescription = getPeriodDescription(timePeriod, referenceDate)
   const changeLabel = `so với ${timePeriod === 'day'
     ? 'hôm qua'
     : timePeriod === 'week'

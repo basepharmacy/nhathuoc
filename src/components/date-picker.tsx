@@ -19,6 +19,8 @@ type DatePickerProps = {
   fromYear?: number
   toYear?: number
   disablePastDates?: boolean
+  /** Override nội dung hiển thị trên nút khi đã chọn ngày (vd: nhãn tuần). */
+  displayLabel?: string
 }
 
 export function DatePicker({
@@ -30,6 +32,7 @@ export function DatePicker({
   fromYear,
   toYear,
   disablePastDates = true,
+  displayLabel,
 }: DatePickerProps) {
   const [open, setOpen] = useState(false)
   const currentYear = new Date().getFullYear()
@@ -48,7 +51,7 @@ export function DatePicker({
           }
         >
           {selected ? (
-            format(selected, 'dd/MM/yyyy', { locale: vi })
+            displayLabel ?? format(selected, 'dd/MM/yyyy', { locale: vi })
           ) : (
             <span>{placeholder}</span>
           )}

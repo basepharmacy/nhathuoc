@@ -240,10 +240,13 @@ export const createDashboardReportRepository = (
 
     async getSalesStatistics(params: {
       period: SalesPeriod
+      referenceDate?: string
       locationId?: string | null
     }): Promise<SalesStatisticsResult> {
       const { data, error } = await client.rpc('get_sales_statistics_v2', {
         p_period: params.period,
+        p_reference_date: params.referenceDate ?? undefined,
+        p_timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         p_location_id: params.locationId ?? undefined,
       })
 
