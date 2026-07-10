@@ -43,22 +43,33 @@ export function useStockAdjustment({
     toast.error(mapSupabaseError(error))
   }
 
+  // Quy đổi số lượng và giá về base unit trước khi gửi lên BE.
+  // BE coi quantity gửi lên luôn là base unit (bảng stock_adjustments không có product_unit_id).
+  const buildAdjustmentPayload = (item: AdjustmentItem) => {
+    const selectedUnit = item.product.product_units?.find(
+      (unit) => unit.id === item.productUnitId
+    )
+    const cf = selectedUnit?.conversion_factor || 1
+
+    return {
+      tenant_id: tenantId,
+      product_id: item.product.id,
+      location_id: selectedLocationId!,
+      batch_code: item.batchCode.trim(),
+      quantity: item.quantity * cf,
+      cost_price: Math.round(item.costPrice / cf),
+      reason_code: item.reasonCode,
+      reason: item.reason.trim().length > 0 ? item.reason.trim() : null,
+      expiry_date: item.expiryDate ? item.expiryDate.trim() : null,
+    }
+  }
+
   const createMutation = useMutation({
     mutationFn: async () => {
       validateAdjustment()
 
       await stockAdjustmentsRepo.createBatchStockAdjustments(
-        items.map((item) => ({
-          tenant_id: tenantId,
-          product_id: item.product.id,
-          location_id: selectedLocationId!,
-          batch_code: item.batchCode.trim(),
-          quantity: item.quantity,
-          cost_price: item.costPrice,
-          reason_code: item.reasonCode,
-          reason: item.reason.trim().length > 0 ? item.reason.trim() : null,
-          expiry_date: item.expiryDate ? item.expiryDate.trim() : null,
-        }))
+        items.map(buildAdjustmentPayload)
       )
     },
     onSuccess: () => {
