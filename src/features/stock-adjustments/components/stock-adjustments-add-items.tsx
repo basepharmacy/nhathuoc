@@ -79,8 +79,14 @@ export function StockAdjustmentsAddItems({
     if (!item.batchCode.trim()) return 0
     const key = `${item.product.id}::${item.batchCode.trim()}`
     const batchQty = batchQuantityMap.get(key)
+    if (batchQty == null) return 0
+    // Tồn kho lưu theo base unit, quy đổi giới hạn giảm về đơn vị đang chọn
+    const selectedUnit = item.product.product_units?.find(
+      (unit) => unit.id === item.productUnitId
+    )
+    const cf = selectedUnit?.conversion_factor || 1
     // Existing batch → allow decrease up to batch quantity; new batch → min 0
-    return batchQty != null ? -batchQty : 0
+    return -Math.floor(batchQty / cf)
   }
 
   useEffect(() => {
