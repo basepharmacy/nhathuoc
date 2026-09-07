@@ -79,7 +79,13 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
   const handleAddProduct = (product: ProductWithUnits) => {
     onAddProduct(product)
     setSearchTerm('')
-    setSearchOpen(false)
+    // Reset ngay debounced term để gợi ý hiện lại danh sách mặc định,
+    // thay vì giữ kết quả tìm kiếm cũ trong 300ms chờ debounce
+    setDebouncedSearchTerm('')
+    setActiveIndex(0)
+    // Mở lại gợi ý và giữ focus ở ô tìm kiếm, giống lúc vừa vào màn hình
+    setSearchOpen(true)
+    inputRef.current?.focus()
   }
 
   const handleCreateProduct = () => {
@@ -177,6 +183,7 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
           className='p-0'
           style={{ width: 'var(--radix-popover-trigger-width)' }}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
           onWheel={(event) => event.stopPropagation()}
           onTouchMove={(event) => event.stopPropagation()}
         >
@@ -195,6 +202,8 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
                   }}
                   value='__create_product__'
                   onSelect={handleCreateProduct}
+                  // Không cho mousedown lấy focus khỏi ô tìm kiếm
+                  onMouseDown={(event) => event.preventDefault()}
                   onMouseEnter={() => setActiveIndex(createItemIndex)}
                   className={cn(
                     'cursor-pointer text-primary',
@@ -221,6 +230,8 @@ export const PurchaseOrdersSearch = forwardRef<PurchaseOrdersSearchHandle, Purch
                     }}
                     value={product.product_name}
                     onSelect={() => handleAddProduct(product)}
+                    // Không cho mousedown lấy focus khỏi ô tìm kiếm
+                    onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn('cursor-pointer', index === activeIndex && 'bg-accent')}
                   >

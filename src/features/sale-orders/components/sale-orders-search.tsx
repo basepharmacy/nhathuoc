@@ -86,7 +86,13 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
   const handleAddProduct = (row: SearchRow) => {
     onAddProduct(row.product, row.unit.id)
     setSearchTerm('')
-    setSearchOpen(false)
+    // Reset ngay debounced term để gợi ý hiện lại danh sách mặc định,
+    // thay vì giữ kết quả tìm kiếm cũ trong 300ms chờ debounce
+    setDebouncedSearchTerm('')
+    setActiveIndex(0)
+    // Mở lại gợi ý và giữ focus ở ô tìm kiếm, giống lúc vừa vào màn hình
+    setSearchOpen(true)
+    inputRef.current?.focus()
   }
 
   // Auto-focus on mount
@@ -173,6 +179,7 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
           className='p-0'
           style={{ width: 'var(--radix-popover-trigger-width)' }}
           onOpenAutoFocus={(event) => event.preventDefault()}
+          onCloseAutoFocus={(event) => event.preventDefault()}
           onWheel={(event) => event.stopPropagation()}
           onTouchMove={(event) => event.stopPropagation()}
         >
@@ -189,6 +196,8 @@ export const SaleOrdersSearch = forwardRef<SaleOrdersSearchHandle, SaleOrdersSea
                     }}
                     value={`${row.product.product_name}-${row.unit.id}`}
                     onSelect={() => handleAddProduct(row)}
+                    // Không cho mousedown lấy focus khỏi ô tìm kiếm
+                    onMouseDown={(event) => event.preventDefault()}
                     onMouseEnter={() => setActiveIndex(index)}
                     className={cn(
                       'cursor-pointer data-[selected=true]:bg-transparent data-[selected=true]:text-inherit',
