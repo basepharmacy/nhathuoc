@@ -106,25 +106,19 @@ export function SaleOrders() {
       // Đơn đã lưu/hoàn tất → xoá nháp của tab này.
       clearDraftTab(tabId)
       if (tabs.length <= 1) {
-        // if (status === '2_COMPLETE' && !savedOrderCode.includes('offline-')) {
-        //   clearDraftSession()
-        //   navigate({
-        //     to: '/sale-orders/detail',
-        //     search: { orderCode: savedOrderCode },
-        //   })
-        // } else {
-        //   // DRAFT: close current tab and create a new one
-        //   const newTab = createTab()
-        //   setTabs([newTab])
-        //   setActiveTabId(newTab.id)
-        //   navigate({ search: {} })
-        // }
-        // Tạm thời luôn tạo tab mới khi hoàn thành đơn
-        const newTab = createTab()
-        setTabs([newTab])
-        setActiveTabId(newTab.id)
-        navigate({ search: {} })
-        return
+        if (false && status === '2_COMPLETE' && !savedOrderCode.includes('offline-')) {
+          clearDraftSession()
+          navigate({
+            to: '/sale-orders/detail',
+            search: { orderCode: savedOrderCode },
+          })
+        } else {
+          // DRAFT: close current tab and create a new one
+          const newTab = createTab()
+          setTabs([newTab])
+          setActiveTabId(newTab.id)
+          navigate({ search: {} })
+        }
       }
       setTabs((prev) => {
         const idx = prev.findIndex((t) => t.id === tabId)
