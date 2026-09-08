@@ -1,4 +1,5 @@
 import { type InventoryBatch } from '@/services/supabase/'
+import { isItemOverStock } from '../data/inventory-helpers'
 import { type SaleOrderState } from './sale-order-store'
 
 export const selectBatchesByProductId = (state: SaleOrderState) => {
@@ -20,3 +21,7 @@ export const selectTotal = (state: SaleOrderState) =>
 
 export const selectIsEdit = (state: SaleOrderState) =>
   Boolean(state.initialData.id)
+
+/** Đơn có ít nhất 1 dòng vượt tồn kho → chỉ được lưu nháp, không hoàn tất được. */
+export const selectHasOverStockItem = (state: SaleOrderState) =>
+  state.items.some(isItemOverStock)

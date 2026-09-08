@@ -101,6 +101,9 @@ export const createInventoryBatchRepository = (
         total,
       }
     },
+    // Trả về cả lô đã hết hàng (quantity = 0) để màn bán hàng vẫn gắn được
+    // batch_id hợp lệ cho sản phẩm hết tồn (sale_order_items.batch_id là NOT NULL).
+    // Lô đã hết hạn vẫn bị loại nên số dòng tăng thêm có giới hạn.
     async getAllAvailableBatches(params: {
       tenantId: string
       locationId?: string | null
@@ -109,7 +112,6 @@ export const createInventoryBatchRepository = (
         .from('inventory_batches')
         .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id, average_cost_price')
         .eq('tenant_id', params.tenantId)
-        .gt('quantity', 0)
 
       if (params.locationId) {
         query = query.eq('location_id', params.locationId)

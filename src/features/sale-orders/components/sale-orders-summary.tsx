@@ -16,13 +16,18 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { cn, formatCurrency } from '@/lib/utils'
 import { bankByBin } from '@/components/bank-combobox'
 import { type PaymentMethod } from '../data/types'
 import type { Customer, BankAccount } from '@/services/supabase/'
 import { CustomerSwitcher } from './customer-switcher'
 import { useSaleOrderStore } from '../store/sale-order-context'
-import { selectSubtotal } from '../store/sale-order-selectors'
+import { selectSubtotal, selectHasOverStockItem } from '../store/sale-order-selectors'
 
 type SaleOrdersSummaryProps = {
   customers: Customer[]
@@ -71,6 +76,7 @@ export const SaleOrdersSummary = memo(function SaleOrdersSummary({
   const notes = useSaleOrderStore((s) => s.notes)
   const setNotes = useSaleOrderStore((s) => s.setNotes)
   const setIsAddCustomerOpen = useSaleOrderStore((s) => s.setIsAddCustomerOpen)
+  const hasOverStock = useSaleOrderStore(selectHasOverStockItem)
   const subtotal = useSaleOrderStore(selectSubtotal)
 
   const [cashPopoverOpen, setCashPopoverOpen] = useState(false)
@@ -245,14 +251,25 @@ export const SaleOrdersSummary = memo(function SaleOrdersSummary({
         >
           Lưu nháp (F3)
         </Button>
-        <Button
-          type='button'
-          className='h-9 flex-1 rounded-xl'
-          onClick={onSubmit}
-          disabled={isSubmitting}
-        >
-          Hoàn tất (F9)
-        </Button>
+        <Tooltip>
+          {/* Button có `disabled:pointer-events-none` nên tooltip phải gắn vào
+              thẻ bọc, nếu không sẽ không hover được lúc nút bị vô hiệu hoá. */}
+          <TooltipTrigger asChild>
+            <span className='flex-1'>
+              <Button
+                type='button'
+                className='h-9 w-full rounded-xl'
+                onClick={onSubmit}
+                disabled={isSubmitting || hasOverStock}
+              >
+                Hoàn tất (F9)
+              </Button>
+            </span>
+          </TooltipTrigger>
+          {hasOverStock ? (
+            <TooltipContent>Đơn có sản phẩm vượt tồn kho — chỉ có thể lưu nháp.</TooltipContent>
+          ) : null}
+        </Tooltip>
       </div>
 
       <Textarea

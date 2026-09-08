@@ -12,8 +12,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import { formatCurrency, formatDateLabel } from '@/lib/utils'
+import { cn, formatCurrency, formatDateLabel } from '@/lib/utils'
 import { type ProductUnit } from '@/services/supabase'
+import { isItemOverStock } from '../data/inventory-helpers'
 import { useSaleOrderStore } from '../store/sale-order-context'
 
 type SaleOrdersItemsProps = {
@@ -77,6 +78,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                   const costPrice =
                     batch?.average_cost_price != null ? batch.average_cost_price * conversionFactor : null
                   const isBelowCost = costPrice != null && costPrice > 0 && item.unitPrice < costPrice
+                  const isOverStock = isItemOverStock(item)
                   const belowCostSpacer = isBelowCost ? (
                     <p className='mt-1 text-xs invisible select-none' aria-hidden='true'>
                       &nbsp;
@@ -86,7 +88,12 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                     <TableRow
                       key={item.id}
                       data-item-id={item.id}
-                      className={isSelected ? 'bg-primary/5 ring-1 ring-inset ring-primary/20' : 'cursor-pointer'}
+                      className={cn(
+                        'cursor-pointer',
+                        isSelected && 'bg-primary/5 ring-1 ring-inset ring-primary/20',
+                        // Đặt sau cùng để thắng cả nền dòng đang chọn lẫn hover mặc định.
+                        isOverStock && 'bg-destructive/10 hover:bg-destructive/15'
+                      )}
                       onClick={() => onSelectedItemIndexChange?.(index)}
                     >
                       <TableCell className='align-middle'>
@@ -102,7 +109,9 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         <div className='mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
                           {item.batchCode ? <span>Lô: {item.batchCode}</span> : null}
                           <span>HSD: {formatDateLabel(item.expiryDate)}</span>
-                          <span>SL: {item.stock}</span>
+                          <span className={cn(isOverStock && 'font-medium text-destructive')}>
+                            SL: {item.stock}
+                          </span>
                         </div>
                         {belowCostSpacer}
                       </TableCell>

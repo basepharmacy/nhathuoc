@@ -4,10 +4,11 @@ import { toast } from 'sonner'
 import { type ProductWithUnits, type InventoryBatch } from '@/services/supabase/'
 import { type PaymentMethod, type SaleOrderItem, type SaleOrderInCreate } from '../data/types'
 import { generateOrderCode } from '../data/sale-order-helper'
-import { getDefaultUnit } from '../data/inventory-helpers'
 import {
   allocateQuantityToBatches,
   getAllocatedByBatch,
+  getDefaultUnit,
+  getFallbackBatch,
   getItemConversionFactor,
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
@@ -117,15 +118,39 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       }
 
       const allocations = getAllocatedByBatch(product.id, state.items)
-      const nextBatch = getNextAvailableBatch(batches, allocations)
+      const availableBatch = getNextAvailableBatch(batches, allocations)
+      // Hết tồn vẫn cho thêm vào đơn (đơn đặt trước / chờ nhập hàng), chỉ cảnh báo.
+      // Dòng sẽ được tô đỏ và đơn chỉ lưu nháp được, không hoàn tất được.
+      const nextBatch = availableBatch ?? getFallbackBatch(batches, state.items, product.id)
 
       if (!nextBatch) {
-        toast.error(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
+        toast.error(`Sản phẩm ${product.product_name} không có lô tồn kho phù hợp.`)
         return
+      }
+
+      if (!availableBatch) {
+        toast.warning(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
       }
 
       const conversionFactor = selectedUnit?.conversion_factor || 1
       const batchStock = Math.floor((nextBatch.quantity ?? 0) / conversionFactor)
+
+      // Lô fallback có thể đã có dòng trong đơn → tăng số lượng thay vì tạo dòng trùng.
+      const existing = state.items.find(
+        (item) =>
+          item.product.id === product.id &&
+          item.batchId === nextBatch.id &&
+          item.productUnitId === (selectedUnit?.id ?? null)
+      )
+
+      if (existing) {
+        set({
+          items: state.items.map((item) =>
+            item.id === existing.id ? { ...item, quantity: item.quantity + 1 } : item
+          ),
+        })
+        return
+      }
 
       set({
         items: [
@@ -173,12 +198,19 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       const maxForItem = Math.floor(maxBaseForItem / (conversionFactor || 1))
       const desired = Math.max(1, Math.floor(nextQuantity || 1))
 
-      if (Math.min(desired, maxForItem) < desired) {
-        toast.error('Số lượng vượt quá tồn kho hiện tại.')
+      if (desired > maxForItem) {
+        toast.warning('Số lượng vượt quá tồn kho hiện tại.')
       }
 
       set({
-        items: allocateQuantityToBatches({ target, desired, batches, allItems: state.items, conversionFactor }),
+        items: allocateQuantityToBatches({
+          target,
+          desired,
+          batches,
+          allItems: state.items,
+          conversionFactor,
+          allowOverStock: true,
+        }),
       })
     },
 
@@ -201,22 +233,16 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
       const maxInNewUnit = Math.floor(maxBaseForItem / newCF)
 
-      if (maxInNewUnit <= 0) {
-        toast.error('Tồn kho không đủ cho đơn vị này.')
-        return
-      }
-
-      const cappedQuantity = Math.min(target.quantity, maxInNewUnit)
-
-      if (cappedQuantity < target.quantity) {
-        toast.error('Số lượng vượt quá tồn kho hiện tại.')
+      // Vẫn cho đổi đơn vị khi tồn không đủ; dòng sẽ hiển thị vượt tồn kho.
+      if (target.quantity > maxInNewUnit) {
+        toast.warning('Số lượng vượt quá tồn kho hiện tại.')
       }
 
       const updatedTarget: SaleOrderItem = {
         ...target,
         productUnitId: newUnitId,
         unitPrice: selectedUnit.sell_price ?? target.unitPrice,
-        quantity: cappedQuantity,
+        quantity: target.quantity,
       }
 
       const updatedItems = state.items.map((item) =>
@@ -226,10 +252,11 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       set({
         items: allocateQuantityToBatches({
           target: updatedTarget,
-          desired: cappedQuantity,
+          desired: updatedTarget.quantity,
           batches,
           allItems: updatedItems,
           conversionFactor: newCF,
+          allowOverStock: true,
         }),
       })
     },

@@ -7,7 +7,7 @@ import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { useSaleOrderStoreApi } from '../store/sale-order-context'
-import { selectTotal, selectIsEdit } from '../store/sale-order-selectors'
+import { selectTotal, selectIsEdit, selectHasOverStockItem } from '../store/sale-order-selectors'
 
 type UseSaleOrderMutationsParams = {
   tenantId: string
@@ -48,11 +48,17 @@ export function useSaleOrderMutations({
     }))
   }
 
-  const validateOrder = () => {
-    const { selectedLocationId, items } = store.getState()
+  const validateOrder = (status: SaleOrder['status']) => {
+    const state = store.getState()
+    const { selectedLocationId, items } = state
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
+    // Đơn vượt tồn kho chỉ được lưu nháp: hoàn tất sẽ trừ kho xuống âm và
+    // vi phạm CHECK (quantity >= 0) trên inventory_batches.
+    if (status === '2_COMPLETE' && selectHasOverStockItem(state)) {
+      throw new Error('Đơn có sản phẩm vượt tồn kho. Vui lòng lưu nháp hoặc điều chỉnh số lượng.')
+    }
   }
 
   const handleMutationError = (error: unknown) => {
@@ -88,7 +94,7 @@ export function useSaleOrderMutations({
 
   const createMutation = useMutation({
     mutationFn: async (status: SaleOrder['status']) => {
-      validateOrder()
+      validateOrder(status)
       const state = store.getState()
       const total = selectTotal(state)
       const saleCompletedTime = status === '2_COMPLETE'
@@ -160,7 +166,7 @@ export function useSaleOrderMutations({
     mutationFn: async (status: SaleOrder['status']) => {
       const { initialData } = store.getState()
       if (!initialData.id) throw new Error('Không tìm thấy đơn bán hàng.')
-      validateOrder()
+      validateOrder(status)
 
       const state = store.getState()
       const total = selectTotal(state)

@@ -32,6 +32,26 @@ export const getNextAvailableBatch = (
 }
 
 /**
+ * Lô dùng khi sản phẩm đã hết tồn: ưu tiên lô chưa có dòng nào trong đơn dùng tới,
+ * nếu hết thì lấy lô đầu tiên. Luôn trả về một lô có thật vì
+ * `sale_order_items.batch_id` là NOT NULL.
+ */
+export const getFallbackBatch = (
+  batches: InventoryBatch[],
+  rows: SaleOrderItem[],
+  productId: string
+): InventoryBatch | null => {
+  if (batches.length === 0) return null
+  const usedBatchIds = new Set(
+    rows.filter((row) => row.product.id === productId).map((row) => row.batchId)
+  )
+  return batches.find((batch) => !usedBatchIds.has(batch.id)) ?? batches[0]
+}
+
+/** Dòng đang bán vượt tồn kho của lô đang chọn (gồm cả trường hợp lô đã hết sạch). */
+export const isItemOverStock = (item: SaleOrderItem) => item.quantity > item.stock
+
+/**
  * FIFO batch allocation: distributes a desired quantity across inventory batches,
  * starting from the current batch and spilling over to subsequent batches.
  */
@@ -41,6 +61,7 @@ export const allocateQuantityToBatches = ({
   batches,
   allItems,
   conversionFactor = 1,
+  allowOverStock = false,
 }: {
   target: SaleOrderItem
   desired: number
@@ -48,6 +69,8 @@ export const allocateQuantityToBatches = ({
   allItems: SaleOrderItem[]
   /** Conversion factor of the target item's selected unit (base unit = 1). */
   conversionFactor?: number
+  /** Cho phép giữ số lượng vượt tồn kho trên dòng target thay vì cắt bớt. */
+  allowOverStock?: boolean
 }): SaleOrderItem[] => {
   // Guard against zero conversion factor to prevent division by zero
   const safeCF = conversionFactor || 1
@@ -63,7 +86,8 @@ export const allocateQuantityToBatches = ({
   // Max available for this item, converted to the target's selected unit
   const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
   const maxForItem = Math.floor(maxBaseForItem / safeCF)
-  const capped = Math.min(Math.max(1, Math.floor(desired || 1)), maxForItem)
+  const desiredQty = Math.max(1, Math.floor(desired || 1))
+  const capped = allowOverStock ? desiredQty : Math.min(desiredQty, maxForItem)
 
   // Track per-batch allocations by other items in base units
   const allocationsBase = new Map<string, number>()
@@ -85,19 +109,23 @@ export const allocateQuantityToBatches = ({
       if (item.id !== target.id) return item
 
       const batch = batches.find((entry) => entry.id === item.batchId)
+      const batchBase = batch ? getBatchQuantity(batch) : 0
       const availableBase = Math.max(
         0,
-        (batch ? getBatchQuantity(batch) : 0) -
-        (allocationsBase.get(item.batchId ?? '') ?? 0)
+        batchBase - (allocationsBase.get(item.batchId ?? '') ?? 0)
       )
       // Convert available base units to the target's selected unit
       const availableInUnit = Math.floor(availableBase / safeCF)
       const assigned = Math.min(remaining, availableInUnit)
       remaining -= assigned
 
-      return { ...item, quantity: assigned }
+      // Tính lại stock theo đơn vị đang chọn — cần thiết khi đổi đơn vị,
+      // nếu không dòng vượt tồn sẽ không được phát hiện tới lần refetch sau.
+      return { ...item, quantity: assigned, stock: Math.floor(batchBase / safeCF) }
     })
-    .filter((item) => item.quantity > 0)
+    // Khi cho phép vượt tồn, giữ lại dòng target dù chưa được cấp phát lô nào —
+    // phần vượt sẽ được cộng vào dòng này ở cuối hàm.
+    .filter((item) => item.quantity > 0 || (allowOverStock && item.id === target.id))
 
   const startIndex = batches.findIndex((batch) => batch.id === target.batchId)
   // Wrap around: try batches after the current one first, then batches before it
@@ -143,7 +171,18 @@ export const allocateQuantityToBatches = ({
     })
   })
 
-  return nextItems
+  // Phần không lô nào gánh được chính là phần vượt tồn: dồn vào dòng target.
+  if (allowOverStock && remaining > 0) {
+    const targetIndex = nextItems.findIndex((item) => item.id === target.id)
+    if (targetIndex >= 0) {
+      nextItems[targetIndex] = {
+        ...nextItems[targetIndex],
+        quantity: nextItems[targetIndex].quantity + remaining,
+      }
+    }
+  }
+
+  return allowOverStock ? nextItems.filter((item) => item.quantity > 0) : nextItems
 }
 
 export const getDefaultUnit = (product: ProductWithUnits) =>
