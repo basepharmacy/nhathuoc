@@ -6,6 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { PercentInput } from '@/components/percent-input'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -68,6 +69,15 @@ export function DiscountInput({
               {p}%
             </Button>
           ))}
+        </div>
+        <div className='mt-2 flex items-center justify-between gap-2 border-t pt-2'>
+          <span className='text-xs text-muted-foreground'>Nhập %</span>
+          <PercentInput
+            value={percent}
+            onChange={(p) => onChange?.(Math.round((subtotal * p) / 100))}
+            onEnter={() => setOpen(false)}
+            disabled={disabled || subtotal <= 0}
+          />
         </div>
       </PopoverContent>
     </Popover>
