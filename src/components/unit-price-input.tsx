@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { CurrencyInput } from '@/components/ui/currency-input'
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { CurrencyInput } from '@/components/ui/currency-input'
+import { PercentInput } from '@/components/percent-input'
 
 const DISCOUNT_PRESETS = [5, 10, 15, 20, 25, 50, 75]
 
@@ -45,7 +46,7 @@ export function UnitPriceInput({
       <PopoverTrigger asChild>
         <div className='flex items-center gap-1.5'>
           {discountPercent > 0 && (
-            <span className='text-xs font-medium text-red-500 shrink-0'>
+            <span className='shrink-0 text-xs font-medium text-red-500'>
               -{discountPercent}%
             </span>
           )}
@@ -92,6 +93,17 @@ export function UnitPriceInput({
               -{p}%
             </Button>
           ))}
+        </div>
+        <div className='mt-2 flex items-center justify-between gap-2 border-t pt-2'>
+          <span className='text-xs text-muted-foreground'>Nhập %</span>
+          <PercentInput
+            value={discountPercent}
+            onChange={(p) =>
+              onChange(Math.round(originalPrice * (1 - p / 100)))
+            }
+            onEnter={() => handleOpenChange(false)}
+            disabled={disabled || originalPrice <= 0}
+          />
         </div>
       </PopoverContent>
     </Popover>
