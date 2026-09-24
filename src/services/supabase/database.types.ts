@@ -1526,7 +1526,7 @@ export type Database = {
       }
       get_inventory_batches_list: {
         Args: {
-          p_expiry_status?: string
+          p_expiry_days?: number
           p_location_id?: string
           p_page_index?: number
           p_page_size?: number
@@ -1556,7 +1556,7 @@ export type Database = {
       }
       get_inventory_products_list: {
         Args: {
-          p_expiry_status?: string
+          p_expiry_days?: number
           p_location_id?: string
           p_page_index?: number
           p_page_size?: number

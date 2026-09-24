@@ -5,7 +5,7 @@ import {
   type SortingState,
   type VisibilityState,
 } from '@tanstack/react-table'
-import { type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus, type InventoryBatchExpiryStatus } from '@/services/supabase/database/model'
+import { EXPIRY_DAYS_EXPIRED, type InventoryBatchesListQueryInput, type InventoryBatchSortField, type InventoryProductsListQueryInput, type InventoryProductSortField, type InventoryBatchStockStatus } from '@/services/supabase/database/model'
 import { usePermissions } from '@/hooks/use-permissions'
 
 type Location = { id: string; name: string }
@@ -62,12 +62,13 @@ export function useInventoryTable({
     return undefined
   }, [columnFilters])
 
-  const expiryStatus = useMemo(() => {
+  const expiryDays = useMemo(() => {
     const expiryFilter = columnFilters.find(
       (filter) => filter.id === 'expiry_status'
     )
     if (Array.isArray(expiryFilter?.value) && expiryFilter.value.length === 1) {
-      return expiryFilter.value[0] as InventoryBatchExpiryStatus
+      const parsed = Number(expiryFilter.value[0])
+      return Number.isFinite(parsed) ? parsed : undefined
     }
     return undefined
   }, [columnFilters])
@@ -83,10 +84,10 @@ export function useInventoryTable({
     search: searchValue,
     locationId,
     stockStatus,
-    expiryStatus,
+    expiryDays,
     sortBy: batchSortBy,
     sortOrder,
-  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, batchSortBy, sortOrder])
+  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryDays, batchSortBy, sortOrder])
 
   const productListQueryParams: InventoryProductsListQueryInput = useMemo(() => ({
     tenantId,
@@ -95,10 +96,10 @@ export function useInventoryTable({
     search: searchValue,
     locationId,
     stockStatus,
-    expiryStatus,
+    expiryDays,
     sortBy: productSortBy,
     sortOrder,
-  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryStatus, productSortBy, sortOrder])
+  }), [tenantId, pagination, searchValue, locationId, stockStatus, expiryDays, productSortBy, sortOrder])
 
   useEffect(() => {
     setPagination((prev) => ({ ...prev, pageIndex: 0 }))
@@ -147,10 +148,12 @@ export function useInventoryTable({
   ]
 
   const expiryStatusOptions = [
-    { label: 'Đã hết hạn', value: 'expired' },
-    { label: 'Còn 7 ngày', value: '7_days' },
-    { label: 'Còn 1 tháng', value: '1_month' },
-    { label: 'Còn 3 tháng', value: '3_months' },
+    { label: 'Đã hết hạn', value: String(EXPIRY_DAYS_EXPIRED) },
+    { label: 'Còn 7 ngày', value: '7' },
+    { label: 'Còn 1 tháng', value: '30' },
+    { label: 'Còn 3 tháng', value: '90' },
+    { label: 'Còn 6 tháng', value: '180' },
+    { label: 'Còn 12 tháng', value: '365' },
   ]
 
   const filters = useMemo(

@@ -6,7 +6,9 @@ export type InventoryBatch = Tables<'inventory_batches'>
 export type InventoryBatchInsert = TablesInsert<'inventory_batches'>
 
 export type InventoryBatchStockStatus = 'in_stock' | 'out_of_stock'
-export type InventoryBatchExpiryStatus = 'expired' | '7_days' | '1_month' | '3_months'
+// Bộ lọc hạn sử dụng truyền xuống RPC dưới dạng số ngày: âm = đã hết hạn,
+// >= 0 = còn tối đa N ngày.
+export const EXPIRY_DAYS_EXPIRED = -1
 
 export type InventoryBatchSortField = 'expiry_date' | 'quantity' | 'cumulative_quantity' | 'average_cost_price'
 
@@ -17,7 +19,7 @@ export type InventoryBatchesListQueryInput = {
 	search?: string
 	locationId?: string
 	stockStatus?: InventoryBatchStockStatus
-	expiryStatus?: InventoryBatchExpiryStatus
+	expiryDays?: number
 	sortBy?: InventoryBatchSortField
 	sortOrder?: 'asc' | 'desc'
 }
@@ -74,7 +76,7 @@ export type InventoryProductsListQueryInput = {
 	search?: string
 	locationId?: string
 	stockStatus?: InventoryBatchStockStatus
-	expiryStatus?: InventoryBatchExpiryStatus
+	expiryDays?: number
 	sortBy?: InventoryProductSortField
 	sortOrder?: 'asc' | 'desc'
 }

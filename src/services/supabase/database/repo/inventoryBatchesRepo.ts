@@ -48,7 +48,7 @@ export const createInventoryBatchRepository = (
         p_search: params.search?.trim() || undefined,
         p_location_id: params.locationId,
         p_stock_status: params.stockStatus,
-        p_expiry_status: params.expiryStatus,
+        p_expiry_days: params.expiryDays,
         p_sort_by: params.sortBy,
         p_sort_order: params.sortOrder,
       })
@@ -81,7 +81,7 @@ export const createInventoryBatchRepository = (
         p_search: params.search?.trim() || undefined,
         p_location_id: params.locationId,
         p_stock_status: params.stockStatus,
-        p_expiry_status: params.expiryStatus,
+        p_expiry_days: params.expiryDays,
         p_sort_by: params.sortBy,
         p_sort_order: params.sortOrder,
       })
