@@ -58,6 +58,9 @@ const EXCEPTION_MESSAGE_MAP: Record<string, string> = {
   'INSUFFICIENT_STOCK': 'Số lượng tồn không đủ để thực hiện điều chỉnh.',
   'NEGATIVE_QUANTITY_NOT_ALLOWED': 'Số lượng điều chỉnh không được âm.',
   'JWT_MISSING_TENANT_ID': 'Mã khách hàng không hợp lệ hoặc thiếu trong token.',
+  'PRODUCT_HAS_SALE_HISTORY': 'Sản phẩm đã có lịch sử bán hàng nên không thể xoá.',
+  'PRODUCT_HAS_PURCHASE_HISTORY': 'Sản phẩm đã có lịch sử nhập hàng nên không thể xoá.',
+  'PRODUCT_DELETE_FORBIDDEN': 'Bạn không có quyền xoá sản phẩm này.',
 }
 
 /**

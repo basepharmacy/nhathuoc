@@ -15,7 +15,6 @@ type DataTableRowActionsProps = {
 export function DataTableRowActions({ row }: DataTableRowActionsProps) {
   const { setOpen, setCurrentRow } = useProducts()
   const { canEdit } = usePermissions()
-  const isDraft = row.original.status === '1_DRAFT'
   const isActive = row.original.status === '2_ACTIVE'
 
   if (!canEdit('products')) return null
@@ -43,8 +42,6 @@ export function DataTableRowActions({ row }: DataTableRowActionsProps) {
       label: 'Xóa',
       icon: Trash2,
       destructive: true,
-      disabled: !isDraft,
-      tooltip: !isDraft ? 'Chỉ được phép xoá sản phẩm ở trạng thái nháp' : undefined,
       onClick: () => {
         setCurrentRow(row.original)
         setOpen('delete')

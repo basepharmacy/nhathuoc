@@ -210,10 +210,19 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
       return (data ?? []) as ProductUnit[]
     },
     async deleteProduct(productId: string): Promise<void> {
-      const { error } = await client.from('products').delete().eq('id', productId)
+      const { data, error } = await client
+        .from('products')
+        .delete()
+        .eq('id', productId)
+        .select('id')
 
       if (error) {
         throw error
+      }
+
+      // RLS từ chối xoá sẽ không trả lỗi mà chỉ xoá 0 dòng
+      if (!data || data.length === 0) {
+        throw new Error('PRODUCT_DELETE_FORBIDDEN')
       }
     },
     async updateProductUnitCostPrice(unitId: string, costPrice: number): Promise<void> {

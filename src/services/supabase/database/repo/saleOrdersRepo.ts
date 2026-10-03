@@ -355,5 +355,21 @@ export const createSaleOrderRepository = (client: BasePharmacySupabaseClient) =>
       }
       // Không cần xóa thủ công items vì đã thiết lập ON DELETE CASCADE ở database
     },
+    async countSaleOrderItemsByProductId(params: {
+      tenantId: string
+      productId: string
+    }): Promise<number> {
+      const { count, error } = await client
+        .from('sale_order_items')
+        .select('id', { count: 'exact', head: true })
+        .eq('tenant_id', params.tenantId)
+        .eq('product_id', params.productId)
+
+      if (error) {
+        throw error
+      }
+
+      return count ?? 0
+    },
   }
 }
