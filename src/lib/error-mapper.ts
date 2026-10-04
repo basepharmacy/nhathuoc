@@ -61,6 +61,14 @@ const EXCEPTION_MESSAGE_MAP: Record<string, string> = {
   'PRODUCT_HAS_SALE_HISTORY': 'Sản phẩm đã có lịch sử bán hàng nên không thể xoá.',
   'PRODUCT_HAS_PURCHASE_HISTORY': 'Sản phẩm đã có lịch sử nhập hàng nên không thể xoá.',
   'PRODUCT_DELETE_FORBIDDEN': 'Bạn không có quyền xoá sản phẩm này.',
+  'PRODUCT_NOT_FOUND': 'Không tìm thấy sản phẩm.',
+  'FORBIDDEN': 'Bạn không có quyền thực hiện thao tác này.',
+  'INVALID_FACTOR': 'Hệ số quy đổi phải là số nguyên từ 2 trở lên.',
+  'INVALID_UNIT_NAME': 'Tên đơn vị không hợp lệ.',
+  'INVALID_UNIT_PRICE': 'Giá của đơn vị không được âm.',
+  'UNIT_NAME_DUPLICATED': 'Sản phẩm đã có đơn vị trùng tên này.',
+  'INVALID_BASE_UNIT_STATE':
+    'Dữ liệu đơn vị của sản phẩm không hợp lệ (phải có đúng một đơn vị cơ bản). Vui lòng kiểm tra lại trong màn hình sửa sản phẩm.',
 }
 
 /**

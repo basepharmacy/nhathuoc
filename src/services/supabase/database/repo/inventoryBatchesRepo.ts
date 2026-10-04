@@ -144,7 +144,7 @@ export const createInventoryBatchRepository = (
 
       let query = client
         .from('inventory_batches')
-        .select('id, batch_code, expiry_date, quantity, product_id, location_id, tenant_id')
+        .select('id, batch_code, expiry_date, quantity, average_cost_price, product_id, location_id, tenant_id')
         .eq('tenant_id', params.tenantId)
         .in('product_id', params.productIds)
 

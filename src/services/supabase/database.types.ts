@@ -1687,6 +1687,14 @@ export type Database = {
           previous_total_revenue: number
         }[]
       }
+      get_product_unit_usage: {
+        Args: { p_product_id: string }
+        Returns: {
+          product_unit_id: string
+          purchase_count: number
+          sale_count: number
+        }[]
+      }
       get_sales_time_series: {
         Args: {
           p_group_by?: string
@@ -1821,6 +1829,16 @@ export type Database = {
           supplier_id: string
           updated_at: string
         }[]
+      }
+      rebase_product_base_unit: {
+        Args: {
+          p_cost_price?: number
+          p_factor: number
+          p_new_unit_name: string
+          p_product_id: string
+          p_sell_price?: number
+        }
+        Returns: Json
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

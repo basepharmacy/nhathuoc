@@ -1,5 +1,14 @@
 import { BasePharmacySupabaseClient } from '../../client'
-import { Product, ProductInsert, ProductUnit, ProductUnitInsert, ProductUpdate, ProductWithUnits } from '../model'
+import {
+  Product,
+  ProductInsert,
+  ProductUnit,
+  ProductUnitInsert,
+  ProductUnitUsage,
+  ProductUpdate,
+  ProductWithUnits,
+  RebaseProductBaseUnitResult,
+} from '../model'
 
 export const createProductRepository = (client: BasePharmacySupabaseClient) => {
   const insertProduct = async (params: ProductInsert): Promise<Product> => {
@@ -245,6 +254,51 @@ export const createProductRepository = (client: BasePharmacySupabaseClient) => {
       if (error) {
         throw error
       }
+    },
+
+    /**
+     * Đổi đơn vị cơ bản của sản phẩm sang một đơn vị nhỏ hơn.
+     *
+     * Tồn kho, lịch sử điều chỉnh kho, ngưỡng tồn tối thiểu và hệ số quy đổi của
+     * các đơn vị hiện có đều được quy đổi trong cùng một transaction ở phía DB.
+     * Bắt buộc dùng RPC vì RLS của inventory_batches không cho UPDATE từ client.
+     */
+    async rebaseProductBaseUnit(params: {
+      productId: string
+      unitName: string
+      factor: number
+      costPrice: number | null
+      sellPrice: number | null
+    }): Promise<RebaseProductBaseUnitResult> {
+      const { data, error } = await client.rpc('rebase_product_base_unit', {
+        p_product_id: params.productId,
+        p_new_unit_name: params.unitName,
+        p_factor: params.factor,
+        p_cost_price: params.costPrice ?? undefined,
+        p_sell_price: params.sellPrice ?? undefined,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return data as unknown as RebaseProductBaseUnitResult
+    },
+
+    /**
+     * Số lượng đơn bán / đơn nhập đã dùng từng đơn vị của sản phẩm.
+     * Dùng để khoá đơn vị đã phát sinh giao dịch trong form sửa sản phẩm.
+     */
+    async getProductUnitUsage(productId: string): Promise<ProductUnitUsage[]> {
+      const { data, error } = await client.rpc('get_product_unit_usage', {
+        p_product_id: productId,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      return (data ?? []) as ProductUnitUsage[]
     },
   }
 

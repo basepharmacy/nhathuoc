@@ -1,12 +1,13 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useFieldArray, useForm } from 'react-hook-form'
+import { useFieldArray, useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { z } from 'zod'
 import { useUser } from '@/client/provider'
 import { productsRepo, productMastersRepo } from '@/client'
+import { getProductUnitUsageQueryOptions } from '@/client/queries'
 import { Button } from '@/components/ui/button'
 import {
   Collapsible,
@@ -53,7 +54,7 @@ import {
   PopoverContent,
   PopoverAnchor,
 } from '@/components/ui/popover'
-import { ChevronDown, Loader2, Plus, Trash2 } from 'lucide-react'
+import { ChevronDown, Loader2, Plus, Scale, Trash2 } from 'lucide-react'
 import { cn, formatCurrency, normalizeNumber } from '@/lib/utils'
 import {
   type ProductForm,
@@ -62,8 +63,9 @@ import {
   productTypeLabels,
   productFormSchema,
 } from '../data/schema'
-import { type ProductWithUnits, type Category } from '@/services/supabase'
+import { type ProductWithUnits, type ProductUnit, type Category } from '@/services/supabase'
 import type { ProductMasterWithUnits } from '@/services/supabase/'
+import { ProductsRebaseUnitDialog } from './products-rebase-unit-dialog'
 
 type ProductsActionDialogProps = {
   currentRow?: ProductWithUnits
@@ -152,6 +154,62 @@ export function ProductsActionDialog({
     name: 'units',
   })
 
+  // Đơn vị đã phát sinh đơn bán / đơn nhập thì không được xoá hay đổi hệ số quy đổi:
+  // sale_order_items.product_unit_id là ON DELETE SET NULL và trigger hoàn kho đọc
+  // conversion_factor tại thời điểm huỷ đơn, nên sửa ở đây sẽ làm lệch tồn kho.
+  const unitUsageQuery = useQuery({
+    ...getProductUnitUsageQueryOptions(tenantId, currentRow?.id ?? ''),
+    enabled: isEdit && open && Boolean(tenantId) && Boolean(currentRow?.id),
+  })
+
+  const usedUnitIds = useMemo(() => {
+    const ids = new Set<string>()
+    for (const usage of unitUsageQuery.data ?? []) {
+      if (Number(usage.sale_count) + Number(usage.purchase_count) > 0) {
+        ids.add(usage.product_unit_id)
+      }
+    }
+    return ids
+  }, [unitUsageQuery.data])
+
+  const originalUnitsById = useMemo(() => {
+    const map = new Map<string, ProductUnit>()
+    for (const unit of currentRow?.product_units ?? []) {
+      map.set(unit.id, unit)
+    }
+    return map
+  }, [currentRow?.product_units])
+
+  // Đơn vị cơ bản đã tồn tại thì giữ nguyên, không suy từ vị trí trong form.
+  // Muốn đổi đơn vị cơ bản phải dùng luồng riêng (ProductsRebaseUnitDialog) vì
+  // còn phải quy đổi tồn kho.
+  const existingBaseUnitId = useMemo(
+    () => (currentRow?.product_units ?? []).find((unit) => unit.is_base_unit)?.id ?? null,
+    [currentRow?.product_units]
+  )
+
+  const watchedUnits = useWatch({ control: form.control, name: 'units' })
+
+  // Chưa biết đơn vị nào đã dùng thì khoá hết các đơn vị đã có trong DB cho an toàn,
+  // tránh cửa sổ ngắn lúc query chưa xong mà người dùng kịp xoá nhầm.
+  const isUsageUnknown =
+    isEdit && (unitUsageQuery.isPending || unitUsageQuery.isError)
+
+  const resolveUnitFlags = useCallback(
+    (unitId: string | undefined, index: number) => {
+      const isBaseUnit = existingBaseUnitId
+        ? unitId === existingBaseUnitId
+        : index === 0
+      const isUsed = Boolean(unitId) && (isUsageUnknown || usedUnitIds.has(unitId!))
+      return { isBaseUnit, isUsed }
+    },
+    [existingBaseUnitId, isUsageUnknown, usedUnitIds]
+  )
+
+
+  // Đổi đơn vị cơ bản là thao tác nặng (quy đổi lại tồn kho) nên mở ở dialog riêng
+  // chồng lên form sửa, thay vì trộn vào form
+  const [rebaseOpen, setRebaseOpen] = useState(false)
 
   const isOpenRef = useRef(open)
   const defaultDetailsOpen = useMemo(() => {
@@ -295,14 +353,25 @@ export function ProductsActionDialog({
   }, [form])
 
   const normalizeUnits = (units: ProductForm['units']) =>
-    units.map((unit, index) => ({
-      ...(unit.id ? { id: unit.id } : {}),
-      unit_name: unit.unit_name.trim(),
-      conversion_factor: index === 0 ? 1 : Number(unit.conversion_factor ?? 1),
-      cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,
-      sell_price: unit.sell_price != null ? Number(unit.sell_price) : null,
-      is_base_unit: index === 0,
-    }))
+    units.map((unit, index) => {
+      const { isBaseUnit, isUsed } = resolveUnitFlags(unit.id, index)
+      const original = unit.id ? originalUnitsById.get(unit.id) : undefined
+      // Đơn vị đã có giao dịch giữ nguyên hệ số gốc kể cả khi form bị sửa
+      const conversionFactor = isBaseUnit
+        ? 1
+        : isUsed && original
+          ? original.conversion_factor
+          : Number(unit.conversion_factor ?? 1)
+
+      return {
+        ...(unit.id ? { id: unit.id } : {}),
+        unit_name: unit.unit_name.trim(),
+        conversion_factor: conversionFactor,
+        cost_price: unit.cost_price != null ? Number(unit.cost_price) : null,
+        sell_price: unit.sell_price != null ? Number(unit.sell_price) : null,
+        is_base_unit: isBaseUnit,
+      }
+    })
 
   const createMutation = useMutation({
     mutationFn: (values: ProductForm) =>
@@ -597,28 +666,44 @@ export function ProductsActionDialog({
                     <div className='text-sm font-semibold text-end'>
                       Đơn vị
                     </div>
-                    <Button
-                      type='button'
-                      variant='outline'
-                      size='sm'
-                      className='gap-2'
-                      onClick={() =>
-                        appendUnit({
-                          unit_name: '',
-                          conversion_factor: 1,
-                          cost_price: null,
-                          sell_price: null,
-                          is_base_unit: false,
-                        })
-                      }
-                    >
-                      <Plus className='size-4' />
-                      Thêm đơn vị
-                    </Button>
+                    <div className='flex flex-wrap items-center gap-2'>
+                      {isEdit && currentRow ? (
+                        <Button
+                          type='button'
+                          variant='outline'
+                          size='sm'
+                          className='gap-2'
+                          onClick={() => setRebaseOpen(true)}
+                        >
+                          <Scale className='size-4' />
+                          Đổi đơn vị cơ bản
+                        </Button>
+                      ) : null}
+                      <Button
+                        type='button'
+                        variant='outline'
+                        size='sm'
+                        className='gap-2'
+                        onClick={() =>
+                          appendUnit({
+                            unit_name: '',
+                            conversion_factor: 1,
+                            cost_price: null,
+                            sell_price: null,
+                            is_base_unit: false,
+                          })
+                        }
+                      >
+                        <Plus className='size-4' />
+                        Thêm đơn vị
+                      </Button>
+                    </div>
                   </div>
                   <div className='space-y-4'>
                     {unitFields.map((unitField, index) => {
-                      const isBaseUnit = index === 0
+                      const unitId = watchedUnits?.[index]?.id
+                      const { isBaseUnit, isUsed } = resolveUnitFlags(unitId, index)
+                      const isFactorLocked = isBaseUnit || isUsed
                       return (
                         <div
                           key={unitField.id}
@@ -651,7 +736,12 @@ export function ProductsActionDialog({
                                     <Input
                                       type='number'
                                       placeholder='Quy đổi'
-                                      disabled={isBaseUnit}
+                                      disabled={isFactorLocked}
+                                      title={
+                                        isUsed && !isBaseUnit
+                                          ? 'Đơn vị đã phát sinh giao dịch, không thể sửa hệ số quy đổi'
+                                          : undefined
+                                      }
                                       value={
                                         isBaseUnit
                                           ? 1
@@ -732,7 +822,15 @@ export function ProductsActionDialog({
                                   Cơ sở
                                 </span>
                               ) : null}
-                              {!isBaseUnit && (
+                              {!isBaseUnit && isUsed ? (
+                                <span
+                                  className='rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground'
+                                  title='Đơn vị đã phát sinh đơn bán hoặc đơn nhập nên không thể xoá hay sửa hệ số quy đổi'
+                                >
+                                  Đã dùng
+                                </span>
+                              ) : null}
+                              {!isBaseUnit && !isUsed && (
                                 <Button
                                   type='button'
                                   variant='ghost'
@@ -987,6 +1085,16 @@ export function ProductsActionDialog({
             {isEdit ? 'Lưu' : 'Thêm'}
           </Button>
         </DialogFooter>
+
+        {isEdit && currentRow ? (
+          <ProductsRebaseUnitDialog
+            open={rebaseOpen}
+            onOpenChange={setRebaseOpen}
+            currentRow={currentRow}
+            // Sau khi quy đổi, dữ liệu đơn vị trong form đã cũ nên đóng luôn form sửa
+            onRebased={() => onOpenChange(false)}
+          />
+        ) : null}
       </DialogContent>
     </Dialog>
   )

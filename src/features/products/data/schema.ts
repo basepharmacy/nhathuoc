@@ -120,7 +120,67 @@ export const productFormSchema = z.object({
         is_base_unit: z.boolean().optional(),
       })
     )
-    .min(1, 'Cần ít nhất một đơn vị.'),
+    .min(1, 'Cần ít nhất một đơn vị.')
+    // Trùng tên đơn vị trong cùng sản phẩm gây nhập nhằng khi chọn đơn vị lúc
+    // bán / nhập hàng, và nhân bản dòng ở các báo cáo join theo đơn vị cơ bản.
+    .superRefine((units, ctx) => {
+      const seen = new Map<string, number>()
+      units.forEach((unit, index) => {
+        const key = unit.unit_name.trim().toLowerCase()
+        if (!key) return
+        if (seen.has(key)) {
+          ctx.addIssue({
+            code: 'custom',
+            path: [index, 'unit_name'],
+            message: 'Tên đơn vị bị trùng với đơn vị khác của sản phẩm.',
+          })
+          return
+        }
+        seen.set(key, index)
+      })
+    }),
 })
 
 export type ProductForm = z.infer<typeof productFormSchema>
+
+/**
+ * Form đổi đơn vị cơ bản sang một đơn vị NHỎ HƠN.
+ *
+ * Tồn kho được lưu theo đơn vị cơ bản nên khi đổi, toàn bộ số lượng phải nhân
+ * với hệ số. Chỉ cho phép đi xuống đơn vị nhỏ hơn để kết quả luôn là số nguyên.
+ */
+export const rebaseBaseUnitFormSchema = z.object({
+  unit_name: z
+    .string()
+    .min(1, 'Tên đơn vị là bắt buộc.')
+    .max(50, 'Đơn vị không được vượt quá 50 ký tự.'),
+  factor: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return Number.NaN
+      const numberValue = Number(value)
+      return Number.isNaN(numberValue) ? Number.NaN : numberValue
+    },
+    z
+      .number({ message: 'Hệ số quy đổi là bắt buộc.' })
+      .int('Hệ số quy đổi phải là số nguyên.')
+      .min(2, 'Đơn vị mới phải nhỏ hơn đơn vị cơ bản hiện tại (hệ số từ 2 trở lên).')
+  ),
+  cost_price: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return null
+      const numberValue = Number(value)
+      return Number.isNaN(numberValue) ? null : numberValue
+    },
+    z.number().min(0, 'Giá nhập không được âm.').nullable()
+  ),
+  sell_price: z.preprocess(
+    (value) => {
+      if (value === '' || value === null || value === undefined) return null
+      const numberValue = Number(value)
+      return Number.isNaN(numberValue) ? null : numberValue
+    },
+    z.number().min(0, 'Giá bán không được âm.').nullable()
+  ),
+})
+
+export type RebaseBaseUnitForm = z.infer<typeof rebaseBaseUnitFormSchema>
