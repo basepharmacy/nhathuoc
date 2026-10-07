@@ -10,6 +10,7 @@ import { toast } from 'sonner'
 import { productsRepo } from '@/client'
 import { useUser } from '@/client/provider'
 import { getInventoryBatchesQueryOptions } from '@/client/queries'
+import { formatQuantity, fromQtyMilli, lineAmount, toBaseMilli, toBaseQuantity } from '@/lib/quantity'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -98,8 +99,16 @@ export function ProductsRebaseUnitDialog({
     enabled: open && Boolean(tenantId),
   })
 
+  // Cộng ở thang milli rồi mới quy về số thường: tồn kho là numeric(14,3) nên
+  // cộng bằng float cho ra 0.8999999999999999 thay vì 0,9.
   const totalQuantity = useMemo(
-    () => (batchesQuery.data ?? []).reduce((sum, batch) => sum + (batch.quantity ?? 0), 0),
+    () =>
+      fromQtyMilli(
+        (batchesQuery.data ?? []).reduce(
+          (sum, batch) => sum + toBaseMilli(batch.quantity ?? 0),
+          0
+        )
+      ),
     [batchesQuery.data]
   )
 
@@ -107,7 +116,7 @@ export function ProductsRebaseUnitDialog({
   const weightedAvgCost = useMemo(() => {
     const batches = batchesQuery.data ?? []
     const totalValue = batches.reduce(
-      (sum, batch) => sum + (batch.average_cost_price ?? 0) * (batch.quantity ?? 0),
+      (sum, batch) => sum + lineAmount(batch.quantity ?? 0, batch.average_cost_price ?? 0),
       0
     )
     return totalQuantity > 0 ? Math.round(totalValue / totalQuantity) : null
@@ -324,10 +333,10 @@ export function ProductsRebaseUnitDialog({
                     <div className='rounded-lg border'>
                       <PreviewRow
                         label='Tồn kho'
-                        before={`${totalQuantity.toLocaleString('vi-VN')} ${baseUnit.unit_name}`}
+                        before={`${formatQuantity(totalQuantity)} ${baseUnit.unit_name}`}
                         after={
                           factor
-                            ? `${(totalQuantity * factor).toLocaleString('vi-VN')} ${newUnitLabel}`
+                            ? `${formatQuantity(toBaseQuantity(totalQuantity, factor))} ${newUnitLabel}`
                             : null
                         }
                         loading={batchesQuery.isLoading}

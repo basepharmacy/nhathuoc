@@ -1,5 +1,5 @@
 import { type ColumnDef } from '@tanstack/react-table'
-import { formatCurrency, formatDateTimeLabel, formatQuantity } from '@/lib/utils'
+import { formatCurrency, formatDateTimeLabel, formatStockQuantity } from '@/lib/utils'
 import { type StockAdjustmentWithRelations } from '@/services/supabase/'
 import { Badge } from '@/components/ui/badge'
 import { getReasonCodeLabel } from '../data/reason-code'
@@ -48,7 +48,7 @@ export function createStockAdjustmentsColumns(
         const qty = row.original.quantity
         return (
           <Badge variant={qty >= 0 ? 'default' : 'destructive'} className='tabular-nums'>
-            {qty >= 0 ? '+' : ''}{formatQuantity(qty)}
+            {qty >= 0 ? '+' : ''}{formatStockQuantity(qty)}
           </Badge>
         )
       },

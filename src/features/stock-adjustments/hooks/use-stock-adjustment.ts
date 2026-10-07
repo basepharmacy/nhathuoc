@@ -5,6 +5,7 @@ import { stockAdjustmentsRepo } from '@/client'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { type ProductWithUnits } from '@/services/supabase'
 import { type AdjustmentItem, getDefaultUnit } from '../data/types'
+import { isValidSignedQuantity, lineAmount, toBaseQuantity } from '@/lib/quantity'
 
 type UseStockAdjustmentParams = {
   tenantId: string
@@ -32,9 +33,11 @@ export function useStockAdjustment({
       throw new Error('Tất cả sản phẩm phải được nhập lô hàng.')
     }
 
-    const zeroQtyItems = items.filter((item) => item.quantity === 0)
-    if (zeroQtyItems.length > 0) {
-      throw new Error('Số lượng không được bằng 0.')
+    // numeric(14,3) làm tròn im lặng khi quá 3 chữ số thập phân, nên chặn trước
+    // khi gửi thay vì để Postgres âm thầm sửa con số.
+    const badQtyItems = items.filter((item) => !isValidSignedQuantity(item.quantity))
+    if (badQtyItems.length > 0) {
+      throw new Error('Số lượng phải khác 0 và tối đa 3 chữ số thập phân.')
     }
   }
 
@@ -56,7 +59,9 @@ export function useStockAdjustment({
       product_id: item.product.id,
       location_id: selectedLocationId!,
       batch_code: item.batchCode.trim(),
-      quantity: item.quantity * cf,
+      // Nhân ở thang milli: `0.333 * 30` trong JS ra 9.989999999999998.
+      quantity: toBaseQuantity(item.quantity, cf),
+      // Tiền vẫn là integer VND.
       cost_price: Math.round(item.costPrice / cf),
       reason_code: item.reasonCode,
       reason: item.reason.trim().length > 0 ? item.reason.trim() : null,
@@ -136,7 +141,10 @@ export function useStockAdjustment({
   const submit = () => createMutation.mutate()
 
   const totals = useMemo(() => {
-    const total = items.reduce((sum, item) => sum + Math.abs(item.quantity) * item.costPrice, 0)
+    const total = items.reduce(
+      (sum, item) => sum + lineAmount(Math.abs(item.quantity), item.costPrice),
+      0
+    )
     return { total }
   }, [items])
 

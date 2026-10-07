@@ -2,7 +2,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
-import { formatQuantity } from '@/lib/quantity'
+import { formatQuantity, lineAmount } from '@/lib/quantity'
 import { VietQrImage } from '@/components/viet-qr-image'
 import type { BankAccount, SaleOrderItemWithRelation } from '@/services/supabase'
 
@@ -88,7 +88,7 @@ export function SaleOrderInvoice({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const lineTotal = item.quantity * item.unit_price - item.discount
+            const lineTotal = lineAmount(item.quantity, item.unit_price) - item.discount
             const unitName = item.product_unit?.unit_name
             return (
               <tr key={item.id} className='border-b border-dotted border-gray-400'>

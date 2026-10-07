@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { formatCurrency } from '@/lib/utils'
-import { formatQuantity } from '@/lib/quantity'
+import { formatQuantity, lineAmount } from '@/lib/quantity'
 import {
   Dialog,
   DialogContent,
@@ -110,7 +110,7 @@ function OfflineInvoice({ mutation, tenantId }: { mutation: OfflineMutation; ten
   const display = payload._display
 
   const subtotal = items.reduce(
-    (sum, item) => sum + Math.round(item.quantity * item.unit_price),
+    (sum, item) => sum + lineAmount(item.quantity, item.unit_price),
     0
   )
   const total = order?.total_amount ?? Math.max(0, subtotal - (order?.discount ?? 0))
@@ -154,7 +154,7 @@ function OfflineInvoice({ mutation, tenantId }: { mutation: OfflineMutation; ten
         </thead>
         <tbody>
           {items.map((item, idx) => {
-            const lineTotal = Math.round(item.quantity * item.unit_price) - item.discount
+            const lineTotal = lineAmount(item.quantity, item.unit_price) - item.discount
             return (
               <tr key={idx} className='border-b border-dotted border-gray-400'>
                 <td className='max-w-[120px] py-1 text-left'>
@@ -259,7 +259,7 @@ function OfflineOrderDetailDialog({
   const display = payload._display
 
   const subtotal = items.reduce(
-    (sum, item) => sum + Math.round(item.quantity * item.unit_price),
+    (sum, item) => sum + lineAmount(item.quantity, item.unit_price),
     0
   )
 
@@ -319,7 +319,7 @@ function OfflineOrderDetailDialog({
               </TableHeader>
               <TableBody>
                 {items.map((item, idx) => {
-                  const lineTotal = Math.round(item.quantity * item.unit_price) - item.discount
+                  const lineTotal = lineAmount(item.quantity, item.unit_price) - item.discount
                   return (
                     <TableRow key={idx}>
                       <TableCell className='text-sm'>

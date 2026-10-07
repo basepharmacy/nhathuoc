@@ -25,7 +25,9 @@ const DEFAULT_MESSAGE = 'Đã xảy ra lỗi, vui lòng thử lại.'
 // ── PostgreSQL error-code messages ──────────────────────────────────
 const PG_ERROR_CODE_MESSAGES: Record<string, string> = {
   '23503': 'Không thể thực hiện vì dữ liệu đang được sử dụng ở nơi khác.',
-  '23514': 'Dữ liệu không hợp lệ, vui lòng kiểm tra lại.',
+  // CHECK duy nhất mà người dùng chạm tới là chk_sale_order_items_quantity_positive
+  // và chk_inventory_batches_quantity_non_negative — cả hai đều về số lượng.
+  '23514': 'Số lượng không hợp lệ (phải lớn hơn 0 và không vượt quá tồn kho).',
   '42501': 'Bạn không có quyền thực hiện thao tác này.',
   '42P01': 'Lỗi hệ thống, vui lòng liên hệ quản trị viên.',
   PGRST301: 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.',
@@ -69,10 +71,8 @@ const EXCEPTION_MESSAGE_MAP: Record<string, string> = {
   'UNIT_NAME_DUPLICATED': 'Sản phẩm đã có đơn vị trùng tên này.',
   'INVALID_BASE_UNIT_STATE':
     'Dữ liệu đơn vị của sản phẩm không hợp lệ (phải có đúng một đơn vị cơ bản). Vui lòng kiểm tra lại trong màn hình sửa sản phẩm.',
-  'QTY_NOT_CONVERTIBLE': 'Số lượng không quy đổi được thành số nguyên đơn vị cơ bản.',
-  'UNIT_TOO_LARGE_FOR_DECIMAL':
-    'Đơn vị này quá lớn để bán số lẻ. Vui lòng chọn đơn vị nhỏ hơn.',
-  'INVALID_QUANTITY': 'Số lượng không hợp lệ (tối đa 3 chữ số thập phân).',
+  'INVALID_QUANTITY': 'Số lượng phải lớn hơn 0 và tối đa 3 chữ số thập phân.',
+  'FACTOR_OVERFLOW': 'Hệ số quy đổi quá lớn so với tồn kho hiện tại.',
 }
 
 /**
@@ -89,11 +89,6 @@ export function mapSupabaseError(error: unknown): string {
     details?: string
     status?: number
     statusCode?: number
-  }
-
-  // Postgres gửi tên đơn vị cơ bản qua `USING DETAIL` để ghép vào thông báo.
-  if (err.message === 'QTY_NOT_CONVERTIBLE' && err.details) {
-    return `Số lượng không quy đổi được thành số nguyên ${err.details}.`
   }
 
   if (err.message && err.message in EXCEPTION_MESSAGE_MAP) {

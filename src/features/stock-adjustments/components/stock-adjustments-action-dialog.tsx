@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { SquarePen } from 'lucide-react'
 import { useUser } from '@/client/provider'
 import { stockAdjustmentsRepo } from '@/client'
-import { formatCurrency, formatDateLabel, formatQuantity, normalizeNumber } from '@/lib/utils'
+import { formatCurrency, formatDateLabel, formatStockQuantity, normalizeNumber } from '@/lib/utils'
 import { DatePicker } from '@/components/date-picker'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
@@ -48,11 +48,15 @@ import {
   getReasonCodeOptionsByQuantity,
   type StockAdjustmentReasonCode,
 } from '../data/reason-code'
+import { isValidSignedQuantity } from '@/lib/quantity'
 
 const formSchema = z.object({
   quantity: z
     .number()
-    .refine((val) => val !== 0, 'Số lượng không được bằng 0.'),
+    .refine(
+      isValidSignedQuantity,
+      'Số lượng phải khác 0 và tối đa 3 chữ số thập phân.'
+    ),
   costPrice: z
     .number()
     .min(0, 'Giá nhập không được âm.'),
@@ -250,7 +254,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
             </div>
             <div>
               <span className='text-muted-foreground'>Tồn kho</span>
-              <p className='font-medium'>{formatQuantity(batch.quantity)}</p>
+              <p className='font-medium'>{formatStockQuantity(batch.quantity)}</p>
             </div>
           </div>
         </div>
@@ -284,7 +288,7 @@ export function StockAdjustmentsActionDialog({ open, onOpenChange, batch }: Prop
                         </FormControl>
                       </PopoverTrigger>
                       <PopoverContent side='bottom' className='w-auto max-w-[240px] p-2 text-xs'>
-                        Không được giảm vượt quá số lượng tồn kho của lô ({batch.quantity}).
+                        Không được giảm vượt quá số lượng tồn kho của lô ({formatStockQuantity(batch.quantity)}).
                       </PopoverContent>
                     </Popover>
                     <FormMessage />

@@ -1,5 +1,6 @@
 import { SaleOrderInCreate, SaleOrderItem } from './types'
 import { SaleOrderWithItems, ProductWithUnits, InventoryBatch } from '@/services/supabase'
+import { lineAmount } from '@/lib/quantity'
 
 export function mapOrderToSaleOrderInCreate(
   order: SaleOrderWithItems,
@@ -33,7 +34,7 @@ export function mapOrderToSaleOrderInCreate(
     .filter((item): item is SaleOrderItem => Boolean(item))
 
   const subTotal = items.reduce(
-    (sum, item) => sum + Math.round(item.quantity * item.unitPrice),
+    (sum, item) => sum + lineAmount(item.quantity, item.unitPrice),
     0,
   )
 

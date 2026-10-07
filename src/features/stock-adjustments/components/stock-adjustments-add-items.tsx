@@ -27,6 +27,7 @@ import { type AdjustmentItem } from '../data/types'
 import { type ProductUnit } from '@/services/supabase/'
 import { ALL_REASON_CODE_OPTIONS } from '../data/reason-code'
 import { type StockAdjustmentReasonCode } from '../data/reason-code'
+import { baseMilliToQtyMilli, formatQuantity, fromQtyMilli, toBaseMilli } from '@/lib/quantity'
 
 type StockAdjustmentsAddItemsProps = {
   items: AdjustmentItem[]
@@ -70,7 +71,9 @@ export function StockAdjustmentsAddItems({
     const map = new Map<string, number>()
     for (const batch of inventoryBatches) {
       const key = `${batch.product_id}::${batch.batch_code}`
-      map.set(key, (map.get(key) ?? 0) + batch.quantity)
+      // Cộng dồn ở thang milli: tồn kho là numeric(14,3) nên `0.3 + 0.6` bằng
+      // float ra 0.8999999999999999 và hiển thị thành số rác.
+      map.set(key, (map.get(key) ?? 0) + toBaseMilli(batch.quantity))
     }
     return map
   }, [inventoryBatches])
@@ -78,15 +81,17 @@ export function StockAdjustmentsAddItems({
   const getMinQuantity = (item: AdjustmentItem) => {
     if (!item.batchCode.trim()) return 0
     const key = `${item.product.id}::${item.batchCode.trim()}`
-    const batchQty = batchQuantityMap.get(key)
-    if (batchQty == null) return 0
+    const batchMilli = batchQuantityMap.get(key)
+    if (batchMilli == null) return 0
     // Tồn kho lưu theo base unit, quy đổi giới hạn giảm về đơn vị đang chọn
     const selectedUnit = item.product.product_units?.find(
       (unit) => unit.id === item.productUnitId
     )
     const cf = selectedUnit?.conversion_factor || 1
-    // Existing batch → allow decrease up to batch quantity; new batch → min 0
-    return -Math.floor(batchQty / cf)
+    // Existing batch → allow decrease up to batch quantity; new batch → min 0.
+    // Làm tròn XUỐNG ở thang milli: `Math.floor(9.99 / 1)` cho -9 nên lô 9,99
+    // Viên không bao giờ ghi giảm hết được, còn lại 0,99 Viên ma.
+    return -fromQtyMilli(baseMilliToQtyMilli(batchMilli, cf))
   }
 
   useEffect(() => {
@@ -147,7 +152,16 @@ export function StockAdjustmentsAddItems({
                               {item.expiryDate ? (
                                 <span>HSD: {formatDateLabel(item.expiryDate)}</span>
                               ) : null}
-                              <span>Tồn kho: {batchQuantityMap.get(`${item.product.id}::${item.batchCode.trim()}`) ?? 0}</span>
+                              <span>
+                                Tồn kho:{' '}
+                                {formatQuantity(
+                                  fromQtyMilli(
+                                    batchQuantityMap.get(
+                                      `${item.product.id}::${item.batchCode.trim()}`
+                                    ) ?? 0
+                                  )
+                                )}
+                              </span>
                               <Button
                                 type='button'
                                 variant='ghost'

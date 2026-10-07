@@ -200,10 +200,14 @@ export function PurchaseOrdersItems({
                         />
                       </TableCell>
                       <TableCell className='align-middle'>
+                        {/* purchase_order_items.quantity vẫn là integer: nhập từ
+                            NCC luôn nguyên kiện, số lẻ lọt xuống sẽ bị Postgres
+                            làm tròn im lặng. */}
                         <QuantityStepper
                           value={item.quantity}
                           onChange={(qty) => onUpdateItem(item.id, { quantity: qty })}
                           disabled={readOnly}
+                          decimals={0}
                         />
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>

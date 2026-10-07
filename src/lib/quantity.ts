@@ -1,16 +1,18 @@
 /**
- * Quy đổi số lượng bán (có thể là số thập phân) về ĐƠN VỊ CƠ BẢN.
+ * Quy đổi số lượng bán (số thập phân, tối đa 3 chữ số) về ĐƠN VỊ CƠ BẢN.
  *
- * Bối cảnh: tồn kho (`inventory_batches.quantity`) luôn là số nguyên theo đơn vị
- * cơ bản, trong khi người bán có thể gõ số lẻ theo đơn vị lớn hơn — ví dụ
- * `0.333 Hộp` với 1 Hộp = 30 Viên. Mọi phép trừ kho phải ra số nguyên Viên.
+ * Bối cảnh: tồn kho (`inventory_batches.quantity`) nay là `numeric(14,3)` chứ không
+ * còn là số nguyên, nên quy đổi suy biến thành một phép nhân thuần và KHÔNG còn
+ * khái niệm dung sai. Phía Postgres cũng vậy: `quantity * conversion_factor` nằm
+ * thẳng trong trigger, không còn hàm `sale_qty_to_base()`.
  *
- * Toàn bộ phép tính quyết định chạy bằng SỐ NGUYÊN ở thang phần nghìn (milli)
- * vì `0.333 * 30` trong JS ra 9.989999999999998, không phải 9.99.
+ * Toàn bộ phép tính quyết định chạy bằng SỐ NGUYÊN ở thang phần nghìn (milli) vì
+ * `0.333 * 30` trong JS ra 9.989999999999998, không phải 9.99. Quy tắc xuyên suốt:
+ * MỌI phép cộng dồn và so sánh tồn kho chạy trên milli, không bao giờ trên float —
+ * `0.3 + 0.6 = 0.8999999999999999` đủ để chặn một đơn hàng hợp lệ.
  *
- * Bản sao của logic này nằm trong Postgres: `public.sale_qty_to_base()`
- * (migration 20261005000001_sale_order_decimal_quantity.sql). Sửa một bên thì
- * phải sửa bên kia.
+ * Quy ước tên: `qtyMilli` là milli của ĐƠN VỊ ĐANG BÁN, `baseMilli` là milli của
+ * ĐƠN VỊ CƠ BẢN; `baseMilli = qtyMilli × factor`.
  */
 
 /** Số chữ số thập phân tối đa cho số lượng bán. */
@@ -19,15 +21,8 @@ export const QUANTITY_DECIMALS = 3
 /** Hệ số của thang milli: 1 đơn vị = 1000 milli. */
 export const QTY_SCALE = 1000
 
-/**
- * Hệ số quy đổi từ đó trở lên thì KHÔNG cho nhập số lẻ.
- *
- * `round()` chỉ xác định duy nhất khi dung sai < 0.5 đơn vị cơ bản, mà sàn dung
- * sai (sai số biểu diễn 3 chữ số) là 0.0005 × factor — chạm 0.5 đúng tại 1000.
- * Ví dụ hỏng thật: factor 1200, 3 Viên → 3/1200 = 0.0025 → làm tròn 3 chữ số
- * thành 0.003 → 0.003 × 1200 = 3.6 → round = 4 ≠ 3.
- */
-export const MAX_FACTOR_FOR_DECIMAL = 1000
+/** Số lượng nhỏ nhất bán được — áp dụng cho MỌI đơn vị, kể cả đơn vị cơ bản. */
+export const MIN_QUANTITY = 1 / QTY_SCALE
 
 /** Chuỗi hợp lệ khi đang gõ: tuỳ chọn dấu âm, tối đa 3 chữ số thập phân, chấp nhận cả `,` lẫn `.`. */
 export const QUANTITY_INPUT_PATTERN = /^-?\d*(?:[.,]\d{0,3})?$/
@@ -63,69 +58,90 @@ export function roundQuantity(quantity: number): number {
 }
 
 /**
- * Dung sai cho phép, tính ở thang milli và nhân đôi để mọi vế đều là số nguyên.
+ * Giá trị `numeric(14,3)` đọc từ DB → milli nguyên.
  *
- * Dung sai thật (đơn vị cơ bản) = max(0.0005 × factor, min(0.15, 0.05 × factor)):
- * - `0.05 × factor` — 5% của một đơn vị đang bán. Với đơn vị cơ bản (factor 1)
- *   dung sai chỉ còn 0.05 nên `1.1` bị từ chối: chỉ đơn vị lớn mới cho số lẻ.
- * - cap `0.15` — giữ dung sai hữu hạn khi factor lớn, để `0.34 × 30 = 10.2` vẫn chặn.
- * - sàn `0.0005 × factor` — bảo đảm round-trip: giá trị do chính FIFO sinh ra
- *   (`baseToQuantity`) luôn được chấp nhận lại.
+ * Alias của `toQtyMilli` nhưng đặt tên riêng để đọc code biết đang ở thang nào:
+ * trộn hai thang là lỗi im lặng, không phải lỗi biên dịch.
  */
-function toleranceDoubleMilli(factor: number): number {
-  return Math.max(factor, Math.min(300, 100 * factor))
+export function toBaseMilli(base: number): number {
+  return toQtyMilli(base)
 }
 
 /**
- * Quy đổi số lượng (milli) sang số nguyên đơn vị cơ bản.
- * Trả `null` khi không quy đổi được — caller tự quyết định thông báo lỗi.
+ * Số lượng theo đơn vị đang bán → milli ĐƠN VỊ CƠ BẢN.
+ *
+ * Luôn chính xác tuyệt đối: `qtyMilli` nguyên nhân `factor` nguyên. Không có đường
+ * fail, không dung sai. Biên: 1e6 đơn vị × 1000 milli × factor 1e4 = 1e13 ≪ 2^53.
  */
-export function toBaseQuantityMilli(qtyMilli: number, factor: number): number | null {
-  if (!Number.isInteger(qtyMilli) || qtyMilli <= 0) return null
+export function qtyToBaseMilli(quantity: number, factor: number): number {
+  return toQtyMilli(quantity) * SAFE_FACTOR(factor)
+}
 
+/** Như `qtyToBaseMilli` nhưng trả số thường (đơn vị cơ bản, 3 chữ số thập phân). */
+export function toBaseQuantity(quantity: number, factor: number): number {
+  return fromQtyMilli(qtyToBaseMilli(quantity, factor))
+}
+
+/**
+ * Milli cơ bản → milli đơn vị đang bán, LÀM TRÒN XUỐNG (về phía 0).
+ *
+ * Bắt buộc làm tròn xuống chứ không `round`: làm tròn lên sinh ra số lượng tiêu thụ
+ * NHIỀU HƠN tồn thật. Lô còn 11 Viên, 1 Hộp = 30 Viên: `round(11000/30) = 367` →
+ * `0.367 × 30 = 11.01 > 11` → kho âm, `CHECK (quantity >= 0)` nổ 23514.
+ * Hệ quả đã chấp nhận: phần lẻ không biểu diễn được ở lại trong lô.
+ */
+export function baseMilliToQtyMilli(baseMilli: number, factor: number): number {
   const f = SAFE_FACTOR(factor)
-
-  // Đơn vị quá lớn: số lẻ không round-trip được, chỉ nhận số nguyên.
-  if (f >= MAX_FACTOR_FOR_DECIMAL && qtyMilli % QTY_SCALE !== 0) return null
-
-  const num = qtyMilli * f // nguyên, ≤ ~1e11 ≪ 2^53 → chính xác tuyệt đối
-  const base = Math.floor((num + QTY_SCALE / 2) / QTY_SCALE) // = round(num / 1000)
-
-  if (base < 1) return null
-  if (2 * Math.abs(num - QTY_SCALE * base) > toleranceDoubleMilli(f)) return null
-
-  return base
-}
-
-/** Như `toBaseQuantityMilli` nhưng nhận số lượng thường. */
-export function toBaseQuantity(quantity: number, factor: number): number | null {
-  return toBaseQuantityMilli(toQtyMilli(quantity), factor)
+  return baseMilli >= 0 ? Math.floor(baseMilli / f) : -Math.floor(-baseMilli / f)
 }
 
 /**
- * Số nguyên đơn vị cơ bản → số lượng theo đơn vị đang bán (3 chữ số thập phân).
- * Với factor < 1000, `toBaseQuantity(baseToQuantity(n, f), f) === n` luôn đúng.
+ * Lượng tồn `base` quy về đơn vị đang bán, không bao giờ vượt quá `base`.
+ * Không còn round-trip: `toBaseQuantity(baseToQuantity(10, 30), 30) === 9.99`.
  */
 export function baseToQuantity(base: number, factor: number): number {
-  return fromQtyMilli(Math.round((base * QTY_SCALE) / SAFE_FACTOR(factor)))
+  return fromQtyMilli(baseMilliToQtyMilli(toBaseMilli(base), factor))
 }
 
-/** Số lượng nhỏ nhất bán được theo đơn vị này: đúng 1 đơn vị cơ bản. */
-export function minQuantityForFactor(factor: number): number {
-  return baseToQuantity(1, factor)
+/**
+ * Hợp lệ để gửi lên DB: lớn hơn 0 và không quá 3 chữ số thập phân.
+ *
+ * Khoan dung với sai số float (`0.33299999999999996` vẫn qua) để không chặn nhầm
+ * người bán vì một phép trừ trong JS. Đổi lại, mọi payload gửi đi PHẢI đi qua
+ * `roundQuantity` trước: RPC so `v_quantity <> round(v_quantity, 3)` và sẽ trả
+ * INVALID_QUANTITY cho giá trị thô.
+ */
+export function isValidQuantity(quantity: number): boolean {
+  if (!Number.isFinite(quantity) || quantity <= 0) return false
+  return Math.abs(quantity * QTY_SCALE - Math.round(quantity * QTY_SCALE)) < 1e-6
 }
 
-export function isQuantityConvertible(quantity: number, factor: number): boolean {
-  return toBaseQuantity(quantity, factor) !== null
+/** Bản cho điều chỉnh kho: cho phép số âm, chỉ cấm 0. */
+export function isValidSignedQuantity(quantity: number): boolean {
+  return quantity !== 0 && isValidQuantity(Math.abs(quantity))
+}
+
+/**
+ * Thành tiền một dòng = ROUND(số lượng × đơn giá).
+ *
+ * Nhân ở thang milli vì `0.145 * 100` trong JS ra 14.499999999999998 → làm tròn
+ * thành 14 thay vì 15. Đây là bất biến chung của hệ thống: `line_total = ROUND(quantity × unit_price)` và
+ * `order_total = Σ line_total − discount`. Hoá đơn in cho khách liệt kê từng dòng
+ * nên tổng phải bằng tổng các dòng hiển thị, vì vậy mọi RPC báo cáo cũng phải dùng
+ * `SUM(ROUND(soi.quantity * soi.unit_price))` chứ không phải `ROUND(SUM(...))`.
+ */
+export function lineAmount(quantity: number, unitPrice: number): number {
+  return Math.round((toQtyMilli(quantity) * unitPrice) / QTY_SCALE)
 }
 
 const quantityFormatter = new Intl.NumberFormat('vi-VN', {
+  minimumFractionDigits: 0,
   maximumFractionDigits: QUANTITY_DECIMALS,
   useGrouping: false,
 })
 
 /**
- * Hiển thị số lượng theo vi-VN: `0.333` → `0,333`, `1` → `1`.
+ * Hiển thị số lượng theo vi-VN: `0.333` → `0,333`, `9.99` → `9,99`, `1` → `1`.
  * Tắt phân nhóm hàng nghìn vì `1.000` dễ bị đọc nhầm thành một nghìn.
  */
 export function formatQuantity(quantity: number): string {

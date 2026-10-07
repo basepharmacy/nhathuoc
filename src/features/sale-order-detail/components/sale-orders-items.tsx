@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table'
 import { formatCurrency, formatDateLabel } from '@/lib/utils'
 import { SaleOrderItemWithRelation } from '@/services/supabase'
+import { lineAmount } from '@/lib/quantity'
 
 type SaleOrdersItemsProps = {
   items: SaleOrderItemWithRelation[]
@@ -43,7 +44,7 @@ export function SaleOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = Math.round(item.quantity * item.unit_price)
+                  const lineTotal = lineAmount(item.quantity, item.unit_price)
                   return (
                     <TableRow
                       key={item.id}
@@ -83,7 +84,6 @@ export function SaleOrdersItems({
                           value={item.quantity}
                           onChange={() => { }}
                           disabled={true}
-                          decimals={3}
                         />
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>

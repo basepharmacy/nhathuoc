@@ -7,15 +7,22 @@ import { generateOrderCode } from '../data/sale-order-helper'
 import {
   allocateQuantityToBatches,
   getAllocatedByBatch,
-  getAllocatedOtherBase,
-  getBaseUnitName,
+  getAllocatedOtherMilli,
+  getBatchMilli,
   getDefaultUnit,
   getFallbackBatch,
-  getItemBaseQuantity,
+  getItemBaseMilli,
   getItemConversionFactor,
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
-import { baseToQuantity, toBaseQuantity } from '@/lib/quantity'
+import {
+  baseMilliToQtyMilli,
+  formatQuantity,
+  fromQtyMilli,
+  isValidQuantity,
+  qtyToBaseMilli,
+  roundQuantity,
+} from '@/lib/quantity'
 import { selectBatchesByProductId } from './sale-order-selectors'
 import { debouncedDraftStorage } from '../data/draft-storage'
 
@@ -149,7 +156,9 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       if (existing) {
         set({
           items: state.items.map((item) =>
-            item.id === existing.id ? { ...item, quantity: item.quantity + 1 } : item
+            item.id === existing.id
+              ? { ...item, quantity: roundQuantity(item.quantity + 1) }
+              : item
           ),
         })
         return
@@ -193,30 +202,30 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       }
 
       const conversionFactor = getItemConversionFactor(target)
-      const desiredBase = toBaseQuantity(nextQuantity, conversionFactor)
 
-      // Không quy đổi được ra số nguyên đơn vị cơ bản → giữ nguyên giá trị cũ.
-      if (desiredBase === null) {
-        toast.error(
-          `Số lượng không quy đổi được thành số nguyên ${getBaseUnitName(target.product)}.`
-        )
-        return
-      }
+      // Quá 3 chữ số thập phân hoặc <= 0 → giữ nguyên giá trị cũ. RPC cũng chặn
+      // (INVALID_QUANTITY) nhưng với đơn offline thì lỗi chỉ lộ ra lúc đồng bộ,
+      // và mutation hỏng bị xoá khỏi hàng đợi.
+      if (!isValidQuantity(nextQuantity)) return
 
-      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
-      const maxBaseForItem = Math.max(
+      const desiredBaseMilli = qtyToBaseMilli(nextQuantity, conversionFactor)
+
+      // Cộng dồn ở thang milli: `0.3 + 0.6` trong JS ra 0.8999999999999999 nên
+      // cộng bằng float sẽ cảnh báo nhầm khi tồn kho vẫn đủ.
+      const totalStockMilli = batches.reduce((sum, batch) => sum + getBatchMilli(batch), 0)
+      const maxMilliForItem = Math.max(
         0,
-        totalStockBase - getAllocatedOtherBase(target, state.items)
+        totalStockMilli - getAllocatedOtherMilli(target, state.items)
       )
 
-      if (desiredBase > maxBaseForItem) {
+      if (desiredBaseMilli > maxMilliForItem) {
         toast.warning('Số lượng vượt quá tồn kho hiện tại.')
       }
 
       set({
         items: allocateQuantityToBatches({
           target,
-          desiredBase,
+          desiredBaseMilli,
           batches,
           allItems: state.items,
           conversionFactor,
@@ -237,27 +246,36 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       const newCF = selectedUnit.conversion_factor || 1
       const batches = batchesByProduct[target.product.id] ?? []
 
-      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
-      const maxBaseForItem = Math.max(
+      const totalStockMilli = batches.reduce((sum, batch) => sum + getBatchMilli(batch), 0)
+      const maxMilliForItem = Math.max(
         0,
-        totalStockBase - getAllocatedOtherBase(target, state.items)
+        totalStockMilli - getAllocatedOtherMilli(target, state.items)
       )
 
-      // Giữ nguyên LƯỢNG HÀNG chứ không giữ con số: 0,333 Hộp (= 10 Viên) đổi
-      // sang Viên phải ra 10. Giữ nguyên con số sẽ tạo ra dòng `0,333 Viên`
-      // không bao giờ quy đổi được nên không lưu được.
-      const desiredBase = Math.max(1, getItemBaseQuantity(target))
+      // Giữ nguyên LƯỢNG HÀNG chứ không giữ con số: 0,333 Hộp (= 9,99 Viên) đổi
+      // sang Viên phải ra 9,99. Tối thiểu một đơn vị nhỏ nhất của đơn vị mới.
+      const desiredBaseMilli = Math.max(newCF, getItemBaseMilli(target))
 
       // Vẫn cho đổi đơn vị khi tồn không đủ; dòng sẽ hiển thị vượt tồn kho.
-      if (desiredBase > maxBaseForItem) {
+      if (desiredBaseMilli > maxMilliForItem) {
         toast.warning('Số lượng vượt quá tồn kho hiện tại.')
+      }
+
+      // Làm tròn XUỐNG sang đơn vị mới: 10 Viên đổi sang Hộp (1 Hộp = 30 Viên) ra
+      // 0,333 Hộp = 9,99 Viên, hụt 0,01 Viên. Trước đây dung sai che việc này;
+      // nay phải nói ra thay vì để người bán tự phát hiện.
+      const nextQtyMilli = baseMilliToQtyMilli(desiredBaseMilli, newCF)
+      if (nextQtyMilli * newCF !== desiredBaseMilli) {
+        toast.info(
+          `Đã làm tròn xuống ${formatQuantity(fromQtyMilli(nextQtyMilli))} ${selectedUnit.unit_name}.`
+        )
       }
 
       const updatedTarget: SaleOrderItem = {
         ...target,
         productUnitId: newUnitId,
         unitPrice: selectedUnit.sell_price ?? target.unitPrice,
-        quantity: baseToQuantity(desiredBase, newCF),
+        quantity: fromQtyMilli(nextQtyMilli),
       }
 
       const updatedItems = state.items.map((item) =>
@@ -267,7 +285,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       set({
         items: allocateQuantityToBatches({
           target: updatedTarget,
-          desiredBase,
+          desiredBaseMilli,
           batches,
           allItems: updatedItems,
           conversionFactor: newCF,
@@ -322,9 +340,12 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       // v1: `stock` (tồn theo đơn vị đang bán) đổi thành `stockBase` (đơn vị cơ
       // bản). Nháp v0 không có `stockBase` → `isItemOverStock` so với undefined
       // sẽ luôn false và cho hoàn tất đơn vượt tồn, nên bỏ hẳn items cũ.
-      version: 1,
+      // v2: tồn kho thành numeric(14,3) và quy đổi bỏ dung sai. Nháp v1 chứa
+      // `quantity` sinh bằng round() và `stockBase` số nguyên của thế giới cũ;
+      // khôi phục nguyên trạng sẽ cho dòng vượt tồn ảo ngay khi mở lại.
+      version: 2,
       migrate: (persisted, from) => {
-        if (from >= 1) return persisted as Partial<SaleOrderStore>
+        if (from >= 2) return persisted as Partial<SaleOrderStore>
         const { items: _dropped, ...rest } = (persisted ?? {}) as Partial<SaleOrderStore>
         return rest as Partial<SaleOrderStore>
       },

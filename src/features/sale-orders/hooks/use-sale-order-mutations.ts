@@ -7,8 +7,7 @@ import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { useSaleOrderStoreApi } from '../store/sale-order-context'
-import { getBaseUnitName, getItemConversionFactor } from '../data/inventory-helpers'
-import { isQuantityConvertible } from '@/lib/quantity'
+import { isValidQuantity, roundQuantity } from '@/lib/quantity'
 import { selectTotal, selectIsEdit, selectHasOverStockItem } from '../store/sale-order-selectors'
 
 type UseSaleOrderMutationsParams = {
@@ -36,7 +35,11 @@ export function useSaleOrderMutations({
       tenant_id: tenantId,
       product_id: item.product.id,
       product_unit_id: item.productUnitId,
-      quantity: item.quantity,
+      // Làm sạch TRƯỚC KHI GỬI: isValidQuantity khoan dung với sai số float
+      // (0.33299999999999996 vẫn "hợp lệ"), nhưng RPC so `v_quantity <> round(
+      // v_quantity, 3)` nên giá trị thô bị trả INVALID_QUANTITY — và nếu đang
+      // offline thì mutation hỏng bị xoá khỏi hàng đợi.
+      quantity: roundQuantity(item.quantity),
       unit_price: item.unitPrice,
       discount: item.discount,
       batch_id: item.batchId ?? null,
@@ -57,14 +60,13 @@ export function useSaleOrderMutations({
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
 
-    // Chặn CẢ KHI LƯU NHÁP: nháp có số lượng không quy đổi được sẽ chết lúc hoàn
-    // tất, và nếu đang offline thì mutation hỏng bị xoá hẳn khỏi hàng đợi.
-    const badItem = items.find(
-      (item) => !isQuantityConvertible(item.quantity, getItemConversionFactor(item))
-    )
+    // Chặn CẢ KHI LƯU NHÁP: RPC từ chối số lượng <= 0 hoặc quá 3 chữ số thập
+    // phân (INVALID_QUANTITY), và nếu đang offline thì mutation hỏng bị xoá hẳn
+    // khỏi hàng đợi — đơn mất luôn, không khôi phục được.
+    const badItem = items.find((item) => !isValidQuantity(item.quantity))
     if (badItem) {
       throw new Error(
-        `${badItem.product.product_name}: số lượng không quy đổi được thành số nguyên ${getBaseUnitName(badItem.product)}.`
+        `${badItem.product.product_name}: số lượng phải lớn hơn 0 và tối đa 3 chữ số thập phân.`
       )
     }
 

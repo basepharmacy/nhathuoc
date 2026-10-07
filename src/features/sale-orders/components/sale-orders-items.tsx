@@ -13,7 +13,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { cn, formatCurrency, formatDateLabel } from '@/lib/utils'
-import { minQuantityForFactor } from '@/lib/quantity'
+import { MIN_QUANTITY, formatQuantity, lineAmount } from '@/lib/quantity'
 import { type ProductUnit } from '@/services/supabase'
 import { getBaseUnitName, isItemOverStock } from '../data/inventory-helpers'
 import { useSaleOrderStore } from '../store/sale-order-context'
@@ -65,7 +65,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = Math.round(item.quantity * item.unitPrice)
+                  const lineTotal = lineAmount(item.quantity, item.unitPrice)
                   const unitOptions = item.product.product_units ?? []
                   const isSelected = index === selectedItemIndex
                   const isEditingPrice = editingPriceItemId === item.id
@@ -111,7 +111,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                           {item.batchCode ? <span>Lô: {item.batchCode}</span> : null}
                           <span>HSD: {formatDateLabel(item.expiryDate)}</span>
                           <span className={cn(isOverStock && 'font-medium text-destructive')}>
-                            SL: {item.stockBase} {getBaseUnitName(item.product)}
+                            SL: {formatQuantity(item.stockBase)} {getBaseUnitName(item.product)}
                           </span>
                         </div>
                         {belowCostSpacer}
@@ -157,8 +157,7 @@ export const SaleOrdersItems = memo(function SaleOrdersItems({
                         <QuantityStepper
                           value={item.quantity}
                           onChange={(qty) => onQuantityChange(item.id, qty)}
-                          decimals={3}
-                          min={minQuantityForFactor(conversionFactor)}
+                          min={MIN_QUANTITY}
                         />
                         {belowCostSpacer}
                       </TableCell>

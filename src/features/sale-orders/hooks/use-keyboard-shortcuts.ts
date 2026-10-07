@@ -1,8 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type SaleOrdersSearchHandle } from '../components/sale-orders-search'
 import { type SaleOrderItem } from '../data/types'
-import { getItemConversionFactor } from '../data/inventory-helpers'
-import { minQuantityForFactor } from '@/lib/quantity'
+import { MIN_QUANTITY, roundQuantity } from '@/lib/quantity'
 
 type UseSaleOrderKeyboardShortcutsParams = {
   isActive: boolean
@@ -140,11 +139,11 @@ export function useSaleOrderKeyboardShortcuts({
             selectedItemIndex < items.length
           ) {
             const item = items[selectedItemIndex]
-            // Dòng số lẻ (vd 0,5 Hộp) không giảm được 1 đơn vị → hạ về mức nhỏ
-            // nhất bán được là đúng 1 đơn vị cơ bản.
-            const minQty = minQuantityForFactor(getItemConversionFactor(item))
-            if (item.quantity > minQty) {
-              onQuantityChange(item.id, Math.max(minQty, item.quantity - 1))
+            // roundQuantity vì `1.333 - 1` trong JS ra 0.33299999999999996, giá
+            // trị đó bị RPC trả INVALID_QUANTITY.
+            const next = roundQuantity(item.quantity - 1)
+            if (next >= MIN_QUANTITY) {
+              onQuantityChange(item.id, next)
             }
           }
           break

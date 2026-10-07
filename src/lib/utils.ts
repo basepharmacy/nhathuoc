@@ -100,7 +100,15 @@ export const formatDateTimeLabel = (value?: string | null) => {
   }).format(date)
 }
 
-export const formatQuantity = (value?: number | null) =>
+/**
+ * Số lượng cho bảng tồn kho / báo cáo: CÓ phân nhóm hàng nghìn, tối đa 3 chữ số
+ * thập phân (mặc định của Intl.NumberFormat).
+ *
+ * Khác với `formatQuantity` trong `@/lib/quantity` — bản đó tắt phân nhóm vì ở
+ * màn POS "1.000" dễ bị đọc nhầm thành một nghìn. Hai hàm từng trùng tên và
+ * import từ hai chỗ khác nhau, sửa một bên không có tác dụng ở bên kia.
+ */
+export const formatStockQuantity = (value?: number | null) =>
   new Intl.NumberFormat('vi-VN').format(value ?? 0)
 
 export function formatShortCurrency(value: number) {

@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { formatCurrency, formatDateLabel, formatQuantity } from '@/lib/utils'
+import { formatCurrency, formatDateLabel, formatStockQuantity } from '@/lib/utils'
 import { useQuery } from '@tanstack/react-query'
 import { useUser } from '@/client/provider'
 import { useLocationContext } from '@/context/location-provider'
@@ -123,7 +123,7 @@ export function ReportOverview({
             <ShoppingCart className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className='text-2xl font-bold'>{formatQuantity(data.orders)}</div>
+            <div className='text-2xl font-bold'>{formatStockQuantity(data.orders)}</div>
             <div className='flex flex-wrap items-center gap-2 text-xs text-muted-foreground'>
               <span>{periodDescription}</span>
               <ChangeBadge value={data.ordersChange} label={changeLabel} />
@@ -174,7 +174,7 @@ export function ReportOverview({
                     <span>Lô: {batch.batch}</span>
                     <span>HSD: {formatDateLabel(batch.expiredAt)}</span>
                     <span>
-                      Còn {formatQuantity(batch.quantity)} {batch.unitName}
+                      Còn {formatStockQuantity(batch.quantity)} {batch.unitName}
                     </span>
                   </div>
                 </div>
@@ -203,7 +203,7 @@ export function ReportOverview({
                   <div>
                     <p className='text-sm font-medium'>{item.name}</p>
                     <p className='text-xs text-muted-foreground'>
-                      Còn {formatQuantity(item.stock)} {item.unitName}
+                      Còn {formatStockQuantity(item.stock)} {item.unitName}
                     </p>
                   </div>
                   <Badge variant={item.status === 'out' ? 'destructive' : 'secondary'}>
