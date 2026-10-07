@@ -7,6 +7,8 @@ import { addOfflineMutation, isNetworkError } from '@/services/offline/mutation-
 import { useOnlineStatus } from '@/hooks/use-online-status'
 import { mapSupabaseError } from '@/lib/error-mapper'
 import { useSaleOrderStoreApi } from '../store/sale-order-context'
+import { getBaseUnitName, getItemConversionFactor } from '../data/inventory-helpers'
+import { isQuantityConvertible } from '@/lib/quantity'
 import { selectTotal, selectIsEdit, selectHasOverStockItem } from '../store/sale-order-selectors'
 
 type UseSaleOrderMutationsParams = {
@@ -54,6 +56,18 @@ export function useSaleOrderMutations({
     if (!tenantId || !userId) throw new Error('Thiếu thông tin người dùng.')
     if (!selectedLocationId) throw new Error('Vui lòng chọn cửa hàng.')
     if (items.length === 0) throw new Error('Vui lòng thêm ít nhất 1 sản phẩm.')
+
+    // Chặn CẢ KHI LƯU NHÁP: nháp có số lượng không quy đổi được sẽ chết lúc hoàn
+    // tất, và nếu đang offline thì mutation hỏng bị xoá hẳn khỏi hàng đợi.
+    const badItem = items.find(
+      (item) => !isQuantityConvertible(item.quantity, getItemConversionFactor(item))
+    )
+    if (badItem) {
+      throw new Error(
+        `${badItem.product.product_name}: số lượng không quy đổi được thành số nguyên ${getBaseUnitName(badItem.product)}.`
+      )
+    }
+
     // Đơn vượt tồn kho chỉ được lưu nháp: hoàn tất sẽ trừ kho xuống âm và
     // vi phạm CHECK (quantity >= 0) trên inventory_batches.
     if (status === '2_COMPLETE' && selectHasOverStockItem(state)) {

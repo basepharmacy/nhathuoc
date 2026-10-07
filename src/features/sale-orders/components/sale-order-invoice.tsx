@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
+import { formatQuantity } from '@/lib/quantity'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { type SaleOrderItem } from '../data/types'
 import type { BankAccount } from '@/services/supabase/'
@@ -87,7 +88,7 @@ export function SaleOrderInvoice({
         </thead>
         <tbody>
           {items.map((item, index) => {
-            const lineTotal = item.quantity * item.unitPrice
+            const lineTotal = Math.round(item.quantity * item.unitPrice)
             const unitName =
               item.product.product_units?.find(
                 (u) => u.id === item.productUnitId
@@ -105,7 +106,7 @@ export function SaleOrderInvoice({
                     <div className='text-[10px] text-gray-600'>CK: -{formatCurrency(item.discount)}d</div>
                   )}
                 </td>
-                <td className='py-1 text-center'>{item.quantity}</td>
+                <td className='py-1 text-center'>{formatQuantity(item.quantity)}</td>
                 <td className='py-1 text-right whitespace-nowrap'>
                   {formatCurrency(item.unitPrice)}
                 </td>

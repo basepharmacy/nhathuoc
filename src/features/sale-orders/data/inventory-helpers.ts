@@ -1,4 +1,5 @@
 import { type InventoryBatch, ProductWithUnits } from '@/services/supabase/'
+import { baseToQuantity, toBaseQuantity } from '@/lib/quantity'
 import { type SaleOrderItem } from './types'
 
 export const getBatchQuantity = (batch: InventoryBatch) => batch.quantity ?? 0
@@ -9,12 +10,25 @@ export const getItemConversionFactor = (item: SaleOrderItem): number => {
   return unit?.conversion_factor || 1
 }
 
+/** Tên đơn vị cơ bản của sản phẩm, dùng để ghép vào thông báo lỗi. */
+export const getBaseUnitName = (product: ProductWithUnits): string =>
+  product.product_units?.find((u) => u.is_base_unit)?.unit_name ?? 'đơn vị cơ bản'
+
+/**
+ * Số lượng của một dòng quy về đơn vị cơ bản. Trả 0 khi không quy đổi được —
+ * các phép cộng dồn tồn kho dùng hàm này nên phải luôn ra số, còn việc chặn
+ * người dùng đã làm ở tầng nhập liệu và lúc submit.
+ */
+export const getItemBaseQuantity = (item: SaleOrderItem): number =>
+  toBaseQuantity(item.quantity, getItemConversionFactor(item)) ?? 0
+
 export const getAllocatedByBatch = (productId: string, rows: SaleOrderItem[]) => {
   const map = new Map<string, number>()
   rows.forEach((row) => {
     if (row.product.id !== productId) return
     if (!row.batchId) return
-    map.set(row.batchId, (map.get(row.batchId) ?? 0) + row.quantity)
+    // Cộng dồn theo ĐƠN VỊ CƠ BẢN: các dòng cùng lô có thể đang dùng đơn vị khác nhau.
+    map.set(row.batchId, (map.get(row.batchId) ?? 0) + getItemBaseQuantity(row))
   })
   return map
 }
@@ -49,22 +63,40 @@ export const getFallbackBatch = (
 }
 
 /** Dòng đang bán vượt tồn kho của lô đang chọn (gồm cả trường hợp lô đã hết sạch). */
-export const isItemOverStock = (item: SaleOrderItem) => item.quantity > item.stock
+export const isItemOverStock = (item: SaleOrderItem) =>
+  getItemBaseQuantity(item) > item.stockBase
+
+/** Tổng tồn kho của các dòng KHÁC cùng sản phẩm, theo đơn vị cơ bản. */
+export const getAllocatedOtherBase = (
+  target: SaleOrderItem,
+  allItems: SaleOrderItem[]
+) =>
+  allItems
+    .filter((item) => item.product.id === target.product.id && item.id !== target.id)
+    .reduce((sum, item) => sum + getItemBaseQuantity(item), 0)
+
+let rowSeq = 0
 
 /**
- * FIFO batch allocation: distributes a desired quantity across inventory batches,
- * starting from the current batch and spilling over to subsequent batches.
+ * FIFO batch allocation: phân bổ số lượng mong muốn qua các lô, bắt đầu từ lô
+ * đang chọn rồi tràn sang các lô tiếp theo.
+ *
+ * Toàn bộ phép tính chạy theo ĐƠN VỊ CƠ BẢN (số nguyên); số lượng hiển thị của
+ * mỗi dòng mới được quy ngược về đơn vị đang chọn ở bước cuối. Làm ngược lại
+ * (tính theo đơn vị đang chọn rồi chia cho hệ số) sẽ mất tới `factor - 1` đơn vị
+ * cơ bản mỗi lô — một lô còn 25 Viên với 1 Hộp = 30 Viên sẽ bị bỏ qua hoàn toàn.
  */
 export const allocateQuantityToBatches = ({
   target,
-  desired,
+  desiredBase,
   batches,
   allItems,
   conversionFactor = 1,
   allowOverStock = false,
 }: {
   target: SaleOrderItem
-  desired: number
+  /** Số lượng mong muốn, đã quy về ĐƠN VỊ CƠ BẢN (số nguyên ≥ 1). */
+  desiredBase: number
   batches: InventoryBatch[]
   allItems: SaleOrderItem[]
   /** Conversion factor of the target item's selected unit (base unit = 1). */
@@ -77,17 +109,11 @@ export const allocateQuantityToBatches = ({
 
   // Total stock is always in base units
   const totalStockBase = batches.reduce((sum, batch) => sum + getBatchQuantity(batch), 0)
+  const allocatedOtherBase = getAllocatedOtherBase(target, allItems)
 
-  // Sum other items' allocations in base units (each item may use a different unit)
-  const allocatedOtherBase = allItems
-    .filter((item) => item.product.id === target.product.id && item.id !== target.id)
-    .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
-
-  // Max available for this item, converted to the target's selected unit
   const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
-  const maxForItem = Math.floor(maxBaseForItem / safeCF)
-  const desiredQty = Math.max(1, Math.floor(desired || 1))
-  const capped = allowOverStock ? desiredQty : Math.min(desiredQty, maxForItem)
+  const wanted = Math.max(1, Math.round(desiredBase))
+  const capped = allowOverStock ? wanted : Math.min(wanted, maxBaseForItem)
 
   // Track per-batch allocations by other items in base units
   const allocationsBase = new Map<string, number>()
@@ -95,14 +121,13 @@ export const allocateQuantityToBatches = ({
     if (item.product.id !== target.product.id) return
     if (item.id === target.id) return
     if (!item.batchId) return
-    const itemCF = getItemConversionFactor(item)
     allocationsBase.set(
       item.batchId,
-      (allocationsBase.get(item.batchId) ?? 0) + item.quantity * itemCF
+      (allocationsBase.get(item.batchId) ?? 0) + getItemBaseQuantity(item)
     )
   })
 
-  let remaining = capped // in target unit
+  let remainingBase = capped
 
   const nextItems: SaleOrderItem[] = allItems
     .map((item) => {
@@ -114,14 +139,14 @@ export const allocateQuantityToBatches = ({
         0,
         batchBase - (allocationsBase.get(item.batchId ?? '') ?? 0)
       )
-      // Convert available base units to the target's selected unit
-      const availableInUnit = Math.floor(availableBase / safeCF)
-      const assigned = Math.min(remaining, availableInUnit)
-      remaining -= assigned
+      const assignedBase = Math.min(remainingBase, availableBase)
+      remainingBase -= assignedBase
 
-      // Tính lại stock theo đơn vị đang chọn — cần thiết khi đổi đơn vị,
-      // nếu không dòng vượt tồn sẽ không được phát hiện tới lần refetch sau.
-      return { ...item, quantity: assigned, stock: Math.floor(batchBase / safeCF) }
+      return {
+        ...item,
+        quantity: baseToQuantity(assignedBase, safeCF),
+        stockBase: batchBase,
+      }
     })
     // Khi cho phép vượt tồn, giữ lại dòng target dù chưa được cấp phát lô nào —
     // phần vượt sẽ được cộng vào dòng này ở cuối hàm.
@@ -134,50 +159,56 @@ export const allocateQuantityToBatches = ({
     : batches
 
   nextBatches.forEach((batch) => {
-    if (remaining <= 0) return
+    if (remainingBase <= 0) return
     const availableBase = Math.max(
       0,
       getBatchQuantity(batch) - (allocationsBase.get(batch.id) ?? 0)
     )
-    const availableInUnit = Math.floor(availableBase / safeCF)
-    if (availableInUnit <= 0) return
+    if (availableBase <= 0) return
 
-    const assigned = Math.min(remaining, availableInUnit)
-    remaining -= assigned
+    const assignedBase = Math.min(remainingBase, availableBase)
+    remainingBase -= assignedBase
 
     const existingIndex = nextItems.findIndex(
       (item) => item.product.id === target.product.id && item.batchId === batch.id
     )
 
     if (existingIndex >= 0) {
+      const existing = nextItems[existingIndex]
+      const mergedBase =
+        (toBaseQuantity(existing.quantity, safeCF) ?? 0) + assignedBase
       nextItems[existingIndex] = {
-        ...nextItems[existingIndex],
-        quantity: nextItems[existingIndex].quantity + assigned,
+        ...existing,
+        quantity: baseToQuantity(mergedBase, safeCF),
       }
       return
     }
 
     nextItems.push({
-      id: `${target.product.id}-${batch.id}-${Date.now()}`,
+      // Date.now() một mình không đủ: nhiều lô được tạo trong cùng một mili giây
+      // sẽ trùng key React.
+      id: `${target.product.id}-${batch.id}-${Date.now()}-${rowSeq++}`,
       product: target.product,
       productUnitId: target.productUnitId,
-      quantity: assigned,
+      quantity: baseToQuantity(assignedBase, safeCF),
       unitPrice: target.unitPrice,
       discount: 0,
       batchId: batch.id,
       batchCode: batch.batch_code ?? '',
       expiryDate: batch.expiry_date ?? '',
-      stock: Math.floor(getBatchQuantity(batch) / safeCF),
+      stockBase: getBatchQuantity(batch),
     })
   })
 
   // Phần không lô nào gánh được chính là phần vượt tồn: dồn vào dòng target.
-  if (allowOverStock && remaining > 0) {
+  if (allowOverStock && remainingBase > 0) {
     const targetIndex = nextItems.findIndex((item) => item.id === target.id)
     if (targetIndex >= 0) {
+      const existing = nextItems[targetIndex]
+      const mergedBase = (toBaseQuantity(existing.quantity, safeCF) ?? 0) + remainingBase
       nextItems[targetIndex] = {
-        ...nextItems[targetIndex],
-        quantity: nextItems[targetIndex].quantity + remaining,
+        ...existing,
+        quantity: baseToQuantity(mergedBase, safeCF),
       }
     }
   }

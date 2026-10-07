@@ -13,8 +13,10 @@ export const selectBatchesByProductId = (state: SaleOrderState) => {
   }, {})
 }
 
+// Làm tròn TỪNG DÒNG rồi mới cộng, khớp với thành tiền hiển thị và hoá đơn in.
+// `sale_orders.total_amount` là integer nên tổng bắt buộc phải nguyên.
 export const selectSubtotal = (state: SaleOrderState) =>
-  state.items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0)
+  state.items.reduce((sum, item) => sum + Math.round(item.quantity * item.unitPrice), 0)
 
 export const selectTotal = (state: SaleOrderState) =>
   Math.max(0, selectSubtotal(state) - state.orderDiscount)

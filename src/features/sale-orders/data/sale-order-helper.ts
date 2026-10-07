@@ -25,13 +25,15 @@ export function mapOrderToSaleOrderInCreate(
         batchId: item.batch_id ?? '',
         batchCode: batch?.batch_code ?? '',
         expiryDate: batch?.expiry_date ?? '',
-        stock: 0,
+        // Điền tồn thật ngay từ đầu: để 0 thì mọi dòng bị coi là vượt tồn và
+        // nút Hoàn tất bị khoá cho tới khi syncInventoryBatches chạy.
+        stockBase: batch?.quantity ?? 0,
       }
     })
     .filter((item): item is SaleOrderItem => Boolean(item))
 
   const subTotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
+    (sum, item) => sum + Math.round(item.quantity * item.unitPrice),
     0,
   )
 

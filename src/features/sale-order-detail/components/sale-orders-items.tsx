@@ -43,7 +43,7 @@ export function SaleOrdersItems({
                 </TableRow>
               ) : (
                 items.map((item, index) => {
-                  const lineTotal = item.quantity * item.unit_price
+                  const lineTotal = Math.round(item.quantity * item.unit_price)
                   return (
                     <TableRow
                       key={item.id}
@@ -83,6 +83,7 @@ export function SaleOrdersItems({
                           value={item.quantity}
                           onChange={() => { }}
                           disabled={true}
+                          decimals={3}
                         />
                       </TableCell>
                       <TableCell className='align-middle text-end text-sm font-semibold text-foreground'>

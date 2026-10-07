@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import Barcode from 'react-barcode'
 import { formatCurrency } from '@/lib/utils'
+import { formatQuantity } from '@/lib/quantity'
 import { VietQrImage } from '@/components/viet-qr-image'
 import type { BankAccount, SaleOrderItemWithRelation } from '@/services/supabase'
 
@@ -102,7 +103,7 @@ export function SaleOrderInvoice({
                     <div className='text-[10px] text-gray-600'>CK: -{formatCurrency(item.discount)}d</div>
                   )}
                 </td>
-                <td className='py-1 text-center'>{item.quantity}</td>
+                <td className='py-1 text-center'>{formatQuantity(item.quantity)}</td>
                 <td className='py-1 text-right whitespace-nowrap'>
                   {formatCurrency(item.unit_price)}
                 </td>

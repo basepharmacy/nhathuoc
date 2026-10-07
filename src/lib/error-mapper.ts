@@ -69,6 +69,10 @@ const EXCEPTION_MESSAGE_MAP: Record<string, string> = {
   'UNIT_NAME_DUPLICATED': 'Sản phẩm đã có đơn vị trùng tên này.',
   'INVALID_BASE_UNIT_STATE':
     'Dữ liệu đơn vị của sản phẩm không hợp lệ (phải có đúng một đơn vị cơ bản). Vui lòng kiểm tra lại trong màn hình sửa sản phẩm.',
+  'QTY_NOT_CONVERTIBLE': 'Số lượng không quy đổi được thành số nguyên đơn vị cơ bản.',
+  'UNIT_TOO_LARGE_FOR_DECIMAL':
+    'Đơn vị này quá lớn để bán số lẻ. Vui lòng chọn đơn vị nhỏ hơn.',
+  'INVALID_QUANTITY': 'Số lượng không hợp lệ (tối đa 3 chữ số thập phân).',
 }
 
 /**
@@ -82,8 +86,14 @@ export function mapSupabaseError(error: unknown): string {
   const err = error as {
     code?: string
     message?: string
+    details?: string
     status?: number
     statusCode?: number
+  }
+
+  // Postgres gửi tên đơn vị cơ bản qua `USING DETAIL` để ghép vào thông báo.
+  if (err.message === 'QTY_NOT_CONVERTIBLE' && err.details) {
+    return `Số lượng không quy đổi được thành số nguyên ${err.details}.`
   }
 
   if (err.message && err.message in EXCEPTION_MESSAGE_MAP) {

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { VietQrImage } from '@/components/viet-qr-image'
 import { formatCurrency } from '@/lib/utils'
+import { formatQuantity } from '@/lib/quantity'
 import {
   Dialog,
   DialogContent,
@@ -109,7 +110,7 @@ function OfflineInvoice({ mutation, tenantId }: { mutation: OfflineMutation; ten
   const display = payload._display
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unit_price,
+    (sum, item) => sum + Math.round(item.quantity * item.unit_price),
     0
   )
   const total = order?.total_amount ?? Math.max(0, subtotal - (order?.discount ?? 0))
@@ -153,7 +154,7 @@ function OfflineInvoice({ mutation, tenantId }: { mutation: OfflineMutation; ten
         </thead>
         <tbody>
           {items.map((item, idx) => {
-            const lineTotal = item.quantity * item.unit_price - item.discount
+            const lineTotal = Math.round(item.quantity * item.unit_price) - item.discount
             return (
               <tr key={idx} className='border-b border-dotted border-gray-400'>
                 <td className='max-w-[120px] py-1 text-left'>
@@ -171,7 +172,7 @@ function OfflineInvoice({ mutation, tenantId }: { mutation: OfflineMutation; ten
                     </div>
                   )}
                 </td>
-                <td className='py-1 text-center'>{item.quantity}</td>
+                <td className='py-1 text-center'>{formatQuantity(item.quantity)}</td>
                 <td className='py-1 text-right whitespace-nowrap'>
                   {formatCurrency(item.unit_price)}
                 </td>
@@ -258,7 +259,7 @@ function OfflineOrderDetailDialog({
   const display = payload._display
 
   const subtotal = items.reduce(
-    (sum, item) => sum + item.quantity * item.unit_price,
+    (sum, item) => sum + Math.round(item.quantity * item.unit_price),
     0
   )
 
@@ -318,7 +319,7 @@ function OfflineOrderDetailDialog({
               </TableHeader>
               <TableBody>
                 {items.map((item, idx) => {
-                  const lineTotal = item.quantity * item.unit_price - item.discount
+                  const lineTotal = Math.round(item.quantity * item.unit_price) - item.discount
                   return (
                     <TableRow key={idx}>
                       <TableCell className='text-sm'>
@@ -335,7 +336,7 @@ function OfflineOrderDetailDialog({
                         {item._display?.unitName || '—'}
                       </TableCell>
                       <TableCell className='text-right text-sm'>
-                        {item.quantity}
+                        {formatQuantity(item.quantity)}
                       </TableCell>
                       <TableCell className='text-right text-sm text-nowrap'>
                         {formatCurrency(item.unit_price)}

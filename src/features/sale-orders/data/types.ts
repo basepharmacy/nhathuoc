@@ -12,7 +12,8 @@ export type SaleOrderItem = {
   batchId: string
   batchCode: string
   expiryDate: string
-  stock: number
+  /** Tồn kho của lô đang chọn, luôn là SỐ NGUYÊN theo ĐƠN VỊ CƠ BẢN. */
+  stockBase: number
 }
 
 export type SaleOrderInCreate = {

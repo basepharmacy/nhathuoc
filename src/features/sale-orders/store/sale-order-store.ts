@@ -7,11 +7,15 @@ import { generateOrderCode } from '../data/sale-order-helper'
 import {
   allocateQuantityToBatches,
   getAllocatedByBatch,
+  getAllocatedOtherBase,
+  getBaseUnitName,
   getDefaultUnit,
   getFallbackBatch,
+  getItemBaseQuantity,
   getItemConversionFactor,
   getNextAvailableBatch,
 } from '../data/inventory-helpers'
+import { baseToQuantity, toBaseQuantity } from '@/lib/quantity'
 import { selectBatchesByProductId } from './sale-order-selectors'
 import { debouncedDraftStorage } from '../data/draft-storage'
 
@@ -132,8 +136,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
         toast.warning(`Sản phẩm ${product.product_name} đã hết tồn kho.`)
       }
 
-      const conversionFactor = selectedUnit?.conversion_factor || 1
-      const batchStock = Math.floor((nextBatch.quantity ?? 0) / conversionFactor)
+      const batchStockBase = nextBatch.quantity ?? 0
 
       // Lô fallback có thể đã có dòng trong đơn → tăng số lượng thay vì tạo dòng trùng.
       const existing = state.items.find(
@@ -165,7 +168,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
             batchId: nextBatch.id,
             batchCode: nextBatch.batch_code ?? '',
             expiryDate: nextBatch.expiry_date ?? '',
-            stock: batchStock,
+            stockBase: batchStockBase,
           },
         ],
       })
@@ -190,22 +193,30 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       }
 
       const conversionFactor = getItemConversionFactor(target)
-      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
-      const allocatedOtherBase = state.items
-        .filter((item) => item.product.id === target.product.id && item.id !== target.id)
-        .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
-      const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
-      const maxForItem = Math.floor(maxBaseForItem / (conversionFactor || 1))
-      const desired = Math.max(1, Math.floor(nextQuantity || 1))
+      const desiredBase = toBaseQuantity(nextQuantity, conversionFactor)
 
-      if (desired > maxForItem) {
+      // Không quy đổi được ra số nguyên đơn vị cơ bản → giữ nguyên giá trị cũ.
+      if (desiredBase === null) {
+        toast.error(
+          `Số lượng không quy đổi được thành số nguyên ${getBaseUnitName(target.product)}.`
+        )
+        return
+      }
+
+      const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
+      const maxBaseForItem = Math.max(
+        0,
+        totalStockBase - getAllocatedOtherBase(target, state.items)
+      )
+
+      if (desiredBase > maxBaseForItem) {
         toast.warning('Số lượng vượt quá tồn kho hiện tại.')
       }
 
       set({
         items: allocateQuantityToBatches({
           target,
-          desired,
+          desiredBase,
           batches,
           allItems: state.items,
           conversionFactor,
@@ -227,14 +238,18 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       const batches = batchesByProduct[target.product.id] ?? []
 
       const totalStockBase = batches.reduce((sum, batch) => sum + (batch.quantity ?? 0), 0)
-      const allocatedOtherBase = state.items
-        .filter((item) => item.product.id === target.product.id && item.id !== target.id)
-        .reduce((sum, item) => sum + item.quantity * getItemConversionFactor(item), 0)
-      const maxBaseForItem = Math.max(0, totalStockBase - allocatedOtherBase)
-      const maxInNewUnit = Math.floor(maxBaseForItem / newCF)
+      const maxBaseForItem = Math.max(
+        0,
+        totalStockBase - getAllocatedOtherBase(target, state.items)
+      )
+
+      // Giữ nguyên LƯỢNG HÀNG chứ không giữ con số: 0,333 Hộp (= 10 Viên) đổi
+      // sang Viên phải ra 10. Giữ nguyên con số sẽ tạo ra dòng `0,333 Viên`
+      // không bao giờ quy đổi được nên không lưu được.
+      const desiredBase = Math.max(1, getItemBaseQuantity(target))
 
       // Vẫn cho đổi đơn vị khi tồn không đủ; dòng sẽ hiển thị vượt tồn kho.
-      if (target.quantity > maxInNewUnit) {
+      if (desiredBase > maxBaseForItem) {
         toast.warning('Số lượng vượt quá tồn kho hiện tại.')
       }
 
@@ -242,7 +257,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
         ...target,
         productUnitId: newUnitId,
         unitPrice: selectedUnit.sell_price ?? target.unitPrice,
-        quantity: target.quantity,
+        quantity: baseToQuantity(desiredBase, newCF),
       }
 
       const updatedItems = state.items.map((item) =>
@@ -252,7 +267,7 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
       set({
         items: allocateQuantityToBatches({
           target: updatedTarget,
-          desired: updatedTarget.quantity,
+          desiredBase,
           batches,
           allItems: updatedItems,
           conversionFactor: newCF,
@@ -289,9 +304,8 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
         items: state.items.map((item) => {
           if (!item.batchId) return item
           const batch = batches.find((b) => b.id === item.batchId)
-          const cf = getItemConversionFactor(item) || 1
-          const stock = batch ? Math.floor((batch.quantity ?? 0) / cf) : 0
-          return stock === item.stock ? item : { ...item, stock }
+          const stockBase = batch ? (batch.quantity ?? 0) : 0
+          return stockBase === item.stockBase ? item : { ...item, stockBase }
         }),
       })),
   })
@@ -305,6 +319,15 @@ export function createSaleOrderStore({ initialData, inventoryBatches, storageKey
   return createStore<SaleOrderStore>()(
     persist(initializer, {
       name: storageKey,
+      // v1: `stock` (tồn theo đơn vị đang bán) đổi thành `stockBase` (đơn vị cơ
+      // bản). Nháp v0 không có `stockBase` → `isItemOverStock` so với undefined
+      // sẽ luôn false và cho hoàn tất đơn vượt tồn, nên bỏ hẳn items cũ.
+      version: 1,
+      migrate: (persisted, from) => {
+        if (from >= 1) return persisted as Partial<SaleOrderStore>
+        const { items: _dropped, ...rest } = (persisted ?? {}) as Partial<SaleOrderStore>
+        return rest as Partial<SaleOrderStore>
+      },
       // Storage có debounce + flush khi rời trang (xem draft-storage.ts).
       storage: createJSONStorage(() => debouncedDraftStorage),
       // Giữ location mặc định khi nháp lưu giá trị rỗng, tránh ghi đè thành null
